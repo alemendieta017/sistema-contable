@@ -1,0 +1,24 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Copy root monorepo manifests
+COPY package.json tsconfig.json ./
+COPY shared/package.json ./shared/
+COPY frontend/package.json ./frontend/
+
+# Install dependencies (workspaces will link automatically)
+RUN npm install --legacy-peer-deps
+
+# Copy shared workspace and compile it
+COPY shared/ ./shared/
+RUN npm run shared:build
+
+# Copy frontend codebase
+COPY frontend/ ./frontend/
+
+WORKDIR /app/frontend
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

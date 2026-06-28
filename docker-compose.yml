@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sistema-contable-db
+    environment:
+      POSTGRES_DB: sistema_contable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sistema_contable"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    container_name: sistema-contable-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres_password
+      DATABASE_NAME: sistema_contable
+      JWT_SECRET: supersecretjwtkey1234!
+      PORT: 3001
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/shared/node_modules
+      - /app/backend/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    container_name: sistema-contable-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      PORT: 3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/shared/node_modules
+      - /app/frontend/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

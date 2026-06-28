@@ -1,0 +1,189 @@
+"use client";
+
+import React, { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+interface Entry {
+  accountId: string;
+  entryType: "DEBIT" | "CREDIT";
+  amount: number;
+  account: {
+    type: string;
+  };
+}
+
+interface Transaction {
+  id: string;
+  date: string;
+  status?: string;
+  entries: Entry[];
+}
+
+interface CalendarViewProps {
+  transactions: Transaction[];
+}
+
+export default function CalendarView({ transactions }: CalendarViewProps) {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth(); // 0-11
+
+  const months = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+  // Helper calendar functions
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDayOfWeek = new Date(year, month, 1).getDay(); // 0 (Sun) to 6 (Sat)
+
+  // Aggregate day-by-day statistics
+  const dayStats: Record<number, { income: number; expense: number; net: number }> = {};
+  for (let i = 1; i <= daysInMonth; i++) {
+    dayStats[i] = { income: 0, expense: 0, net: 0 };
+  }
+
+  for (const tx of transactions) {
+    const txDateObj = new Date(tx.date);
+    if (txDateObj.getFullYear() !== year || txDateObj.getMonth() !== month) continue;
+
+    if (tx.status === "REVERSED") continue;
+
+    const day = txDateObj.getDate();
+    let txIncome = 0;
+    let txExpense = 0;
+
+    for (const entry of tx.entries) {
+      if (entry.entryType === "CREDIT" && entry.account?.type === "INCOME") {
+        txIncome += entry.amount;
+      }
+      if (entry.entryType === "DEBIT" && entry.account?.type === "EXPENSE") {
+        txExpense += entry.amount;
+      }
+    }
+
+    if (dayStats[day]) {
+      dayStats[day].income += txIncome;
+      dayStats[day].expense += txExpense;
+      dayStats[day].net += txIncome - txExpense;
+    }
+  }
+
+  // Preceding empty slots
+  const blankSlots = Array.from({ length: startDayOfWeek }, (_, i) => null);
+  // Month days slots
+  const daySlots = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const totalSlots = [...blankSlots, ...daySlots];
+
+  const handlePrevMonth = () => {
+    setSelectedDate(new Date(year, month - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedDate(new Date(year, month + 1, 1));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Selector Header */}
+      <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Calendario Mensual</span>
+        
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handlePrevMonth}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
+          >
+            <ChevronLeft className="w-4.5 h-4.5" />
+          </button>
+          <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 select-none">
+            {months[month]} {year}
+          </span>
+          <button
+            onClick={handleNextMonth}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
+          >
+            <ChevronRight className="w-4.5 h-4.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Grid Sheet */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm overflow-x-auto">
+        <div className="min-w-[600px] space-y-2">
+          {/* Days of Week Headers */}
+          <div className="grid grid-cols-7 gap-2 text-center border-b border-slate-100 dark:border-slate-700 pb-2">
+            {daysOfWeek.map((day) => (
+              <span key={day} className="text-3xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest">
+                {day}
+              </span>
+            ))}
+          </div>
+
+          {/* Calendar Slots */}
+          <div className="grid grid-cols-7 gap-2">
+            {totalSlots.map((dayNum, index) => {
+              if (dayNum === null) {
+                return (
+                  <div
+                    key={`blank-${index}`}
+                    className="min-h-[85px] bg-slate-50/30 dark:bg-slate-900/10 rounded-2xl border border-transparent"
+                  />
+                );
+              }
+
+              const stats = dayStats[dayNum];
+              const hasFlow = stats && (stats.income > 0 || stats.expense > 0);
+
+              return (
+                <div
+                  key={`day-${dayNum}`}
+                  className={`min-h-[85px] p-2.5 rounded-2xl border flex flex-col justify-between transition duration-150 ${
+                    hasFlow
+                      ? "bg-indigo-50/10 dark:bg-indigo-950/5 border-indigo-100/60 dark:border-indigo-900/40"
+                      : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-750"
+                  }`}
+                >
+                  {/* Day Number */}
+                  <span className="text-3xs font-bold text-slate-700 dark:text-slate-300">
+                    {dayNum}
+                  </span>
+
+                  {/* Flow Data */}
+                  {hasFlow ? (
+                    <div className="space-y-0.5 text-right">
+                      {stats.income > 0 && (
+                        <p className="text-5xs font-extrabold text-green-500 leading-none">
+                          +${stats.income.toFixed(0)}
+                        </p>
+                      )}
+                      {stats.expense > 0 && (
+                        <p className="text-5xs font-extrabold text-red-500 leading-none">
+                          -${stats.expense.toFixed(0)}
+                        </p>
+                      )}
+                      <p
+                        className={`text-4xs font-extrabold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5 leading-none ${
+                          stats.net >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-red-500"
+                        }`}
+                      >
+                        ${stats.net.toFixed(0)}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="text-5xs text-slate-300 dark:text-slate-650 text-right font-semibold">
+                      Sin flujo
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
