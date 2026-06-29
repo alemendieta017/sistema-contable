@@ -29,13 +29,14 @@ export class LedgerController {
       .createQueryBuilder('tx')
       .leftJoinAndSelect('tx.entries', 'entry')
       .leftJoinAndSelect('entry.account', 'account')
+      .leftJoinAndSelect('account.currency', 'currency')
       .where('tx.userId = :userId', { userId: user.id });
 
     if (startDate) {
-      query.andWhere('tx.date >= :startDate', { startDate });
+      query.andWhere('tx.date >= :startDate', { startDate: new Date(startDate) });
     }
     if (endDate) {
-      query.andWhere('tx.date <= :endDate', { endDate });
+      query.andWhere('tx.date <= :endDate', { endDate: new Date(endDate) });
     }
 
     return query.orderBy('tx.date', 'DESC').getMany();

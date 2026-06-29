@@ -1,45 +1,62 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../services/api";
-import { useSearch } from "../../lib/search-context";
-import TransactionFilters from "../../components/TransactionFilters";
-import DailyView from "../../components/DailyView";
-import MonthlyView from "../../components/MonthlyView";
-import CalendarView from "../../components/CalendarView";
-import { ReceiptText, Calendar as CalendarIcon, BarChart3, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import { useSearch } from '../../lib/search-context';
+import TransactionFilters from '../../components/TransactionFilters';
+import DailyView from '../../components/DailyView';
+import MonthlyView from '../../components/MonthlyView';
+import CalendarView from '../../components/CalendarView';
+import {
+  ReceiptText,
+  Calendar as CalendarIcon,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+} from 'lucide-react';
+import { formatCurrency, formatLocalDateWithOffset, formatLocalDateEndWithOffset } from '../../lib/utils';
 
 type Account = {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   currencyId: string;
   parentId?: string | null;
 };
 
 export default function TransactionsPage() {
   const { searchQuery } = useSearch();
-  const [view, setView] = useState<"daily" | "calendar" | "monthly">("daily");
-  
+  const [view, setView] = useState<'daily' | 'calendar' | 'monthly'>('daily');
+
   // Date Range (default: current month)
   const getFirstDayOfMonth = () => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().substring(0, 10);
+    const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+    const y = firstDay.getFullYear();
+    const m = String(firstDay.getMonth() + 1).padStart(2, '0');
+    const day = String(firstDay.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   };
   const getLastDayOfMonth = () => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().substring(0, 10);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const y = lastDay.getFullYear();
+    const m = String(lastDay.getMonth() + 1).padStart(2, '0');
+    const day = String(lastDay.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   };
 
   const [startDate, setStartDate] = useState(getFirstDayOfMonth());
   const [endDate, setEndDate] = useState(getLastDayOfMonth());
-  const [selectedAccountId, setSelectedAccountId] = useState("");
-  
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [currencies, setCurrencies] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -48,33 +65,42 @@ export default function TransactionsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
-      const accs = await api.accounts.list();
+      const [accs, curs, txs] = await Promise.all([
+        api.accounts.list(),
+        api.currencies.list(),
+        api.transactions.list(
+          formatLocalDateWithOffset(startDate),
+          formatLocalDateEndWithOffset(endDate)
+        ),
+      ]);
+
       setAccounts(accs || []);
-
-      // If view is calendar or monthly, we want to fetch a wider range of transactions (e.g. current year)
-      // to populate aggregates properly. But let's fetch based on the selected range.
-      const txs = await api.transactions.list(startDate, endDate);
+      setCurrencies(curs || []);
       setTransactions(txs || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar registros contables.");
+      setError(err.message || 'Error al cargar registros contables.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleReverse = async (id: string) => {
-    if (!confirm("¿Está seguro de que desea anular/reversar este asiento? Se creará una transacción de offset automática.")) {
+    if (
+      !confirm(
+        '¿Está seguro de que desea anular/reversar este asiento? Se creará una transacción de offset automática.',
+      )
+    ) {
       return;
     }
     try {
       setLoading(true);
       await api.transactions.reverse(id);
-      setSuccess("Asiento reversado con éxito.");
+      setSuccess('Asiento reversado con éxito.');
       fetchData();
     } catch (err: any) {
-      setError(err.message || "Error al anular transacción.");
+      setError(err.message || 'Error al anular transacción.');
     } finally {
       setLoading(false);
     }
@@ -99,18 +125,25 @@ export default function TransactionsPage() {
     return true;
   });
 
-  // Calculate totals for dashboard summary cards
+  // Find the base currency to display totals
+  const baseCurrency = currencies.find((c) => c.isBase) || {
+    code: 'PYG',
+    symbol: '₲',
+    decimalPlaces: 0,
+  };
+
+  // Calculate totals for dashboard summary cards (aggregates in base currency)
   let totalIncome = 0;
   let totalExpense = 0;
 
   filteredTransactions.forEach((tx) => {
-    if (tx.status === "REVERSED") return;
+    if (tx.status === 'REVERSED') return;
     tx.entries.forEach((entry: any) => {
-      if (entry.entryType === "CREDIT" && entry.account?.type === "INCOME") {
-        totalIncome += entry.amount;
+      if (entry.entryType === 'CREDIT' && entry.account?.type === 'INCOME') {
+        totalIncome += Number(entry.amountBase || entry.amount);
       }
-      if (entry.entryType === "DEBIT" && entry.account?.type === "EXPENSE") {
-        totalExpense += entry.amount;
+      if (entry.entryType === 'DEBIT' && entry.account?.type === 'EXPENSE') {
+        totalExpense += Number(entry.amountBase || entry.amount);
       }
     });
   });
@@ -118,48 +151,45 @@ export default function TransactionsPage() {
   const netBalance = totalIncome - totalExpense;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Top Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
-            Registro de Transacciones
+          <h1 className="text-lg font-bold tracking-tight text-slate-850 dark:text-slate-100">
+            Libro Diario
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-450 mt-0.5">
-            Libro diario contable por partida doble
-          </p>
         </div>
 
         {/* View Switch Tabs */}
         <div className="grid grid-cols-3 gap-1 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 p-0.5 rounded-xl shadow-sm self-stretch sm:self-auto">
           <button
-            onClick={() => setView("daily")}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition ${
-              view === "daily"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                : "text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750"
+            onClick={() => setView('daily')}
+            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+              view === 'daily'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
             }`}
           >
             <ReceiptText className="w-3.5 h-3.5" />
             <span>Diario</span>
           </button>
           <button
-            onClick={() => setView("calendar")}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition ${
-              view === "calendar"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                : "text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750"
+            onClick={() => setView('calendar')}
+            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+              view === 'calendar'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
             <span>Calendario</span>
           </button>
           <button
-            onClick={() => setView("monthly")}
-            className={`flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg transition ${
-              view === "monthly"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                : "text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750"
+            onClick={() => setView('monthly')}
+            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+              view === 'monthly'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -170,67 +200,67 @@ export default function TransactionsPage() {
 
       {/* API Toast Messages */}
       {success && (
-        <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-2xl border border-green-150">
+        <div className="p-2.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl border border-green-150">
           {success}
         </div>
       )}
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150">
+        <div className="p-2.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-150">
           {error}
         </div>
       )}
 
       {/* Dashboard Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
-              Ingresos del Período
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              Ingresos
             </p>
-            <h4 className="text-base font-extrabold text-green-500 mt-1">
-              ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <h4 className="text-sm sm:text-base font-extrabold text-green-500 mt-0.5 truncate">
+              {formatCurrency(totalIncome, baseCurrency)}
             </h4>
           </div>
-          <div className="w-9 h-9 bg-green-50 dark:bg-green-950/20 rounded-xl flex items-center justify-center text-green-500">
-            <TrendingUp className="w-4.5 h-4.5" />
+          <div className="hidden sm:flex w-8 h-8 bg-green-50 dark:bg-green-950/20 rounded-xl items-center justify-center text-green-500 shrink-0">
+            <TrendingUp className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
-              Gastos del Período
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+              Egresos
             </p>
-            <h4 className="text-base font-extrabold text-red-500 mt-1">
-              ${totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <h4 className="text-sm sm:text-base font-extrabold text-red-500 mt-0.5 truncate">
+              {formatCurrency(totalExpense, baseCurrency)}
             </h4>
           </div>
-          <div className="w-9 h-9 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center text-red-500">
-            <TrendingDown className="w-4.5 h-4.5" />
+          <div className="hidden sm:flex w-8 h-8 bg-red-50 dark:bg-red-950/20 rounded-xl items-center justify-center text-red-500 shrink-0">
+            <TrendingDown className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider">
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               Saldo Neto
             </p>
             <h4
-              className={`text-base font-extrabold mt-1 ${
-                netBalance >= 0 ? "text-indigo-500" : "text-red-550 dark:text-red-400"
+              className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
+                netBalance >= 0 ? 'text-indigo-500' : 'text-red-550 dark:text-red-400'
               }`}
             >
-              ${netBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatCurrency(netBalance, baseCurrency)}
             </h4>
           </div>
           <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+            className={`hidden sm:flex w-8 h-8 rounded-xl items-center justify-center shrink-0 ${
               netBalance >= 0
-                ? "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500"
-                : "bg-red-50 dark:bg-red-950/20 text-red-550 dark:text-red-400"
+                ? 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500'
+                : 'bg-red-50 dark:bg-red-950/20 text-red-550 dark:text-red-400'
             }`}
           >
-            <DollarSign className="w-4.5 h-4.5" />
+            <DollarSign className="w-4 h-4" />
           </div>
         </div>
       </div>
@@ -254,11 +284,19 @@ export default function TransactionsPage() {
         </div>
       ) : (
         <div className="animate-in fade-in duration-200">
-          {view === "daily" && (
-            <DailyView transactions={filteredTransactions} onReverse={handleReverse} />
+          {view === 'daily' && (
+            <DailyView
+              transactions={filteredTransactions}
+              onReverse={handleReverse}
+              baseCurrency={baseCurrency}
+            />
           )}
-          {view === "calendar" && <CalendarView transactions={filteredTransactions} />}
-          {view === "monthly" && <MonthlyView transactions={filteredTransactions} />}
+          {view === 'calendar' && (
+            <CalendarView transactions={filteredTransactions} baseCurrency={baseCurrency} />
+          )}
+          {view === 'monthly' && (
+            <MonthlyView transactions={filteredTransactions} baseCurrency={baseCurrency} />
+          )}
         </div>
       )}
     </div>

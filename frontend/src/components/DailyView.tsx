@@ -1,17 +1,20 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState } from 'react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
 interface Entry {
   id: string;
   accountId: string;
-  entryType: "DEBIT" | "CREDIT";
+  entryType: 'DEBIT' | 'CREDIT';
   amount: number;
+  amountBase?: number;
   account: {
     id: string;
     name: string;
     type: string;
+    currency?: CurrencyInfo;
   };
 }
 
@@ -27,9 +30,10 @@ interface Transaction {
 interface DailyViewProps {
   transactions: Transaction[];
   onReverse: (id: string) => void;
+  baseCurrency?: CurrencyInfo;
 }
 
-export default function DailyView({ transactions, onReverse }: DailyViewProps) {
+export default function DailyView({ transactions, onReverse, baseCurrency }: DailyViewProps) {
   const [expandedTx, setExpandedTx] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -39,7 +43,11 @@ export default function DailyView({ transactions, onReverse }: DailyViewProps) {
   // Group by date (YYYY-MM-DD)
   const grouped: Record<string, Transaction[]> = {};
   for (const tx of transactions) {
-    const dStr = new Date(tx.date).toISOString().substring(0, 10);
+    const d = new Date(tx.date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dStr = `${y}-${m}-${day}`;
     if (!grouped[dStr]) {
       grouped[dStr] = [];
     }
@@ -51,106 +59,111 @@ export default function DailyView({ transactions, onReverse }: DailyViewProps) {
 
   if (transactions.length === 0) {
     return (
-      <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700">
-        <p className="text-sm text-slate-450 dark:text-slate-500">No hay transacciones cargadas para este período.</p>
+      <div className="text-center py-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+        <p className="text-xs text-slate-450 dark:text-slate-500">
+          No hay transacciones cargadas para este período.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {sortedDates.map((dateStr) => {
         const dayTxs = grouped[dateStr];
-        const dateObj = new Date(dateStr + "T00:00:00");
-        
-        // Sum total flows for the day
+        const dateObj = new Date(dateStr + 'T00:00:00');
+
+        // Sum total flows for the day (aggregates in base currency)
         let dayDebits = 0;
         dayTxs.forEach((t) => {
-          if (t.status !== "REVERSED") {
+          if (t.status !== 'REVERSED') {
             t.entries
-              .filter((e) => e.entryType === "DEBIT")
+              .filter((e) => e.entryType === 'DEBIT')
               .forEach((e) => {
-                // If it affects expense/asset, consider it flow
-                dayDebits += e.amount;
+                dayDebits += Number(e.amountBase || e.amount);
               });
           }
         });
 
         return (
-          <div key={dateStr} className="space-y-2.5">
+          <div key={dateStr} className="space-y-1">
             {/* Day Header */}
-            <div className="flex justify-between items-center px-2">
+            <div className="flex justify-between items-center px-1">
               <span className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest">
-                {dateObj.toLocaleDateString("es-ES", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
+                {dateObj.toLocaleDateString('es-ES', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
                 })}
               </span>
               <span className="text-3xs font-semibold text-slate-400">
-                Flujo del día: <span className="font-bold text-slate-650 dark:text-slate-300">${dayDebits.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                Flujo del día:{' '}
+                <span className="font-bold text-slate-650 dark:text-slate-300">
+                  {formatCurrency(dayDebits, baseCurrency)}
+                </span>
               </span>
             </div>
 
             {/* Day Transactions */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {dayTxs.map((tx) => {
                 const isExpanded = !!expandedTx[tx.id];
-                const isReversed = tx.status === "REVERSED";
+                const isReversed = tx.status === 'REVERSED';
                 const isReversion = !!tx.reversalOfId;
 
                 // Check dominant type for icon
-                const firstDebit = tx.entries.find((e) => e.entryType === "DEBIT");
-                const firstCredit = tx.entries.find((e) => e.entryType === "CREDIT");
-                const isExpense = firstDebit?.account?.type === "EXPENSE";
-                const isIncome = firstCredit?.account?.type === "INCOME";
+                const firstDebit = tx.entries.find((e) => e.entryType === 'DEBIT');
+                const firstCredit = tx.entries.find((e) => e.entryType === 'CREDIT');
+                const isExpense = firstDebit?.account?.type === 'EXPENSE';
+                const isIncome = firstCredit?.account?.type === 'INCOME';
 
                 const txAmount = firstDebit?.amount || 0;
-
                 return (
                   <div
                     key={tx.id}
                     className={`bg-white dark:bg-slate-800 rounded-2xl border transition-all duration-200 shadow-sm ${
                       isExpanded
-                        ? "border-indigo-150 dark:border-indigo-900"
-                        : "border-slate-100 dark:border-slate-700 hover:border-slate-200"
+                        ? 'border-indigo-500/25 dark:border-indigo-500/30 shadow-md shadow-indigo-500/5'
+                        : 'border-slate-100 dark:border-slate-700 hover:border-slate-200'
                     }`}
                   >
                     {/* Main Row */}
                     <div
                       onClick={() => toggleExpand(tx.id)}
-                      className="p-4 flex items-center justify-between cursor-pointer select-none"
+                      className="p-2 flex items-center justify-between cursor-pointer select-none"
                     >
-                      <div className="flex items-center space-x-3.5">
+                      <div className="flex items-center space-x-2">
                         {/* Transaction Icon */}
                         <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${
+                          className={`w-7 h-7 rounded-xl flex items-center justify-center border shrink-0 ${
                             isReversed
-                              ? "bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-200/50"
+                              ? 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-200/50'
                               : isReversion
-                                ? "bg-amber-50 dark:bg-amber-950/20 text-amber-550 border-amber-200"
+                                ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-550 border-amber-200'
                                 : isExpense
-                                  ? "bg-red-50 dark:bg-red-950/20 text-red-500 border-red-100 dark:border-red-900/60"
+                                  ? 'bg-red-50 dark:bg-red-950/20 text-red-500 border-red-100 dark:border-red-900/60'
                                   : isIncome
-                                    ? "bg-green-50 dark:bg-green-950/20 text-green-500 border-green-100 dark:border-green-900/60"
-                                    : "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 border-indigo-100 dark:border-indigo-900/60"
+                                    ? 'bg-green-50 dark:bg-green-950/20 text-green-500 border-green-100 dark:border-green-900/60'
+                                    : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 border-indigo-100 dark:border-indigo-900/60'
                           }`}
                         >
                           {isReversed ? (
-                            <RefreshCw className="w-4.5 h-4.5 opacity-50 line-through" />
+                            <RefreshCw className="w-3.5 h-3.5 opacity-50 line-through" />
                           ) : isReversion ? (
-                            <RefreshCw className="w-4.5 h-4.5" />
+                            <RefreshCw className="w-3.5 h-3.5" />
                           ) : isIncome ? (
-                            <ArrowUpRight className="w-4.5 h-4.5" />
+                            <ArrowUpRight className="w-3.5 h-3.5" />
                           ) : (
-                            <ArrowDownLeft className="w-4.5 h-4.5" />
+                            <ArrowDownLeft className="w-3.5 h-3.5" />
                           )}
                         </div>
 
                         <div>
                           <p
                             className={`text-xs font-bold ${
-                              isReversed ? "line-through text-slate-400 dark:text-slate-550" : "text-slate-800 dark:text-slate-200"
+                              isReversed
+                                ? 'line-through text-slate-400 dark:text-slate-550'
+                                : 'text-slate-800 dark:text-slate-200'
                             }`}
                           >
                             {tx.description}
@@ -158,12 +171,12 @@ export default function DailyView({ transactions, onReverse }: DailyViewProps) {
                           <p className="text-3xs text-slate-400 mt-0.5">
                             {tx.entries.length} apuntes
                             {isReversed && (
-                              <span className="ml-1.5 text-red-500 font-bold uppercase tracking-wider text-4xs bg-red-50 dark:bg-red-950/20 px-1 py-0.5 rounded">
+                              <span className="ml-1.5 text-red-500 font-bold uppercase tracking-wider text-4xs bg-red-50 dark:bg-red-950/20 px-1 py-0.5 rounded-md">
                                 Anulado
                               </span>
                             )}
                             {isReversion && (
-                              <span className="ml-1.5 text-amber-500 font-bold uppercase tracking-wider text-4xs bg-amber-50 dark:bg-amber-950/20 px-1 py-0.5 rounded">
+                              <span className="ml-1.5 text-amber-500 font-bold uppercase tracking-wider text-4xs bg-amber-50 dark:bg-amber-950/20 px-1 py-0.5 rounded-md">
                                 Reversión
                               </span>
                             )}
@@ -171,74 +184,137 @@ export default function DailyView({ transactions, onReverse }: DailyViewProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-3.5 text-right">
+                      <div className="flex items-center space-x-2 text-right">
                         <div>
                           <p
                             className={`text-xs font-extrabold ${
                               isReversed
-                                ? "line-through text-slate-400"
+                                ? 'line-through text-slate-400'
                                 : isExpense
-                                  ? "text-red-500"
+                                  ? 'text-red-500'
                                   : isIncome
-                                    ? "text-green-500"
-                                    : "text-indigo-600 dark:text-indigo-400"
+                                    ? 'text-green-500'
+                                    : 'text-indigo-600 dark:text-indigo-400'
                             }`}
                           >
-                            ${txAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {formatCurrency(
+                              txAmount,
+                              firstDebit?.account?.currency || baseCurrency,
+                            )}
                           </p>
                         </div>
 
                         <div className="text-slate-400">
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
                         </div>
                       </div>
                     </div>
-
                     {/* Expandable Split Details Table */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 pt-1 border-t border-slate-50 dark:border-slate-700/50 animate-in fade-in duration-200">
-                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-800 space-y-2 text-2xs">
-                          <p className="font-bold text-3xs text-slate-450 dark:text-slate-500 uppercase tracking-widest mb-1.5">
-                            Detalles del Asiento (Partida Doble)
+                      <div className="px-4 pb-3 pt-2 border-t border-slate-100 dark:border-slate-800/60 animate-in fade-in duration-200">
+                        <div className="space-y-3">
+                          <p className="font-bold text-[10px] text-slate-400 dark:text-slate-550 uppercase tracking-widest px-1">
+                            Detalles del Asiento
                           </p>
-                          
-                          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {tx.entries.map((entry) => (
-                              <div
-                                key={entry.id}
-                                className="flex justify-between items-center py-2 text-slate-650 dark:text-slate-350"
-                              >
-                                <span className="font-medium">
-                                  {entry.account.name}{" "}
-                                  <span className="text-4xs bg-slate-200 dark:bg-slate-800 text-slate-450 px-1 rounded-sm uppercase tracking-wider font-semibold ml-1.5">
-                                    {entry.account.type}
-                                  </span>
-                                </span>
-                                <div className="flex gap-4">
-                                  <span className="font-semibold text-slate-450 uppercase w-10 text-right">
-                                    {entry.entryType === "DEBIT" ? "Debe" : "Haber"}
-                                  </span>
-                                  <span
-                                    className={`font-extrabold w-18 text-right ${
-                                      entry.entryType === "DEBIT" ? "text-red-500" : "text-green-550 dark:text-green-400"
-                                    }`}
-                                  >
-                                    ${entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead>
+                                <tr className="border-b border-slate-200/60 dark:border-slate-800/80 text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                  <th className="py-2 px-2 text-left font-semibold">
+                                    Cuenta / Categoría
+                                  </th>
+                                  <th className="py-2 px-2 text-right w-28 sm:w-36 font-semibold">
+                                    Debe
+                                  </th>
+                                  <th className="py-2 px-2 text-right w-28 sm:w-36 font-semibold">
+                                    Haber
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-medium text-slate-600 dark:text-slate-350">
+                                {tx.entries.map((entry) => {
+                                  const entryCurrency = entry.account?.currency || baseCurrency;
+                                  return (
+                                    <tr
+                                      key={entry.id}
+                                      className="hover:bg-slate-50/40 dark:hover:bg-slate-850/10 transition duration-150"
+                                    >
+                                      <td className="py-2.5 px-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold text-slate-750 dark:text-slate-200">
+                                            {entry.account.name}
+                                          </span>
+                                          <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-400 px-1.5 py-0.5 rounded-md tracking-wider">
+                                            {entry.account.type}
+                                          </span>
+                                        </div>
+                                      </td>
+                                      <td className="py-2.5 px-2 text-right">
+                                        {entry.entryType === 'DEBIT' ? (
+                                          <span className="font-extrabold text-red-500/90 dark:text-red-400">
+                                            {formatCurrency(entry.amount, entryCurrency)}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-300 dark:text-slate-600 font-normal select-none">
+                                            —
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 px-2 text-right">
+                                        {entry.entryType === 'CREDIT' ? (
+                                          <span className="font-extrabold text-green-600 dark:text-green-400">
+                                            {formatCurrency(entry.amount, entryCurrency)}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-300 dark:text-slate-600 font-normal select-none">
+                                            —
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot>
+                                {(() => {
+                                  const totalDebits = tx.entries
+                                    .filter((e) => e.entryType === 'DEBIT')
+                                    .reduce((sum, e) => sum + Number(e.amount), 0);
+                                  const totalCredits = tx.entries
+                                    .filter((e) => e.entryType === 'CREDIT')
+                                    .reduce((sum, e) => sum + Number(e.amount), 0);
+                                  const totalCurrency =
+                                    firstDebit?.account?.currency || baseCurrency;
+                                  return (
+                                    <tr className="border-t border-slate-200/80 dark:border-slate-800 font-bold text-slate-700 dark:text-slate-200 text-xs">
+                                      <td className="py-2.5 px-2 font-semibold">Total</td>
+                                      <td className="py-2.5 px-2 text-right font-extrabold text-red-550/90 dark:text-red-400">
+                                        {formatCurrency(totalDebits, totalCurrency)}
+                                      </td>
+                                      <td className="py-2.5 px-2 text-right font-extrabold text-green-600 dark:text-green-400">
+                                        {formatCurrency(totalCredits, totalCurrency)}
+                                      </td>
+                                    </tr>
+                                  );
+                                })()}
+                              </tfoot>
+                            </table>
                           </div>
 
                           {/* Reversal action if eligible */}
                           {!isReversed && !isReversion && (
-                            <div className="flex justify-end pt-2 mt-1 border-t border-slate-150 dark:border-slate-850">
+                            <div className="flex justify-end pt-2 border-t border-slate-150 dark:border-slate-800">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onReverse(tx.id);
                                 }}
-                                className="flex items-center gap-1.5 py-1.5 px-3 border border-red-200 dark:border-red-800 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-650 dark:text-red-400 rounded-lg font-bold text-3xs transition duration-200 shadow-sm shadow-red-500/5"
+                                className="flex items-center gap-1.5 py-1.5 px-3 border border-red-200 dark:border-red-900 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-655 dark:text-red-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                               >
                                 <RefreshCw className="w-3 h-3" />
                                 <span>Anular / Reversar Asiento</span>

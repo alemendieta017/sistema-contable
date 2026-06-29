@@ -24,6 +24,7 @@ export class AccountController {
   async list(@CurrentUser() user: UserEntity) {
     return this.accountRepository.find({
       where: { userId: user.id },
+      relations: ['currency'],
       order: { name: 'ASC' },
     });
   }

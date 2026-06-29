@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
+import { Trash2 } from "lucide-react";
+import { formatCurrency, formatLocalDateWithOffset } from "../../../lib/utils";
 
 type Account = {
   id: string;
@@ -17,7 +19,16 @@ type EntryLine = {
 
 export default function AsientoLibrePage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [date, setDate] = useState(new Date().toISOString().substring(0, 10));
+  const [currencies, setCurrencies] = useState<any[]>([]);
+  const getLocalDateString = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const [date, setDate] = useState(getLocalDateString());
   const [description, setDescription] = useState("");
   const [entries, setEntries] = useState<EntryLine[]>([
     { accountId: "", entryType: "DEBIT", amount: "" },
@@ -29,15 +40,19 @@ export default function AsientoLibrePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchAccounts();
+    fetchInitialData();
   }, []);
 
-  const fetchAccounts = async () => {
+  const fetchInitialData = async () => {
     try {
-      const list = await api.accounts.list();
-      setAccounts(list || []);
+      const [accList, curList] = await Promise.all([
+        api.accounts.list(),
+        api.currencies.list(),
+      ]);
+      setAccounts(accList || []);
+      setCurrencies(curList || []);
     } catch (err: any) {
-      setError("Failed to load accounts list");
+      setError("Error al cargar datos iniciales.");
     }
   };
 
@@ -55,6 +70,10 @@ export default function AsientoLibrePage() {
     updated[index] = { ...updated[index], [field]: value };
     setEntries(updated);
   };
+
+  const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+  const currencySymbol = baseCurrency.symbol || "$";
+  const amountPlaceholder = (0).toFixed(baseCurrency.decimalPlaces !== undefined ? baseCurrency.decimalPlaces : 2);
 
   // Calculation of live sums
   const totalDebits = entries
@@ -88,7 +107,7 @@ export default function AsientoLibrePage() {
 
     try {
       await api.transactions.create({
-        date: new Date(date).toISOString(),
+        date: formatLocalDateWithOffset(date),
         description: description || "Asiento Libre",
         entries: payloadEntries,
       });
@@ -107,7 +126,7 @@ export default function AsientoLibrePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 py-8 max-w-md mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4 py-8 max-w-4xl mx-auto animate-in fade-in duration-200">
       <header className="mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Asiento Libre</h1>
@@ -115,7 +134,7 @@ export default function AsientoLibrePage() {
         </div>
         <button
           onClick={() => (window.location.href = "/transactions")}
-          className="text-xs py-1.5 px-3 bg-slate-200 dark:bg-slate-800 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+          className="text-xs py-1.5 px-3 bg-slate-200 dark:bg-slate-800 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition font-semibold"
         >
           Volver
         </button>
@@ -127,111 +146,162 @@ export default function AsientoLibrePage() {
 
         {/* Date and Description */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 border border-slate-100 dark:border-slate-700 space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Fecha</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm outline-none focus:border-indigo-500 transition"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Concepto / Glosa</label>
-            <input
-              type="text"
-              value={description}
-              placeholder="Ej. Asiento de apertura"
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm outline-none focus:border-indigo-500 transition"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Fecha</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-800 dark:text-slate-200 font-medium"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Concepto / Glosa</label>
+              <input
+                type="text"
+                value={description}
+                placeholder="Ej. Asiento de apertura"
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-800 dark:text-slate-200 font-medium"
+              />
+            </div>
           </div>
         </div>
 
         {/* Entry Lines */}
         <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Apuntes / Partidas</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider">
+              Apuntes / Partidas
+            </h2>
             <button
               type="button"
               onClick={addLine}
-              className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+              className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-0.5"
             >
               + Agregar línea
             </button>
           </div>
 
-          {entries.map((entry, index) => (
-            <div
-              key={index}
-              className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 space-y-3 relative shadow-sm"
-            >
-              {entries.length > 2 && (
-                <button
-                  type="button"
-                  onClick={() => removeLine(index)}
-                  className="absolute top-2 right-2 text-slate-400 hover:text-red-500 text-xs"
-                >
-                  Remover
-                </button>
-              )}
+          {/* Table headers - visible on desktop */}
+          <div className="hidden sm:grid sm:grid-cols-[1fr_120px_140px_auto] gap-3 px-2 mb-1.5 text-4xs font-bold uppercase text-slate-450 dark:text-slate-500 tracking-wider">
+            <div>Cuenta / Categoría</div>
+            <div>Tipo</div>
+            <div className="text-right">Monto</div>
+            <div></div>
+          </div>
 
-              <div>
-                <label className="block text-3xs font-bold text-slate-400 uppercase mb-1">Cuenta</label>
-                <select
-                  value={entry.accountId}
-                  onChange={(e) => updateLine(index, "accountId", e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition"
-                >
-                  <option value="">Seleccionar cuenta...</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.type})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-3xs font-bold text-slate-400 uppercase mb-1">Tipo</label>
+          <div className="space-y-2">
+            {entries.map((entry, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-1 sm:grid-cols-[1fr_120px_140px_auto] gap-2 items-center bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-150 dark:border-slate-700 shadow-sm transition hover:border-slate-350 dark:hover:border-slate-600 relative"
+              >
+                {/* Account Selector */}
+                <div className="w-full">
+                  <label className="block sm:hidden text-4xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                    Cuenta / Categoría
+                  </label>
                   <select
-                    value={entry.entryType}
-                    onChange={(e) => updateLine(index, "entryType", e.target.value as "DEBIT" | "CREDIT")}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition font-semibold"
+                    value={entry.accountId}
+                    onChange={(e) => updateLine(index, "accountId", e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-850 dark:text-slate-200 font-semibold"
                   >
-                    <option value="DEBIT">DÉBITO (Debe)</option>
-                    <option value="CREDIT">CRÉDITO (Haber)</option>
+                    <option value="">Seleccionar cuenta...</option>
+                    {accounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({a.type})
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-3xs font-bold text-slate-400 uppercase mb-1">Monto</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={entry.amount}
-                    placeholder="0.00"
-                    onChange={(e) => updateLine(index, "amount", e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition font-bold"
-                  />
+
+                {/* Segmented Button for Tipo */}
+                <div className="w-full">
+                  <label className="block sm:hidden text-4xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                    Tipo
+                  </label>
+                  <div className="grid grid-cols-2 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => updateLine(index, "entryType", "DEBIT")}
+                      className={`py-1 text-4xs font-bold rounded-lg transition duration-150 ${
+                        entry.entryType === "DEBIT"
+                          ? "bg-rose-600 text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      DEBE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateLine(index, "entryType", "CREDIT")}
+                      className={`py-1 text-4xs font-bold rounded-lg transition duration-150 ${
+                        entry.entryType === "CREDIT"
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      HABER
+                    </button>
+                  </div>
+                </div>
+
+                {/* Amount input with currency symbol prefix */}
+                <div className="w-full">
+                  <label className="block sm:hidden text-4xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                    Monto
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-2.5 text-xs font-semibold text-slate-450 dark:text-slate-500">
+                      {currencySymbol}
+                    </span>
+                    <input
+                      type="number"
+                      step="any"
+                      value={entry.amount}
+                      placeholder={amountPlaceholder}
+                      onChange={(e) => updateLine(index, "amount", e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 pl-7 text-xs outline-none text-right font-bold focus:border-indigo-500 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+
+                {/* Delete button */}
+                <div className="flex justify-end sm:justify-start">
+                  {entries.length > 2 ? (
+                    <button
+                      type="button"
+                      onClick={() => removeLine(index)}
+                      className="p-1.5 text-slate-450 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg border border-transparent hover:border-red-100 dark:hover:border-red-900 transition-all duration-150"
+                      title="Remover línea"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <div className="w-7 h-7 hidden sm:block"></div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Live balance indicator */}
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2">
+        <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
           <div className="flex justify-between text-xs">
             <span>Total Débito (Debe):</span>
-            <span className="font-bold text-green-600 dark:text-green-400">${totalDebits.toFixed(2)}</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-450">{formatCurrency(totalDebits, baseCurrency)}</span>
           </div>
           <div className="flex justify-between text-xs">
             <span>Total Crédito (Haber):</span>
-            <span className="font-bold text-red-600 dark:text-red-400">${totalCredits.toFixed(2)}</span>
+            <span className="font-bold text-rose-600 dark:text-rose-450">{formatCurrency(totalCredits, baseCurrency)}</span>
           </div>
           <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between text-xs font-bold">
             <span>Diferencia:</span>
-            <span className={difference === 0 ? "text-green-500" : "text-amber-500"}>
-              ${difference.toFixed(2)} {difference === 0 ? "✓ Cuadrado" : "✗ Descuadrado"}
+            <span className={difference === 0 ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"}>
+              {formatCurrency(difference, baseCurrency)} {difference === 0 ? "✓ Cuadrado" : "✗ Descuadrado"}
             </span>
           </div>
         </div>

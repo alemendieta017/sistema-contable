@@ -19,6 +19,7 @@
     "postcss": "^8.4.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.9.0",
     "tailwind-merge": "^2.3.0",
     "zod": "^3.23.8"
   },

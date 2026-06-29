@@ -5,6 +5,7 @@ import { api } from "../../../services/api";
 import AccountModal from "../../../components/AccountModal";
 import { ArrowLeft, Plus, ToggleLeft, ToggleRight, Check, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { formatCurrency } from "../../../lib/utils";
 
 interface AccountSummary {
   id: string;
@@ -12,6 +13,8 @@ interface AccountSummary {
   type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
   balance: number;
   currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   parentId?: string | null;
   status?: "ACTIVE" | "INACTIVE";
 }
@@ -136,7 +139,11 @@ export default function AccountsManagePage() {
                     </span>
                   </td>
                   <td className="p-4 text-right font-extrabold">
-                    ${a.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {formatCurrency(a.balance, {
+                      code: a.currencyCode,
+                      symbol: a.currencySymbol,
+                      decimalPlaces: a.decimalPlaces,
+                    })}
                   </td>
                   <td className="p-4 text-center">
                     {isInactive ? (

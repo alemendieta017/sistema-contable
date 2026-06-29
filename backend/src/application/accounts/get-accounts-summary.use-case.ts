@@ -75,6 +75,8 @@ export class GetAccountsSummaryUseCase {
           type: acc.type,
           currencyId: acc.currencyId,
           currencyCode: acc.currency?.code || '',
+          currencySymbol: acc.currency?.symbol || '',
+          decimalPlaces: acc.currency?.decimalPlaces ?? 2,
           parentId: acc.parentId,
           status: acc.status,
           balance,

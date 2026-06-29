@@ -12,12 +12,18 @@ export class GetCategoryStatisticsUseCase {
     private readonly dataSource: DataSource,
   ) {}
 
-  async execute(userId: string, period: string, type: 'INCOME' | 'EXPENSE') {
+  async execute(
+    userId: string,
+    period: string,
+    type: 'INCOME' | 'EXPENSE',
+    timezoneOffset?: number,
+  ) {
     return this.dataSource.transaction('READ UNCOMMITTED', async (entityManager) => {
       // Parse period boundaries
       const [year, month] = period.split('-').map(Number);
-      const startDate = new Date(Date.UTC(year, month - 1, 1));
-      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+      const offsetMs = (timezoneOffset !== undefined ? Number(timezoneOffset) : 0) * 60 * 1000;
+      const startDate = new Date(Date.UTC(year, month - 1, 1) + offsetMs);
+      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999) + offsetMs);
 
       // Query aggregated sums for the chosen type in the period
       const sums = await entityManager
@@ -32,7 +38,9 @@ export class GetCategoryStatisticsUseCase {
         .andWhere('tx.date >= :startDate', { startDate })
         .andWhere('tx.date <= :endDate', { endDate })
         // If it's an expense, we track DEBIT entries. If income, we track CREDIT entries.
-        .andWhere('entry.entryType = :entryType', { entryType: type === 'EXPENSE' ? 'DEBIT' : 'CREDIT' })
+        .andWhere('entry.entryType = :entryType', {
+          entryType: type === 'EXPENSE' ? 'DEBIT' : 'CREDIT',
+        })
         .groupBy('entry.accountId')
         .addGroupBy('acc.name')
         .getRawMany();

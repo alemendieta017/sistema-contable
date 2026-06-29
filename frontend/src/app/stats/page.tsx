@@ -33,7 +33,7 @@ export default function StatsPage() {
       setError("");
 
       // 1. Fetch category aggregates for selected month
-      const statData = await api.reports.statistics(period, type);
+      const statData = await api.reports.statistics(period, type, new Date().getTimezoneOffset());
       setStats(statData || []);
 
       // 2. Fetch full transactions list to reconstruct net worth history & comparison
@@ -56,16 +56,16 @@ export default function StatsPage() {
     let runningNetWorth = 0;
     const historyPoints: { date: string; balance: number }[] = [];
 
-    // Accumulate
+    // Accumulate (in base currency)
     sorted.forEach((tx) => {
       let assetChange = 0;
       let liabilityChange = 0;
 
       tx.entries.forEach((entry: any) => {
         if (entry.account?.type === "ASSET") {
-          assetChange += entry.entryType === "DEBIT" ? entry.amount : -entry.amount;
+          assetChange += entry.entryType === "DEBIT" ? Number(entry.amountBase || entry.amount) : -Number(entry.amountBase || entry.amount);
         } else if (entry.account?.type === "LIABILITY") {
-          liabilityChange += entry.entryType === "CREDIT" ? entry.amount : -entry.amount;
+          liabilityChange += entry.entryType === "CREDIT" ? Number(entry.amountBase || entry.amount) : -Number(entry.amountBase || entry.amount);
         }
       });
 
@@ -113,10 +113,10 @@ export default function StatsPage() {
       if (comparative[key]) {
         tx.entries.forEach((entry: any) => {
           if (entry.entryType === "CREDIT" && entry.account?.type === "INCOME") {
-            comparative[key].income += entry.amount;
+            comparative[key].income += Number(entry.amountBase || entry.amount);
           }
           if (entry.entryType === "DEBIT" && entry.account?.type === "EXPENSE") {
-            comparative[key].expense += entry.amount;
+            comparative[key].expense += Number(entry.amountBase || entry.amount);
           }
         });
       }

@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { useTheme } from "../lib/theme-context";
 
 interface MonthlyBalance {
   monthName: string;
@@ -13,6 +15,8 @@ interface IncomeStatementChartProps {
 }
 
 export default function IncomeStatementChart({ data }: IncomeStatementChartProps) {
+  const { theme } = useTheme();
+
   if (data.length === 0) {
     return (
       <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center py-12 text-xs text-slate-400">
@@ -20,23 +24,6 @@ export default function IncomeStatementChart({ data }: IncomeStatementChartProps
       </div>
     );
   }
-
-  // Dimensions
-  const width = 500;
-  const height = 180;
-  const padding = 20;
-
-  // Max value for scaling
-  const maxVal = Math.max(
-    ...data.flatMap((d) => [d.income, d.expense]),
-    100
-  ) * 1.15; // 15% headroom
-
-  const chartWidth = width - 2 * padding;
-  const chartHeight = height - 2 * padding;
-
-  const barWidth = 14;
-  const groupSpacing = chartWidth / data.length;
 
   return (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
@@ -49,90 +36,63 @@ export default function IncomeStatementChart({ data }: IncomeStatementChartProps
         </p>
       </div>
 
-      <div className="w-full">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-          {/* Grid lines */}
-          <line
-            x1={padding}
-            y1={height - padding}
-            x2={width - padding}
-            y2={height - padding}
-            stroke="#f1f5f9"
-            className="dark:stroke-slate-700/60"
-            strokeWidth="1.5"
-          />
-
-          {data.map((m, idx) => {
-            const groupX = padding + idx * groupSpacing + groupSpacing / 2;
-
-            // Coordinates for Income Bar
-            const incBarHeight = (m.income / maxVal) * chartHeight;
-            const incX = groupX - barWidth - 2;
-            const incY = height - padding - incBarHeight;
-
-            // Coordinates for Expense Bar
-            const expBarHeight = (m.expense / maxVal) * chartHeight;
-            const expX = groupX + 2;
-            const expY = height - padding - expBarHeight;
-
-            return (
-              <g key={m.monthName}>
-                {/* Income Bar (Green) */}
-                {m.income > 0 && (
-                  <rect
-                    x={incX}
-                    y={incY}
-                    width={barWidth}
-                    height={incBarHeight}
-                    fill="#10b981"
-                    rx="3.5"
-                    className="hover:opacity-90 transition duration-150 cursor-pointer"
-                  >
-                    <title>{m.monthName} - Ingreso: ${m.income.toLocaleString()}</title>
-                  </rect>
-                )}
-
-                {/* Expense Bar (Red) */}
-                {m.expense > 0 && (
-                  <rect
-                    x={expX}
-                    y={expY}
-                    width={barWidth}
-                    height={expBarHeight}
-                    fill="#ef4444"
-                    rx="3.5"
-                    className="hover:opacity-90 transition duration-150 cursor-pointer"
-                  >
-                    <title>{m.monthName} - Gasto: ${m.expense.toLocaleString()}</title>
-                  </rect>
-                )}
-
-                {/* Month Name label */}
-                <text
-                  x={groupX}
-                  y={height - padding + 14}
-                  textAnchor="middle"
-                  className="fill-slate-400 dark:fill-slate-500 font-semibold"
-                  style={{ fontSize: "7px" }}
-                >
-                  {m.monthName}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-4 text-4xs font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 bg-green-500 rounded" />
-          <span>Ingreso</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 bg-red-500 rounded" />
-          <span>Gasto</span>
-        </div>
+      <div className="w-full h-44">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <XAxis
+              dataKey="monthName"
+              stroke="#94a3b8"
+              fontSize={8}
+              tickLine={false}
+              axisLine={false}
+              dy={8}
+            />
+            <YAxis
+              stroke="#94a3b8"
+              fontSize={8}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `$${value}`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+                border: theme === "dark" ? "1px solid #334155" : "1px solid #e2e8f0",
+                borderRadius: "12px",
+                fontSize: "10px",
+                color: theme === "dark" ? "#f8fafc" : "#0f172a",
+              }}
+              formatter={(value: any) => [`$${value.toLocaleString()}`]}
+            />
+            <Legend
+              verticalAlign="bottom"
+              height={36}
+              iconType="circle"
+              iconSize={6}
+              wrapperStyle={{
+                fontSize: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                fontWeight: "bold",
+                paddingTop: "12px",
+              }}
+            />
+            <Bar
+              dataKey="income"
+              name="Ingreso"
+              fill="#10b981"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={16}
+            />
+            <Bar
+              dataKey="expense"
+              name="Gasto"
+              fill="#ef4444"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={16}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

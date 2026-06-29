@@ -36,6 +36,8 @@ services:
       - /app/node_modules
       - /app/shared/node_modules
       - /app/backend/node_modules
+      - /app/backend/dist
+      - /app/shared/dist
     depends_on:
       db:
         condition: service_healthy
@@ -50,11 +52,14 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001/api
       PORT: 3000
+      WATCHPACK_POLLING: "true"
     volumes:
       - .:/app
       - /app/node_modules
       - /app/shared/node_modules
       - /app/frontend/node_modules
+      - /app/frontend/.next
+      - /app/shared/dist
     depends_on:
       - backend
 

@@ -19,7 +19,7 @@ export default function SettingsPage() {
       setSuccess("");
 
       const token = localStorage.getItem("auth_token");
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+      const API_BASE_URL = api.baseUrl || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
       
       const response = await fetch(`${API_BASE_URL}/reports/excel`, {
         headers: {

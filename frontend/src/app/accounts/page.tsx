@@ -5,6 +5,7 @@ import { api } from "../../services/api";
 import AccountsList from "../../components/AccountsList";
 import AccountModal from "../../components/AccountModal";
 import { Plus, Wallet, ShieldAlert, BadgeAlert } from "lucide-react";
+import { formatCurrency } from "../../lib/utils";
 
 type AccountSummary = {
   id: string;
@@ -12,6 +13,8 @@ type AccountSummary = {
   type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
   balance: number;
   currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   parentId?: string | null;
   status?: "ACTIVE" | "INACTIVE";
 };
@@ -25,6 +28,7 @@ type SummaryData = {
 
 export default function AccountsPage() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
+  const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -39,8 +43,12 @@ export default function AccountsPage() {
     try {
       setLoading(true);
       setError("");
-      const data = await api.accounts.summary();
+      const [data, curs] = await Promise.all([
+        api.accounts.summary(),
+        api.currencies.list(),
+      ]);
       setSummary(data);
+      setCurrencies(curs || []);
     } catch (err: any) {
       setError(err.message || "Error al cargar resumen de cuentas.");
     } finally {
@@ -145,36 +153,41 @@ export default function AccountsPage() {
       )}
 
       {/* Net Worth Dashboard Card */}
-      <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-650 dark:to-indigo-750 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
-        <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
-          <Wallet className="w-40 h-40" />
-        </div>
-        <p className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
-          Patrimonio Neto
-        </p>
-        <h2 className="text-3xl font-extrabold mt-1">
-          ${summary?.netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </h2>
+      {(() => {
+        const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+        return (
+          <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-650 dark:to-indigo-750 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
+            <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
+              <Wallet className="w-40 h-40" />
+            </div>
+            <p className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
+              Patrimonio Neto
+            </p>
+            <h2 className="text-3xl font-extrabold mt-1">
+              {formatCurrency(summary?.netWorth || 0, baseCurrency)}
+            </h2>
 
-        <div className="grid grid-cols-2 gap-4 mt-6 border-t border-indigo-500/40 pt-4 text-xs">
-          <div>
-            <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-              Total Activos
-            </p>
-            <p className="font-bold text-base mt-0.5">
-              ${summary?.totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
+            <div className="grid grid-cols-2 gap-4 mt-6 border-t border-indigo-500/40 pt-4 text-xs">
+              <div>
+                <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
+                  Total Activos
+                </p>
+                <p className="font-bold text-base mt-0.5">
+                  {formatCurrency(summary?.totalAssets || 0, baseCurrency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
+                  Total Pasivos
+                </p>
+                <p className="font-bold text-base mt-0.5">
+                  {formatCurrency(summary?.totalLiabilities || 0, baseCurrency)}
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-              Total Pasivos
-            </p>
-            <p className="font-bold text-base mt-0.5">
-              ${summary?.totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* If no accounts exist */}
       {summary?.accounts.length === 0 && (

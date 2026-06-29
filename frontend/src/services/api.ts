@@ -1,6 +1,23 @@
-import { LoginRequest, CreateAccountRequest, CreateTransactionRequest } from '@sistema-contable/shared';
+import {
+  LoginRequest,
+  CreateAccountRequest,
+  CreateTransactionRequest,
+} from '@sistema-contable/shared';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `http://${hostname}:3001/api`;
+    }
+  }
+  return 'http://localhost:3001/api';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
@@ -157,8 +174,12 @@ export const api = {
   },
 
   reports: {
-    async statistics(period: string, type: 'INCOME' | 'EXPENSE') {
-      const res = await fetch(`${API_BASE_URL}/reports/statistics?period=${period}&type=${type}`, {
+    async statistics(period: string, type: 'INCOME' | 'EXPENSE', timezoneOffset?: number) {
+      let url = `${API_BASE_URL}/reports/statistics?period=${period}&type=${type}`;
+      if (timezoneOffset !== undefined) {
+        url += `&timezoneOffset=${timezoneOffset}`;
+      }
+      const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -203,4 +224,5 @@ export const api = {
       return handleResponse(res);
     },
   },
+  baseUrl: API_BASE_URL,
 };

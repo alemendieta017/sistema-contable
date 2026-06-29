@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Trash2 } from "lucide-react";
+import { formatCurrency } from "../lib/utils";
 
 interface AccountSummary {
   id: string;
@@ -9,6 +10,8 @@ interface AccountSummary {
   type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
   balance: number;
   currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   parentId?: string | null;
   status?: "ACTIVE" | "INACTIVE";
 }
@@ -45,7 +48,7 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
                   : ""
               } ${isInactive ? "opacity-50" : ""}`}
             >
-              <span className={`${isChild ? "text-slate-500 dark:text-slate-400 font-medium" : "font-bold text-slate-700 dark:text-slate-200"}`}>
+              <span className={`${isChild ? "text-slate-500 dark:text-slate-450 font-medium" : "font-bold text-slate-700 dark:text-slate-200"}`}>
                 {isChild && <span className="mr-1 text-slate-400">└─</span>}
                 {a.name}
                 {isInactive && (
@@ -66,8 +69,11 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
                           : "text-slate-500"
                   }`}
                 >
-                  ${a.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}{" "}
-                  <span className="text-4xs text-slate-400 font-normal">{a.currencyCode}</span>
+                  {formatCurrency(a.balance, {
+                    code: a.currencyCode,
+                    symbol: a.currencySymbol,
+                    decimalPlaces: a.decimalPlaces,
+                  })}
                 </span>
                 {!isInactive && (
                   <button

@@ -1,12 +1,10 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: 2.0.0 -> 2.1.0
-- List of modified principles: None
-- Added sections:
-  * VI. Prevention of Magic Strings & Strict Type Constants
+- Version change: 2.1.0 -> 2.2.0
+- List of modified principles: V. Strict Test-Driven Development (TDD) -> V. Strict Test-Driven Development (TDD) & Quality Verification
+- Added sections: None
 - Removed sections: None
-- Templates requiring updates:
-  * specs/001-accounting-webapp/plan.md (✅ updated)
+- Templates requiring updates: None
 - Follow-up TODOs: None
 -->
 
@@ -26,8 +24,8 @@ The repository is structured as a Monorepo containing both the NestJS backend an
 ### IV. Budgetary Control and Personal/Family Domain
 The accounting engine MUST support budgeting features, permitting the definition, allocation, and enforcement of budget limits across personal and family account categories. Budget limits must be dynamically evaluated against actual ledger transactions.
 
-### V. Strict Test-Driven Development (TDD)
-Test-Driven Development is strictly mandatory. Tests must be written and approved before implementation. Financial calculations, double-entry verification, budget checks, and ledger integrity constraints must maintain 100% test coverage. No code modification is allowed to bypass failing tests.
+### V. Strict Test-Driven Development (TDD) & Quality Verification
+Test-Driven Development is strictly mandatory. Tests must be written and approved before implementation. Financial calculations, double-entry verification, budget checks, and ledger integrity constraints must maintain 100% test coverage. No code modification is allowed to bypass failing tests. All code changes MUST successfully pass ESLint/Prettier verification and the complete automated test suite before a task or development is considered ready or complete.
 
 ### VI. Prevention of Magic Strings & Strict Type Constants
 To prevent runtime errors, maintain codebase readability, and ensure strict type safety, inline magic strings MUST be strictly avoided. TypeScript enums, read-only constant objects (dictionaries), or union types MUST be utilized for all categorized statuses, action types, config keys, routes, or any other set of finite values.
@@ -36,9 +34,9 @@ To prevent runtime errors, maintain codebase readability, and ensure strict type
 The backend will use Node.js with NestJS framework and the frontend will use Next.js. Both projects will be written in TypeScript to guarantee end-to-end type safety. Styling will be implemented using TailwindCSS v4.3 for utility styling, and shadcn/ui for reusable components. Database integrity must be enforced via relational foreign keys and transaction isolation levels (Serializable or Repeatable Read) to prevent race conditions in ledger balance updates.
 
 ## Development Workflow & Quality Gates
-Every pull request must pass the automated test suite, maintain 100% test coverage on financial calculation engines, and pass strict ESLint/Prettier formatting and quality compliance. Architectures must be reviewed to verify adherence to SOLID principles and Clean Architecture layers.
+Every development and pull request must successfully pass the automated test suite, maintain 100% test coverage on financial calculation engines, and pass strict ESLint/Prettier formatting and quality compliance before it is marked ready. Architectures must be reviewed to verify adherence to SOLID principles and Clean Architecture layers.
 
 ## Governance
-This constitution supersedes all other development practices. Amendments or modifications to these principles require documentation of the rationale, a major version bump, and approval from the lead developers.
+This constitution supersedes all other development practices. Amendments or modifications to these principles require documentation of the rationale, a minor or major version bump, and approval from the lead developers.
 
-**Version**: 2.1.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-06-27
+**Version**: 2.2.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-06-29

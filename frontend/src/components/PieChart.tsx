@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Sector } from "recharts";
+import { useTheme } from "../lib/theme-context";
 
 interface StatItem {
   accountId: string;
@@ -14,84 +16,92 @@ interface PieChartProps {
   type: "EXPENSE" | "INCOME";
 }
 
-export default function PieChart({ data, type }: PieChartProps) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+const colors = [
+  "#6366f1", // Indigo
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#ec4899", // Pink
+  "#0ea5e9", // Sky
+  "#8b5cf6", // Violet
+  "#ef4444", // Red
+  "#14b8a6", // Teal
+];
 
-  const colors = [
-    "#6366f1", // Indigo
-    "#10b981", // Emerald
-    "#f59e0b", // Amber
-    "#ec4899", // Pink
-    "#0ea5e9", // Sky
-    "#8b5cf6", // Violet
-    "#ef4444", // Red
-    "#14b8a6", // Teal
-  ];
+export default function PieChart({ data, type }: PieChartProps) {
+  const { theme } = useTheme();
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const total = data.reduce((sum, item) => sum + item.amount, 0);
 
-  // Circumference of our SVG circle (radius = 50)
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius; // ~314.159
+  if (data.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center py-12 text-xs text-slate-400">
+        No hay datos para graficar.
+      </div>
+    );
+  }
 
-  let accumulatedPercentage = 0;
+  // Active shape rendering for a clean look
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 4}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+      </g>
+    );
+  };
+
+  const activeItem = activeIndex !== null ? data[activeIndex] : null;
 
   return (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center gap-6">
-      {/* SVG Doughnut */}
+      {/* Recharts Container */}
       <div className="relative w-40 h-40 shrink-0">
-        <svg viewBox="0 0 120 120" className="w-full h-full transform -rotate-90">
-          {data.length === 0 ? (
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              fill="transparent"
-              stroke="#e2e8f0"
-              strokeWidth="12"
-            />
-          ) : (
-            data.map((item, index) => {
-              const strokeLength = (item.percentage / 100) * circumference;
-              const strokeOffset = circumference - (accumulatedPercentage / 100) * circumference;
-              accumulatedPercentage += item.percentage;
-              const color = colors[index % colors.length];
-              const isHovered = hoveredIndex === index;
+        <ResponsiveContainer width="100%" height="100%">
+          <RePieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={36}
+              outerRadius={50}
+              dataKey="amount"
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              paddingAngle={2}
+              {...({
+                activeIndex: activeIndex ?? undefined,
+                activeShape: renderActiveShape,
+              } as any)}
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="transparent" />
+              ))}
+            </Pie>
+          </RePieChart>
+        </ResponsiveContainer>
 
-              return (
-                <circle
-                  key={item.accountId}
-                  cx="60"
-                  cy="60"
-                  r={radius}
-                  fill="transparent"
-                  stroke={color}
-                  strokeWidth={isHovered ? "16" : "12"}
-                  strokeDasharray={`${strokeLength} ${circumference}`}
-                  strokeDashoffset={strokeOffset}
-                  strokeLinecap="round"
-                  onMouseEnter={() => setHoveredIndex(index)}
-                  onMouseLeave={() => setHoveredIndex(null)}
-                  className="transition-all duration-300 cursor-pointer"
-                />
-              );
-            })
-          )}
-        </svg>
-
-        {/* Center label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-          <span className="text-5xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-            {hoveredIndex !== null ? data[hoveredIndex].accountName : `Total ${type === "EXPENSE" ? "Gasto" : "Ingreso"}`}
+        {/* Center label inside Doughnut */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-3">
+          <span className="text-5xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none truncate max-w-full">
+            {activeItem ? activeItem.accountName : `Total ${type === "EXPENSE" ? "Gasto" : "Ingreso"}`}
           </span>
-          <span className={`font-extrabold text-sm mt-1 leading-none ${type === "EXPENSE" ? "text-red-500" : "text-green-500"}`}>
-            ${(hoveredIndex !== null ? data[hoveredIndex].amount : total).toLocaleString(undefined, {
+          <span className={`font-extrabold text-xs sm:text-sm mt-1 leading-none truncate max-w-full ${type === "EXPENSE" ? "text-red-500" : "text-green-500"}`}>
+            ${(activeItem ? activeItem.amount : total).toLocaleString(undefined, {
               minimumFractionDigits: 2,
             })}
           </span>
-          {hoveredIndex !== null && (
-            <span className="text-4xs text-slate-400 font-semibold mt-0.5">
-              {data[hoveredIndex].percentage}%
+          {activeItem && (
+            <span className="text-5xs text-slate-450 dark:text-slate-500 font-bold mt-0.5">
+              {activeItem.percentage}%
             </span>
           )}
         </div>
@@ -101,24 +111,24 @@ export default function PieChart({ data, type }: PieChartProps) {
       <div className="flex-1 w-full space-y-2 text-2xs">
         {data.map((item, index) => {
           const color = colors[index % colors.length];
-          const isHovered = hoveredIndex === index;
+          const isHovered = activeIndex === index;
           return (
             <div
               key={item.accountId}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
               className={`flex items-center justify-between p-1.5 rounded-lg transition duration-150 cursor-pointer ${
                 isHovered ? "bg-slate-50 dark:bg-slate-900/60 font-bold" : "hover:bg-slate-50/40"
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className="w-3 h-3 rounded-full shrink-0"
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-slate-700 dark:text-slate-350">{item.accountName}</span>
+                <span className="text-slate-700 dark:text-slate-350 truncate">{item.accountName}</span>
               </div>
-              <span className="font-semibold text-slate-400">
+              <span className="font-semibold text-slate-400 dark:text-slate-550 shrink-0 ml-2">
                 ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })} ({item.percentage}%)
               </span>
             </div>
