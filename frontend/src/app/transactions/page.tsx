@@ -43,12 +43,24 @@ export default function TransactionsPage() {
     const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
     const y = lastDay.getFullYear();
     const m = String(lastDay.getMonth() + 1).padStart(2, '0');
-    const day = String(lastDay.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    const day = lastDay.getDate();
+    const dayStr = String(day).padStart(2, '0');
+    return `${y}-${m}-${dayStr}`;
   };
 
-  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
-  const [endDate, setEndDate] = useState(getLastDayOfMonth());
+  const [dailyDates, setDailyDates] = useState({
+    startDate: getFirstDayOfMonth(),
+    endDate: getLastDayOfMonth(),
+  });
+  const [calendarDates, setCalendarDates] = useState({
+    startDate: getFirstDayOfMonth(),
+    endDate: getLastDayOfMonth(),
+  });
+  const [monthlyDates, setMonthlyDates] = useState({
+    startDate: `${new Date().getFullYear()}-01-01`,
+    endDate: `${new Date().getFullYear()}-12-31`,
+  });
+
   const [selectedAccountId, setSelectedAccountId] = useState('');
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -58,9 +70,23 @@ export default function TransactionsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const activeStartDate =
+    view === 'daily'
+      ? dailyDates.startDate
+      : view === 'calendar'
+      ? calendarDates.startDate
+      : monthlyDates.startDate;
+
+  const activeEndDate =
+    view === 'daily'
+      ? dailyDates.endDate
+      : view === 'calendar'
+      ? calendarDates.endDate
+      : monthlyDates.endDate;
+
   useEffect(() => {
     fetchData();
-  }, [startDate, endDate]);
+  }, [activeStartDate, activeEndDate]);
 
   const fetchData = async () => {
     try {
@@ -71,8 +97,8 @@ export default function TransactionsPage() {
         api.accounts.list(),
         api.currencies.list(),
         api.transactions.list(
-          formatLocalDateWithOffset(startDate),
-          formatLocalDateEndWithOffset(endDate)
+          formatLocalDateWithOffset(activeStartDate),
+          formatLocalDateEndWithOffset(activeEndDate)
         ),
       ]);
 
@@ -148,56 +174,38 @@ export default function TransactionsPage() {
     });
   });
 
+  const handleViewChange = (newView: 'daily' | 'calendar' | 'monthly') => {
+    setView(newView);
+  };
+
+  const handleMonthChange = (newDate: Date) => {
+    const firstDay = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+    const lastDay = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
+
+    const formatToYYYYMMDD = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    setCalendarDates({
+      startDate: formatToYYYYMMDD(firstDay),
+      endDate: formatToYYYYMMDD(lastDay),
+    });
+  };
+
+  const handleYearChange = (newYear: number) => {
+    setMonthlyDates({
+      startDate: `${newYear}-01-01`,
+      endDate: `${newYear}-12-31`,
+    });
+  };
+
   const netBalance = totalIncome - totalExpense;
 
   return (
-    <div className="space-y-4">
-      {/* Top Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight text-slate-850 dark:text-slate-100">
-            Libro Diario
-          </h1>
-        </div>
-
-        {/* View Switch Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 p-0.5 rounded-xl shadow-sm self-stretch sm:self-auto">
-          <button
-            onClick={() => setView('daily')}
-            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-              view === 'daily'
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
-            }`}
-          >
-            <ReceiptText className="w-3.5 h-3.5" />
-            <span>Diario</span>
-          </button>
-          <button
-            onClick={() => setView('calendar')}
-            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-              view === 'calendar'
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
-            }`}
-          >
-            <CalendarIcon className="w-3.5 h-3.5" />
-            <span>Calendario</span>
-          </button>
-          <button
-            onClick={() => setView('monthly')}
-            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition ${
-              view === 'monthly'
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-750'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Mensual</span>
-          </button>
-        </div>
-      </div>
-
+    <div className="space-y-4 animate-in fade-in duration-200">
       {/* API Toast Messages */}
       {success && (
         <div className="p-2.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl border border-green-150">
@@ -210,70 +218,121 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* Dashboard Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
-              Ingresos
-            </p>
-            <h4 className="text-sm sm:text-base font-extrabold text-green-500 mt-0.5 truncate">
-              {formatCurrency(totalIncome, baseCurrency)}
-            </h4>
+      {/* Unified Dashboard Header Card */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
+        {/* Top Page Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-slate-850 dark:text-slate-100">
+              Libro Diario
+            </h1>
           </div>
-          <div className="hidden sm:flex w-8 h-8 bg-green-50 dark:bg-green-950/20 rounded-xl items-center justify-center text-green-500 shrink-0">
-            <TrendingUp className="w-4 h-4" />
-          </div>
-        </div>
 
-        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
-              Egresos
-            </p>
-            <h4 className="text-sm sm:text-base font-extrabold text-red-500 mt-0.5 truncate">
-              {formatCurrency(totalExpense, baseCurrency)}
-            </h4>
-          </div>
-          <div className="hidden sm:flex w-8 h-8 bg-red-50 dark:bg-red-950/20 rounded-xl items-center justify-center text-red-500 shrink-0">
-            <TrendingDown className="w-4 h-4" />
-          </div>
-        </div>
-
-        <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-750 shadow-sm flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
-              Saldo Neto
-            </p>
-            <h4
-              className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
-                netBalance >= 0 ? 'text-indigo-500' : 'text-red-550 dark:text-red-400'
+          {/* View Switch Tabs */}
+          <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 p-0.5 rounded-xl shadow-inner self-stretch sm:self-auto">
+            <button
+              onClick={() => handleViewChange('daily')}
+              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                view === 'daily'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
-              {formatCurrency(netBalance, baseCurrency)}
-            </h4>
+              <ReceiptText className="w-3.5 h-3.5" />
+              <span>Diario</span>
+            </button>
+            <button
+              onClick={() => handleViewChange('calendar')}
+              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                view === 'calendar'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Calendario</span>
+            </button>
+            <button
+              onClick={() => handleViewChange('monthly')}
+              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                view === 'monthly'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Mensual</span>
+            </button>
           </div>
-          <div
-            className={`hidden sm:flex w-8 h-8 rounded-xl items-center justify-center shrink-0 ${
-              netBalance >= 0
-                ? 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500'
-                : 'bg-red-50 dark:bg-red-950/20 text-red-550 dark:text-red-400'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
+        </div>
+
+        {/* Dashboard Summary Cards */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+            <div className="min-w-0">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+                Ingresos
+              </p>
+              <h4 className="text-sm sm:text-base font-extrabold text-green-500 mt-0.5 truncate">
+                {formatCurrency(totalIncome, baseCurrency)}
+              </h4>
+            </div>
+            <div className="hidden sm:flex w-8 h-8 bg-green-50 dark:bg-green-950/20 rounded-xl items-center justify-center text-green-500 shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+            <div className="min-w-0">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+                Egresos
+              </p>
+              <h4 className="text-sm sm:text-base font-extrabold text-red-500 mt-0.5 truncate">
+                {formatCurrency(totalExpense, baseCurrency)}
+              </h4>
+            </div>
+            <div className="hidden sm:flex w-8 h-8 bg-red-50 dark:bg-red-950/20 rounded-xl items-center justify-center text-red-500 shrink-0">
+              <TrendingDown className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+            <div className="min-w-0">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+                Saldo Neto
+              </p>
+              <h4
+                className={`text-sm sm:text-base font-extrabold mt-0.5 truncate ${
+                  netBalance >= 0 ? 'text-indigo-500' : 'text-red-500'
+                }`}
+              >
+                {formatCurrency(netBalance, baseCurrency)}
+              </h4>
+            </div>
+            <div
+              className={`hidden sm:flex w-8 h-8 rounded-xl items-center justify-center shrink-0 border ${
+                netBalance >= 0
+                  ? 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 border-indigo-100'
+                  : 'bg-red-50 dark:bg-red-950/20 text-red-550 border-red-100'
+              }`}
+            >
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Global Filters */}
       <TransactionFilters
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
+        startDate={dailyDates.startDate}
+        endDate={dailyDates.endDate}
+        onDateRangeChange={(start, end) => {
+          setDailyDates({ startDate: start, endDate: end });
+        }}
         selectedAccountId={selectedAccountId}
         onAccountIdChange={setSelectedAccountId}
         accounts={accounts}
+        view={view}
       />
 
       {/* Active View Render */}
@@ -292,10 +351,20 @@ export default function TransactionsPage() {
             />
           )}
           {view === 'calendar' && (
-            <CalendarView transactions={filteredTransactions} baseCurrency={baseCurrency} />
+            <CalendarView
+              transactions={filteredTransactions}
+              baseCurrency={baseCurrency}
+              currentDate={new Date(calendarDates.startDate + 'T12:00:00')}
+              onMonthChange={handleMonthChange}
+            />
           )}
           {view === 'monthly' && (
-            <MonthlyView transactions={filteredTransactions} baseCurrency={baseCurrency} />
+            <MonthlyView
+              transactions={filteredTransactions}
+              baseCurrency={baseCurrency}
+              currentYear={new Date(monthlyDates.startDate + 'T12:00:00').getFullYear()}
+              onYearChange={handleYearChange}
+            />
           )}
         </div>
       )}

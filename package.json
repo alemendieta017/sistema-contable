@@ -16,8 +16,10 @@
     "test:integration": "npm run test:integration --workspace=backend"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/parser": "^8.62.1",
+    "eslint": "^8.57.0",
     "prettier": "^3.2.5",
-    "eslint": "^8.57.0"
+    "typescript": "^5.3.3"
   }
 }

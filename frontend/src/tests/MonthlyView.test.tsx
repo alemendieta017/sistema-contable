@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import MonthlyView from '../components/MonthlyView';
 
 describe('MonthlyView Local Timezone Grouping', () => {
@@ -16,8 +16,37 @@ describe('MonthlyView Local Timezone Grouping', () => {
   const baseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 };
 
   test('should render current year summary header by default', () => {
-    render(<MonthlyView transactions={[]} baseCurrency={baseCurrency} />);
+    const onYearChange = jest.fn();
+    render(
+      <MonthlyView
+        transactions={[]}
+        baseCurrency={baseCurrency}
+        currentYear={2026}
+        onYearChange={onYearChange}
+      />
+    );
     expect(screen.getByText('2026')).toBeInTheDocument();
+  });
+
+  test('should call onYearChange when prev/next buttons are clicked', () => {
+    const onYearChange = jest.fn();
+    render(
+      <MonthlyView
+        transactions={[]}
+        baseCurrency={baseCurrency}
+        currentYear={2026}
+        onYearChange={onYearChange}
+      />
+    );
+
+    const prevButton = screen.getAllByRole('button')[0];
+    const nextButton = screen.getAllByRole('button')[1];
+
+    fireEvent.click(prevButton);
+    expect(onYearChange).toHaveBeenCalledWith(2025);
+
+    fireEvent.click(nextButton);
+    expect(onYearChange).toHaveBeenCalledWith(2027);
   });
 
   test('should group transactions under correct local months according to system timezone', () => {
@@ -66,7 +95,15 @@ describe('MonthlyView Local Timezone Grouping', () => {
       },
     ];
 
-    render(<MonthlyView transactions={transactions} baseCurrency={baseCurrency} />);
+    const onYearChange = jest.fn();
+    render(
+      <MonthlyView
+        transactions={transactions}
+        baseCurrency={baseCurrency}
+        currentYear={2026}
+        onYearChange={onYearChange}
+      />
+    );
 
     // Get the expected month for each transaction based on the local Date parsing in the test environment
     const m1Index = new Date(transactions[0].date).getMonth();
@@ -90,17 +127,13 @@ describe('MonthlyView Local Timezone Grouping', () => {
     const m1Name = months[m1Index];
     const m2Name = months[m2Index];
 
-    // Find table rows corresponding to these months
     const m1Row = screen.getByText(m1Name).closest('tr');
     const m2Row = screen.getByText(m2Name).closest('tr');
 
     expect(m1Row).toBeInTheDocument();
     expect(m2Row).toBeInTheDocument();
 
-    // Verify m1 row has the income (e.g. u$s 1.000,00)
     expect(m1Row).toHaveTextContent('u$s 1.000,00');
-
-    // Verify m2 row has the expense (e.g. u$s 200,00)
     expect(m2Row).toHaveTextContent('u$s 200,00');
   });
 });

@@ -24,13 +24,18 @@ interface Transaction {
 interface CalendarViewProps {
   transactions: Transaction[];
   baseCurrency?: CurrencyInfo;
+  currentDate: Date;
+  onMonthChange: (d: Date) => void;
 }
 
-export default function CalendarView({ transactions, baseCurrency }: CalendarViewProps) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth(); // 0-11
+export default function CalendarView({
+  transactions,
+  baseCurrency,
+  currentDate,
+  onMonthChange,
+}: CalendarViewProps) {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth(); // 0-11
 
   const months = [
     'Enero',
@@ -92,11 +97,11 @@ export default function CalendarView({ transactions, baseCurrency }: CalendarVie
   const totalSlots = [...blankSlots, ...daySlots];
 
   const handlePrevMonth = () => {
-    setSelectedDate(new Date(year, month - 1, 1));
+    onMonthChange(new Date(year, month - 1, 1));
   };
 
   const handleNextMonth = () => {
-    setSelectedDate(new Date(year, month + 1, 1));
+    onMonthChange(new Date(year, month + 1, 1));
   };
 
   return (
@@ -162,7 +167,7 @@ export default function CalendarView({ transactions, baseCurrency }: CalendarVie
                   className={`min-h-[60px] p-1.5 rounded-xl border flex flex-col justify-between transition duration-150 ${
                     hasFlow
                       ? 'bg-indigo-50/10 dark:bg-indigo-950/5 border-indigo-100/60 dark:border-indigo-900/40'
-                      : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-750'
+                      : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   {/* Day Number */}
@@ -187,7 +192,7 @@ export default function CalendarView({ transactions, baseCurrency }: CalendarVie
                         className={`text-4xs font-extrabold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5 leading-none ${
                           stats.net >= 0
                             ? 'text-indigo-600 dark:text-indigo-400'
-                            : 'text-red-555 dark:text-red-400'
+                            : 'text-red-500 dark:text-red-400'
                         }`}
                       >
                         {formatCurrency(stats.net, baseCurrency)}

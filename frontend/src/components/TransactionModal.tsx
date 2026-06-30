@@ -179,7 +179,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-sm bg-slate-100 dark:bg-slate-750 hover:bg-slate-200 dark:hover:bg-slate-650 transition"
+            className="w-7 h-7 flex items-center justify-center rounded-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 transition"
           >
             <X className="w-4 h-4 text-slate-500 dark:text-slate-350" />
           </button>
@@ -238,7 +238,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
               <button
                 type="button"
                 onClick={handleAddEntry}
-                className="flex items-center gap-0.5 text-xs font-bold text-indigo-650 dark:text-indigo-400 hover:underline"
+                className="flex items-center gap-0.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Agregar Apunte</span>

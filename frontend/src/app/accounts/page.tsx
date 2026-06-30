@@ -138,7 +138,7 @@ export default function AccountsPage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
           <span>Agregar Cuenta</span>
@@ -156,7 +156,7 @@ export default function AccountsPage() {
       {(() => {
         const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
         return (
-          <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-650 dark:to-indigo-750 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
+          <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
             <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
               <Wallet className="w-40 h-40" />
             </div>

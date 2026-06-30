@@ -35,14 +35,14 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
     }
 
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-750 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 shadow-sm overflow-hidden">
         {ordered.map((a) => {
           const isChild = !!a.parentId;
           const isInactive = a.status === "INACTIVE";
           return (
             <div
               key={a.id}
-              className={`flex justify-between items-center p-3.5 text-xs transition duration-150 hover:bg-slate-50/50 dark:hover:bg-slate-750/30 ${
+              className={`flex justify-between items-center p-3.5 text-xs transition duration-150 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 ${
                 isChild
                   ? "pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20"
                   : ""

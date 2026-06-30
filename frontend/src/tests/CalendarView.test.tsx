@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import CalendarView from '../components/CalendarView';
 
 describe('CalendarView Timezone and Boundary Rendering', () => {
@@ -17,16 +17,40 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
   const baseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 };
 
   test('should render the calendar header for the current month (Junio 2026)', () => {
-    render(<CalendarView transactions={[]} baseCurrency={baseCurrency} />);
+    const onMonthChange = jest.fn();
+    render(
+      <CalendarView
+        transactions={[]}
+        baseCurrency={baseCurrency}
+        currentDate={new Date('2026-06-15T12:00:00.000Z')}
+        onMonthChange={onMonthChange}
+      />
+    );
     expect(screen.getByText('Junio 2026')).toBeInTheDocument();
   });
 
-  test('should render transaction flow in the correct day cell based on local timezone', () => {
-    // We mock the local Date behavior by defining the transaction date.
-    // If the local timezone is UTC-4 (offset 240):
-    // "2026-06-01T04:00:00.000Z" parsed locally becomes Jun 1, 00:00:00.
-    // Let's create transactions and verify that they are grouped under their local day.
+  test('should call onMonthChange when prev/next buttons are clicked', () => {
+    const onMonthChange = jest.fn();
+    render(
+      <CalendarView
+        transactions={[]}
+        baseCurrency={baseCurrency}
+        currentDate={new Date('2026-06-15T12:00:00.000Z')}
+        onMonthChange={onMonthChange}
+      />
+    );
 
+    const prevButton = screen.getAllByRole('button')[0];
+    const nextButton = screen.getAllByRole('button')[1];
+
+    fireEvent.click(prevButton);
+    expect(onMonthChange).toHaveBeenCalledWith(new Date('2026-05-01T00:00:00'));
+
+    fireEvent.click(nextButton);
+    expect(onMonthChange).toHaveBeenCalledWith(new Date('2026-07-01T00:00:00'));
+  });
+
+  test('should render transaction flow in the correct day cell based on local timezone', () => {
     const transactions = [
       {
         id: 'tx-1',
@@ -72,24 +96,23 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
       },
     ];
 
-    const { container } = render(
-      <CalendarView transactions={transactions} baseCurrency={baseCurrency} />,
+    const onMonthChange = jest.fn();
+    render(
+      <CalendarView
+        transactions={transactions}
+        baseCurrency={baseCurrency}
+        currentDate={new Date('2026-06-15T12:00:00.000Z')}
+        onMonthChange={onMonthChange}
+      />
     );
 
-    // Calculate what days they should fall on in the test runner's current timezone.
-    // In UTC, tx-1 is June 1st, tx-2 is June 10th.
-    // In UTC-4, tx-1 is June 1st, tx-2 is June 10th.
     const localDay1 = new Date(transactions[0].date).getDate();
     const localDay2 = new Date(transactions[1].date).getDate();
 
-    // Verify the income transaction is rendered in the correct cell
     const day1Cells = screen.getAllByText(String(localDay1));
     expect(day1Cells.length).toBeGreaterThan(0);
-
-    // Verify the income amount (+500,000) is shown
     expect(screen.getByText('+u$s 500.000,00')).toBeInTheDocument();
 
-    // Verify the expense transaction is rendered in the correct cell
     const day2Cells = screen.getAllByText(String(localDay2));
     expect(day2Cells.length).toBeGreaterThan(0);
     expect(screen.getByText('-u$s 150,00')).toBeInTheDocument();

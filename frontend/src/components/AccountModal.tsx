@@ -134,7 +134,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
                 setType(e.target.value as any);
                 setSelectedParentId("");
               }}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-750 dark:text-slate-200"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
             >
               <option value="ASSET">ACTIVO (Efectivo, Cuentas Bancarias)</option>
               <option value="LIABILITY">PASIVO (Deudas, Tarjetas de Crédito)</option>
@@ -152,7 +152,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               value={selectedCurrencyId}
               required
               onChange={(e) => setSelectedCurrencyId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-750 dark:text-slate-200"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
             >
               {currencies.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -170,7 +170,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               <select
                 value={selectedParentId}
                 onChange={(e) => setSelectedParentId(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-750 dark:text-slate-200"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
               >
                 <option value="">Ninguna (Es categoría principal)</option>
                 {filteredParents.map((a) => (

@@ -39,7 +39,7 @@ export default function Header() {
         {/* Toggle Theme in Header (Mobile/Tablet Friendly Shortcut) */}
         <button
           onClick={toggleTheme}
-          className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition"
+          className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
         >
           {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </button>

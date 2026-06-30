@@ -89,7 +89,7 @@ export default function AccountsManagePage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
           <span>Nuevo Rubro</span>
@@ -115,13 +115,13 @@ export default function AccountsManagePage() {
               <th className="p-4 text-center">Acción</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-750 font-medium">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
             {accounts.map((a) => {
               const isInactive = a.status === "INACTIVE";
               return (
                 <tr
                   key={a.id}
-                  className={`hover:bg-slate-50/50 dark:hover:bg-slate-750/20 transition ${
+                  className={`hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition ${
                     isInactive ? "opacity-60 bg-slate-50/20 dark:bg-slate-900/10" : ""
                   }`}
                 >

@@ -13,21 +13,21 @@ interface Account {
 interface TransactionFiltersProps {
   startDate: string;
   endDate: string;
-  onStartDateChange: (val: string) => void;
-  onEndDateChange: (val: string) => void;
+  onDateRangeChange: (start: string, end: string) => void;
   selectedAccountId: string;
   onAccountIdChange: (val: string) => void;
   accounts: Account[];
+  view: 'daily' | 'calendar' | 'monthly';
 }
 
 export default function TransactionFilters({
   startDate,
   endDate,
-  onStartDateChange,
-  onEndDateChange,
+  onDateRangeChange,
   selectedAccountId,
   onAccountIdChange,
   accounts,
+  view,
 }: TransactionFiltersProps) {
   const [showCustom, setShowCustom] = useState(false);
 
@@ -64,8 +64,7 @@ export default function TransactionFilters({
       return `${y}-${m}-${day}`;
     };
 
-    onStartDateChange(formatToYYYYMMDD(prevMonth));
-    onEndDateChange(formatToYYYYMMDD(lastDay));
+    onDateRangeChange(formatToYYYYMMDD(prevMonth), formatToYYYYMMDD(lastDay));
   };
 
   const handleNextMonth = () => {
@@ -81,8 +80,7 @@ export default function TransactionFilters({
       return `${y}-${m}-${day}`;
     };
 
-    onStartDateChange(formatToYYYYMMDD(nextMonth));
-    onEndDateChange(formatToYYYYMMDD(lastDay));
+    onDateRangeChange(formatToYYYYMMDD(nextMonth), formatToYYYYMMDD(lastDay));
   };
 
   return (
@@ -93,64 +91,68 @@ export default function TransactionFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-        {/* Custom Toggle */}
-        <label className="flex items-center gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 font-bold select-none text-xs">
-          <input
-            type="checkbox"
-            checked={showCustom}
-            onChange={(e) => setShowCustom(e.target.checked)}
-            className="rounded-md border-slate-350 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
-          />
-          <span>Rango Personalizado</span>
-        </label>
-
-        {/* Temporal Navigation: Month navigation or custom pickers */}
-        {!showCustom ? (
-          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 p-0.5">
-            <button
-              onClick={handlePrevMonth}
-              type="button"
-              className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition"
-            >
-              &larr;
-            </button>
-            <span className="px-3 py-0.5 font-semibold text-center min-w-[110px] text-slate-700 dark:text-slate-250 select-none text-xs">
-              {activeMonthLabel}
-            </span>
-            <button
-              onClick={handleNextMonth}
-              type="button"
-              className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition"
-            >
-              &rarr;
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            {/* Start Date */}
-            <div className="relative flex items-center">
-              <Calendar className="absolute left-2.5 w-3 h-3 text-slate-400 pointer-events-none" />
+        {view === 'daily' && (
+          <>
+            {/* Custom Toggle */}
+            <label className="flex items-center gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 font-bold select-none text-xs">
               <input
-                type="date"
-                value={startDate}
-                onChange={(e) => onStartDateChange(e.target.value)}
-                className="w-full pl-7 pr-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 font-medium text-xs"
-                title="Fecha inicio"
+                type="checkbox"
+                checked={showCustom}
+                onChange={(e) => setShowCustom(e.target.checked)}
+                className="rounded-md border-slate-300 dark:border-slate-650 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
               />
-            </div>
+              <span>Rango Personalizado</span>
+            </label>
 
-            {/* End Date */}
-            <div className="relative flex items-center">
-              <Calendar className="absolute left-2.5 w-3 h-3 text-slate-400 pointer-events-none" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => onEndDateChange(e.target.value)}
-                className="w-full pl-7 pr-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 font-medium text-xs"
-                title="Fecha fin"
-              />
-            </div>
-          </div>
+            {/* Temporal Navigation: Month navigation or custom pickers */}
+            {!showCustom ? (
+              <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 p-0.5">
+                <button
+                  onClick={handlePrevMonth}
+                  type="button"
+                  className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition"
+                >
+                  &larr;
+                </button>
+                <span className="px-3 py-0.5 font-semibold text-center min-w-[110px] text-slate-700 dark:text-slate-250 select-none text-xs">
+                  {activeMonthLabel}
+                </span>
+                <button
+                  onClick={handleNextMonth}
+                  type="button"
+                  className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition"
+                >
+                  &rarr;
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {/* Start Date */}
+                <div className="relative flex items-center">
+                  <Calendar className="absolute left-2.5 w-3 h-3 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => onDateRangeChange(e.target.value, endDate)}
+                    className="w-full pl-7 pr-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 font-medium text-xs text-slate-700 dark:text-slate-200"
+                    title="Fecha inicio"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div className="relative flex items-center">
+                  <Calendar className="absolute left-2.5 w-3 h-3 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => onDateRangeChange(startDate, e.target.value)}
+                    className="w-full pl-7 pr-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-500 font-medium text-xs text-slate-700 dark:text-slate-200"
+                    title="Fecha fin"
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Account / Category Selector */}

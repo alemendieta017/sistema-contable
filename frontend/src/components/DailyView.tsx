@@ -246,7 +246,7 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                                     >
                                       <td className="py-2.5 px-2">
                                         <div className="flex items-center gap-2">
-                                          <span className="font-semibold text-slate-750 dark:text-slate-200">
+                                          <span className="font-semibold text-slate-700 dark:text-slate-200">
                                             {entry.account.name}
                                           </span>
                                           <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-400 px-1.5 py-0.5 rounded-md tracking-wider">
@@ -293,7 +293,7 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                                   return (
                                     <tr className="border-t border-slate-200/80 dark:border-slate-800 font-bold text-slate-700 dark:text-slate-200 text-xs">
                                       <td className="py-2.5 px-2 font-semibold">Total</td>
-                                      <td className="py-2.5 px-2 text-right font-extrabold text-red-550/90 dark:text-red-400">
+                                      <td className="py-2.5 px-2 text-right font-extrabold text-red-500">
                                         {formatCurrency(totalDebits, totalCurrency)}
                                       </td>
                                       <td className="py-2.5 px-2 text-right font-extrabold text-green-600 dark:text-green-400">
