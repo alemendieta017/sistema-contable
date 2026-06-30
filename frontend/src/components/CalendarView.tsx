@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
 import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
 interface Entry {
@@ -25,14 +24,12 @@ interface CalendarViewProps {
   transactions: Transaction[];
   baseCurrency?: CurrencyInfo;
   currentDate: Date;
-  onMonthChange: (d: Date) => void;
 }
 
 export default function CalendarView({
   transactions,
   baseCurrency,
   currentDate,
-  onMonthChange,
 }: CalendarViewProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
@@ -96,41 +93,8 @@ export default function CalendarView({
   const daySlots = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const totalSlots = [...blankSlots, ...daySlots];
 
-  const handlePrevMonth = () => {
-    onMonthChange(new Date(year, month - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    onMonthChange(new Date(year, month + 1, 1));
-  };
-
   return (
     <div className="space-y-3">
-      {/* Selector Header */}
-      <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 px-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-        <span className="text-3xs font-bold text-slate-500 dark:text-slate-400 uppercase">
-          Calendario Mensual
-        </span>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handlePrevMonth}
-            className="p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 select-none">
-            {months[month]} {year}
-          </span>
-          <button
-            onClick={handleNextMonth}
-            className="p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
       {/* Grid Sheet */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-2 border border-slate-100 dark:border-slate-700 shadow-sm overflow-x-auto">
         <div className="min-w-[600px] space-y-1">
@@ -139,7 +103,7 @@ export default function CalendarView({
             {daysOfWeek.map((day) => (
               <span
                 key={day}
-                className="text-3xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest"
+                className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest"
               >
                 {day}
               </span>
@@ -166,12 +130,12 @@ export default function CalendarView({
                   key={`day-${dayNum}`}
                   className={`min-h-[60px] p-1.5 rounded-xl border flex flex-col justify-between transition duration-150 ${
                     hasFlow
-                      ? 'bg-indigo-50/10 dark:bg-indigo-950/5 border-indigo-100/60 dark:border-indigo-900/40'
+                      ? 'bg-indigo-50/10 dark:bg-indigo-950/5 border-indigo-200 dark:border-indigo-800'
                       : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   {/* Day Number */}
-                  <span className="text-3xs font-bold text-slate-700 dark:text-slate-300">
+                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
                     {dayNum}
                   </span>
 
@@ -179,17 +143,17 @@ export default function CalendarView({
                   {hasFlow ? (
                     <div className="space-y-0.5 text-right">
                       {stats.income > 0 && (
-                        <p className="text-5xs font-extrabold text-green-500 leading-none">
+                        <p className="text-[8px] font-extrabold text-green-500 leading-none">
                           +{formatCurrency(stats.income, baseCurrency)}
                         </p>
                       )}
                       {stats.expense > 0 && (
-                        <p className="text-5xs font-extrabold text-red-500 leading-none">
+                        <p className="text-[8px] font-extrabold text-red-500 leading-none">
                           -{formatCurrency(stats.expense, baseCurrency)}
                         </p>
                       )}
                       <p
-                        className={`text-4xs font-extrabold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5 leading-none ${
+                        className={`text-[9px] font-extrabold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5 leading-none ${
                           stats.net >= 0
                             ? 'text-indigo-600 dark:text-indigo-400'
                             : 'text-red-500 dark:text-red-400'
@@ -199,7 +163,7 @@ export default function CalendarView({
                       </p>
                     </div>
                   ) : (
-                    <span className="text-5xs text-slate-300 dark:text-slate-650 text-right font-semibold">
+                    <span className="text-[8px] text-slate-300 dark:text-slate-500 text-right font-semibold">
                       Sin flujo
                     </span>
                   )}

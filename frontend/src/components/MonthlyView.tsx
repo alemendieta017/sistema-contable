@@ -1,15 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  ChevronLeft,
-  ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-} from 'lucide-react';
+import React from 'react';
 import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
 interface Entry {
@@ -33,14 +24,12 @@ interface MonthlyViewProps {
   transactions: Transaction[];
   baseCurrency?: CurrencyInfo;
   currentYear: number;
-  onYearChange: (year: number) => void;
 }
 
 export default function MonthlyView({
   transactions,
   baseCurrency,
   currentYear,
-  onYearChange,
 }: MonthlyViewProps) {
   const months = [
     'Enero',
@@ -94,36 +83,11 @@ export default function MonthlyView({
 
   return (
     <div className="space-y-3">
-      {/* Year Selection bar */}
-      <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 px-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-        <span className="text-3xs font-bold text-slate-500 dark:text-slate-400 uppercase">
-          Resumen por Año
-        </span>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => onYearChange(currentYear - 1)}
-            className="p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 select-none">
-            {currentYear}
-          </span>
-          <button
-            onClick={() => onYearChange(currentYear + 1)}
-            className="p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
       {/* Monthly Table */}
       <div className="w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
         <table className="w-full min-w-[600px] border-collapse text-xs">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 text-3xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider select-none">
+            <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider select-none">
               <th className="py-2.5 px-4 text-left font-bold">Mes</th>
               <th className="py-2.5 px-4 text-right font-bold">Transacciones</th>
               <th className="py-2.5 px-4 text-right font-bold">Ingresos</th>
@@ -138,7 +102,7 @@ export default function MonthlyView({
                 <tr
                   key={m.monthIndex}
                   className={`hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition duration-150 ${
-                    hasData ? 'opacity-100' : 'opacity-55 text-slate-450 dark:text-slate-550'
+                    hasData ? 'opacity-100' : 'opacity-55 text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   <td className="py-2.5 px-4 font-semibold text-slate-800 dark:text-slate-100">

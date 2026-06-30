@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CalendarView from '../components/CalendarView';
 
 describe('CalendarView Timezone and Boundary Rendering', () => {
@@ -15,40 +15,6 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
   });
 
   const baseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 };
-
-  test('should render the calendar header for the current month (Junio 2026)', () => {
-    const onMonthChange = jest.fn();
-    render(
-      <CalendarView
-        transactions={[]}
-        baseCurrency={baseCurrency}
-        currentDate={new Date('2026-06-15T12:00:00.000Z')}
-        onMonthChange={onMonthChange}
-      />
-    );
-    expect(screen.getByText('Junio 2026')).toBeInTheDocument();
-  });
-
-  test('should call onMonthChange when prev/next buttons are clicked', () => {
-    const onMonthChange = jest.fn();
-    render(
-      <CalendarView
-        transactions={[]}
-        baseCurrency={baseCurrency}
-        currentDate={new Date('2026-06-15T12:00:00.000Z')}
-        onMonthChange={onMonthChange}
-      />
-    );
-
-    const prevButton = screen.getAllByRole('button')[0];
-    const nextButton = screen.getAllByRole('button')[1];
-
-    fireEvent.click(prevButton);
-    expect(onMonthChange).toHaveBeenCalledWith(new Date('2026-05-01T00:00:00'));
-
-    fireEvent.click(nextButton);
-    expect(onMonthChange).toHaveBeenCalledWith(new Date('2026-07-01T00:00:00'));
-  });
 
   test('should render transaction flow in the correct day cell based on local timezone', () => {
     const transactions = [
@@ -96,13 +62,11 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
       },
     ];
 
-    const onMonthChange = jest.fn();
     render(
       <CalendarView
         transactions={transactions}
         baseCurrency={baseCurrency}
         currentDate={new Date('2026-06-15T12:00:00.000Z')}
-        onMonthChange={onMonthChange}
       />
     );
 

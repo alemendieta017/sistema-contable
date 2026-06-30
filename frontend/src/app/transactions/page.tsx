@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { useSearch } from '../../lib/search-context';
+import { useModal } from '../../lib/modal-context';
 import TransactionFilters from '../../components/TransactionFilters';
 import DailyView from '../../components/DailyView';
 import MonthlyView from '../../components/MonthlyView';
@@ -14,6 +15,7 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
+  Plus,
 } from 'lucide-react';
 import { formatCurrency, formatLocalDateWithOffset, formatLocalDateEndWithOffset } from '../../lib/utils';
 
@@ -27,6 +29,7 @@ type Account = {
 
 export default function TransactionsPage() {
   const { searchQuery } = useSearch();
+  const { openTransactionModal } = useModal();
   const [view, setView] = useState<'daily' | 'calendar' | 'monthly'>('daily');
 
   // Date Range (default: current month)
@@ -218,21 +221,14 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* Unified Dashboard Header Card */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
-        {/* Top Page Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-850 dark:text-slate-100">
-              Libro Diario
-            </h1>
-          </div>
-
-          {/* View Switch Tabs */}
-          <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-850 p-0.5 rounded-xl shadow-inner self-stretch sm:self-auto">
+      {/* Mobile View: Stacked Full-Width Row segments (pegados) */}
+      <div className={`sm:hidden -mx-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 shadow-sm ${(!success && !error) ? '-mt-6' : 'mt-2'}`}>
+        {/* Segmented Control Row */}
+        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/40">
+          <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-0.5 rounded-xl shadow-inner">
             <button
               onClick={() => handleViewChange('daily')}
-              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'daily'
                   ? 'bg-indigo-600 text-white'
                   : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -243,7 +239,7 @@ export default function TransactionsPage() {
             </button>
             <button
               onClick={() => handleViewChange('calendar')}
-              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'calendar'
                   ? 'bg-indigo-600 text-white'
                   : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -254,7 +250,7 @@ export default function TransactionsPage() {
             </button>
             <button
               onClick={() => handleViewChange('monthly')}
-              className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+              className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'monthly'
                   ? 'bg-indigo-600 text-white'
                   : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -266,9 +262,101 @@ export default function TransactionsPage() {
           </div>
         </div>
 
-        {/* Dashboard Summary Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+        {/* Counters Row */}
+        <div className="grid grid-cols-3 divide-x divide-slate-150 dark:divide-slate-700/60 py-2.5 bg-slate-50/30 dark:bg-slate-900/10">
+          <div className="text-center px-1 min-w-0">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              Ingresos
+            </span>
+            <span className="text-xs font-extrabold text-green-500 block mt-0.5 whitespace-nowrap overflow-x-auto no-scrollbar">
+              {formatCurrency(totalIncome, baseCurrency)}
+            </span>
+          </div>
+          <div className="text-center px-1 min-w-0">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              Egresos
+            </span>
+            <span className="text-xs font-extrabold text-red-500 block mt-0.5 whitespace-nowrap overflow-x-auto no-scrollbar">
+              {formatCurrency(totalExpense, baseCurrency)}
+            </span>
+          </div>
+          <div className="text-center px-1 min-w-0">
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              Neto
+            </span>
+            <span
+              className={`text-xs font-extrabold block mt-0.5 whitespace-nowrap overflow-x-auto no-scrollbar ${
+                netBalance >= 0 ? 'text-indigo-500' : 'text-red-500'
+              }`}
+            >
+              {formatCurrency(netBalance, baseCurrency)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View: Unified Dashboard Header Card */}
+      <div className="hidden sm:block bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
+        {/* Top Page Header */}
+        <div className="flex justify-between items-center gap-3">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
+              Libro Diario
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* View Switch Tabs */}
+            <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-0.5 rounded-xl shadow-inner">
+              <button
+                onClick={() => handleViewChange('daily')}
+                className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                  view === 'daily'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ReceiptText className="w-3.5 h-3.5" />
+                <span>Diario</span>
+              </button>
+              <button
+                onClick={() => handleViewChange('calendar')}
+                className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                  view === 'calendar'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <CalendarIcon className="w-3.5 h-3.5" />
+                <span>Calendario</span>
+              </button>
+              <button
+                onClick={() => handleViewChange('monthly')}
+                className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                  view === 'monthly'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Mensual</span>
+              </button>
+            </div>
+
+            {/* Dedicated Desktop Agregar Transacción Button */}
+            <button
+              onClick={openTransactionModal}
+              className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Agregar Transacción</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop View: 3 Separate Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
               <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
                 Ingresos
@@ -282,7 +370,7 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
               <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
                 Egresos
@@ -296,7 +384,7 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
               <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
                 Saldo Neto
@@ -324,10 +412,16 @@ export default function TransactionsPage() {
 
       {/* Global Filters */}
       <TransactionFilters
-        startDate={dailyDates.startDate}
-        endDate={dailyDates.endDate}
+        startDate={activeStartDate}
+        endDate={activeEndDate}
         onDateRangeChange={(start, end) => {
-          setDailyDates({ startDate: start, endDate: end });
+          if (view === 'daily') {
+            setDailyDates({ startDate: start, endDate: end });
+          } else if (view === 'calendar') {
+            setCalendarDates({ startDate: start, endDate: end });
+          } else if (view === 'monthly') {
+            setMonthlyDates({ startDate: start, endDate: end });
+          }
         }}
         selectedAccountId={selectedAccountId}
         onAccountIdChange={setSelectedAccountId}
@@ -355,7 +449,6 @@ export default function TransactionsPage() {
               transactions={filteredTransactions}
               baseCurrency={baseCurrency}
               currentDate={new Date(calendarDates.startDate + 'T12:00:00')}
-              onMonthChange={handleMonthChange}
             />
           )}
           {view === 'monthly' && (
@@ -363,7 +456,6 @@ export default function TransactionsPage() {
               transactions={filteredTransactions}
               baseCurrency={baseCurrency}
               currentYear={new Date(monthlyDates.startDate + 'T12:00:00').getFullYear()}
-              onYearChange={handleYearChange}
             />
           )}
         </div>

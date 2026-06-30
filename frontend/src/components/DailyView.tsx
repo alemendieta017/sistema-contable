@@ -34,10 +34,10 @@ interface DailyViewProps {
 }
 
 export default function DailyView({ transactions, onReverse, baseCurrency }: DailyViewProps) {
-  const [expandedTx, setExpandedTx] = useState<Record<string, boolean>>({});
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
-    setExpandedTx((prev) => ({ ...prev, [id]: !prev[id] }));
+    setExpandedTxId((prevId) => (prevId === id ? null : id));
   };
 
   // Group by date (YYYY-MM-DD)
@@ -96,9 +96,9 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                   month: 'short',
                 })}
               </span>
-              <span className="text-3xs font-semibold text-slate-400">
+              <span className="text-[10px] font-semibold text-slate-400">
                 Flujo del día:{' '}
-                <span className="font-bold text-slate-650 dark:text-slate-300">
+                <span className="font-bold text-slate-600 dark:text-slate-300">
                   {formatCurrency(dayDebits, baseCurrency)}
                 </span>
               </span>
@@ -107,7 +107,7 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
             {/* Day Transactions */}
             <div className="space-y-1">
               {dayTxs.map((tx) => {
-                const isExpanded = !!expandedTx[tx.id];
+                const isExpanded = expandedTxId === tx.id;
                 const isReversed = tx.status === 'REVERSED';
                 const isReversion = !!tx.reversalOfId;
 
@@ -168,15 +168,15 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                           >
                             {tx.description}
                           </p>
-                          <p className="text-3xs text-slate-400 mt-0.5">
+                          <p className="text-[10px] text-slate-400 mt-0.5">
                             {tx.entries.length} apuntes
                             {isReversed && (
-                              <span className="ml-1.5 text-red-500 font-bold uppercase tracking-wider text-4xs bg-red-50 dark:bg-red-950/20 px-1 py-0.5 rounded-md">
+                              <span className="ml-1.5 text-red-500 font-bold uppercase tracking-wider text-[8px] bg-red-50 dark:bg-red-950/20 px-1 py-0.5 rounded-md">
                                 Anulado
                               </span>
                             )}
                             {isReversion && (
-                              <span className="ml-1.5 text-amber-500 font-bold uppercase tracking-wider text-4xs bg-amber-50 dark:bg-amber-950/20 px-1 py-0.5 rounded-md">
+                              <span className="ml-1.5 text-amber-500 font-bold uppercase tracking-wider text-[8px] bg-amber-50 dark:bg-amber-950/20 px-1 py-0.5 rounded-md">
                                 Reversión
                               </span>
                             )}
@@ -215,7 +215,7 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                     </div>
                     {/* Expandable Split Details Table */}
                     {isExpanded && (
-                      <div className="px-4 pb-3 pt-2 border-t border-slate-100 dark:border-slate-800/60 animate-in fade-in duration-200">
+                      <div className="px-4 pb-3 pt-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-150 dark:border-slate-700/80 rounded-b-2xl animate-in fade-in duration-200">
                         <div className="space-y-3">
                           <p className="font-bold text-[10px] text-slate-400 dark:text-slate-550 uppercase tracking-widest px-1">
                             Detalles del Asiento
@@ -280,29 +280,7 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                                   );
                                 })}
                               </tbody>
-                              <tfoot>
-                                {(() => {
-                                  const totalDebits = tx.entries
-                                    .filter((e) => e.entryType === 'DEBIT')
-                                    .reduce((sum, e) => sum + Number(e.amount), 0);
-                                  const totalCredits = tx.entries
-                                    .filter((e) => e.entryType === 'CREDIT')
-                                    .reduce((sum, e) => sum + Number(e.amount), 0);
-                                  const totalCurrency =
-                                    firstDebit?.account?.currency || baseCurrency;
-                                  return (
-                                    <tr className="border-t border-slate-200/80 dark:border-slate-800 font-bold text-slate-700 dark:text-slate-200 text-xs">
-                                      <td className="py-2.5 px-2 font-semibold">Total</td>
-                                      <td className="py-2.5 px-2 text-right font-extrabold text-red-500">
-                                        {formatCurrency(totalDebits, totalCurrency)}
-                                      </td>
-                                      <td className="py-2.5 px-2 text-right font-extrabold text-green-600 dark:text-green-400">
-                                        {formatCurrency(totalCredits, totalCurrency)}
-                                      </td>
-                                    </tr>
-                                  );
-                                })()}
-                              </tfoot>
+
                             </table>
                           </div>
 

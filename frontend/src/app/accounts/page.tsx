@@ -6,6 +6,7 @@ import AccountsList from "../../components/AccountsList";
 import AccountModal from "../../components/AccountModal";
 import { Plus, Wallet, ShieldAlert, BadgeAlert } from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
+import { useSearch } from "../../lib/search-context";
 
 type AccountSummary = {
   id: string;
@@ -27,6 +28,7 @@ type SummaryData = {
 };
 
 export default function AccountsPage() {
+  const { searchQuery } = useSearch();
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +125,11 @@ export default function AccountsPage() {
     );
   }
 
+  const filteredAccounts = summary?.accounts.filter((a) => {
+    if (!searchQuery.trim()) return true;
+    return a.name.toLowerCase().includes(searchQuery.toLowerCase());
+  }) || [];
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -214,11 +221,22 @@ export default function AccountsPage() {
 
       {/* Grouped Account Tables */}
       {summary && summary.accounts.length > 0 && (
-        <AccountsList
-          accounts={summary.accounts}
-          onDelete={handleDeleteAccount}
-          deletingId={deletingId}
-        />
+        filteredAccounts.length > 0 ? (
+          <AccountsList
+            accounts={filteredAccounts}
+            onDelete={handleDeleteAccount}
+            deletingId={deletingId}
+          />
+        ) : (
+          <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+            <p className="text-sm font-bold text-slate-655 dark:text-slate-350">
+              No se encontraron cuentas que coincidan con &quot;{searchQuery}&quot;
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Prueba buscando con otros términos
+            </p>
+          </div>
+        )
       )}
 
       {/* Account Add Modal */}

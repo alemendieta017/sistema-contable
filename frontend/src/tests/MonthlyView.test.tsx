@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import MonthlyView from '../components/MonthlyView';
 
 describe('MonthlyView Local Timezone Grouping', () => {
@@ -14,40 +14,6 @@ describe('MonthlyView Local Timezone Grouping', () => {
   });
 
   const baseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 };
-
-  test('should render current year summary header by default', () => {
-    const onYearChange = jest.fn();
-    render(
-      <MonthlyView
-        transactions={[]}
-        baseCurrency={baseCurrency}
-        currentYear={2026}
-        onYearChange={onYearChange}
-      />
-    );
-    expect(screen.getByText('2026')).toBeInTheDocument();
-  });
-
-  test('should call onYearChange when prev/next buttons are clicked', () => {
-    const onYearChange = jest.fn();
-    render(
-      <MonthlyView
-        transactions={[]}
-        baseCurrency={baseCurrency}
-        currentYear={2026}
-        onYearChange={onYearChange}
-      />
-    );
-
-    const prevButton = screen.getAllByRole('button')[0];
-    const nextButton = screen.getAllByRole('button')[1];
-
-    fireEvent.click(prevButton);
-    expect(onYearChange).toHaveBeenCalledWith(2025);
-
-    fireEvent.click(nextButton);
-    expect(onYearChange).toHaveBeenCalledWith(2027);
-  });
 
   test('should group transactions under correct local months according to system timezone', () => {
     const transactions = [
@@ -95,13 +61,11 @@ describe('MonthlyView Local Timezone Grouping', () => {
       },
     ];
 
-    const onYearChange = jest.fn();
     render(
       <MonthlyView
         transactions={transactions}
         baseCurrency={baseCurrency}
         currentYear={2026}
-        onYearChange={onYearChange}
       />
     );
 

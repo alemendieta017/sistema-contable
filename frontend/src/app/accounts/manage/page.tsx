@@ -6,6 +6,7 @@ import AccountModal from "../../../components/AccountModal";
 import { ArrowLeft, Plus, ToggleLeft, ToggleRight, Check, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "../../../lib/utils";
+import { useSearch } from "../../../lib/search-context";
 
 interface AccountSummary {
   id: string;
@@ -20,6 +21,7 @@ interface AccountSummary {
 }
 
 export default function AccountsManagePage() {
+  const { searchQuery } = useSearch();
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,6 +67,11 @@ export default function AccountsManagePage() {
       </div>
     );
   }
+
+  const filteredAccounts = accounts.filter((a) => {
+    if (!searchQuery.trim()) return true;
+    return a.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className="space-y-6">
@@ -116,7 +123,7 @@ export default function AccountsManagePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
-            {accounts.map((a) => {
+            {filteredAccounts.map((a) => {
               const isInactive = a.status === "INACTIVE";
               return (
                 <tr
@@ -162,7 +169,7 @@ export default function AccountsManagePage() {
                       <button
                         onClick={() => handleDeactivate(a.id)}
                         disabled={saving}
-                        className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
+                        className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
                       >
                         Desactivar
                       </button>
@@ -173,6 +180,13 @@ export default function AccountsManagePage() {
                 </tr>
               );
             })}
+            {filteredAccounts.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-slate-500 dark:text-slate-400">
+                  No se encontraron cuentas que coincidan con &quot;{searchQuery}&quot;
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

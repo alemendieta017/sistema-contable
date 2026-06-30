@@ -173,13 +173,13 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
         {/* Modal Header */}
         <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-150 dark:border-slate-700">
           <div>
-            <h2 className="text-sm font-bold text-slate-850 dark:text-slate-100 uppercase">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">
               Registrar Asiento Contable
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 transition"
+            className="w-7 h-7 flex items-center justify-center rounded-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
           >
             <X className="w-4 h-4 text-slate-500 dark:text-slate-350" />
           </button>
@@ -308,7 +308,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-250 font-bold rounded-sm text-xs hover:bg-slate-300 transition"
+              className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-sm text-xs hover:bg-slate-300 transition"
             >
               Cancelar
             </button>

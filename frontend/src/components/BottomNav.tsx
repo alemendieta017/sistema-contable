@@ -18,14 +18,13 @@ export default function BottomNav() {
   };
 
   const menuItems = [
-    { name: "Cuentas", href: "/accounts", icon: Wallet },
     { name: "Ajustes", href: "/settings", icon: Settings },
   ];
 
   return (
     <>
       {/* Bottom Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-around px-4 z-40 shadow-lg">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-around px-4 z-40 shadow-lg animate-in fade-in duration-200">
         <Link
           href="/transactions"
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
@@ -35,7 +34,19 @@ export default function BottomNav() {
           }`}
         >
           <ReceiptText className="w-5 h-5" />
-          <span className="text-4xs mt-1 font-bold">Registro</span>
+          <span className="text-[10px] mt-1 font-bold">Registro</span>
+        </Link>
+
+        <Link
+          href="/accounts"
+          className={`flex flex-col items-center justify-center flex-1 py-1 ${
+            pathname.startsWith("/accounts")
+              ? "text-indigo-600 dark:text-indigo-400"
+              : "text-slate-400 dark:text-slate-500"
+          }`}
+        >
+          <Wallet className="w-5 h-5" />
+          <span className="text-[10px] mt-1 font-bold">Cuentas</span>
         </Link>
 
         <Link
@@ -47,19 +58,19 @@ export default function BottomNav() {
           }`}
         >
           <BarChart3 className="w-5 h-5" />
-          <span className="text-4xs mt-1 font-bold">Estadísticas</span>
+          <span className="text-[10px] mt-1 font-bold">Estadísticas</span>
         </Link>
 
         <button
           onClick={() => setIsMenuOpen(true)}
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            isMenuOpen || pathname.startsWith("/accounts") || pathname.startsWith("/settings")
+            isMenuOpen || pathname.startsWith("/settings")
               ? "text-indigo-600 dark:text-indigo-400"
               : "text-slate-400 dark:text-slate-500"
           }`}
         >
           <Menu className="w-5 h-5" />
-          <span className="text-4xs mt-1 font-bold">Más</span>
+          <span className="text-[10px] mt-1 font-bold">Más</span>
         </button>
       </div>
 
@@ -116,7 +127,7 @@ export default function BottomNav() {
                   {theme === "light" ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
                   <span>Cambiar Tema</span>
                 </span>
-                <span className="text-4xs uppercase tracking-wider text-slate-400">
+                <span className="text-[10px] uppercase tracking-wider text-slate-400">
                   {theme === "light" ? "Oscuro" : "Claro"}
                 </span>
               </button>
