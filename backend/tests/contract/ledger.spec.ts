@@ -5,6 +5,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { TransactionEntity } from '../../src/infrastructure/database/entities/transaction.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { CreateTransactionUseCase } from '../../src/application/ledger/create-transaction.use-case';
+import { UpdateTransactionUseCase } from '../../src/application/ledger/update-transaction.use-case';
+import { DeleteTransactionUseCase } from '../../src/application/ledger/delete-transaction.use-case';
 import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-transaction.use-case';
 import { GetAccountsSummaryUseCase } from '../../src/application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../src/application/accounts/delete-account.use-case';
@@ -22,6 +24,7 @@ describe('Ledger Endpoints Contract Tests', () => {
       orderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
     }),
+    findOne: jest.fn().mockResolvedValue({ id: 'tx-123', description: 'Test transaction', entries: [] }),
   };
   const mockAccountRepo = {
     find: jest.fn().mockResolvedValue([]),
@@ -31,6 +34,14 @@ describe('Ledger Endpoints Contract Tests', () => {
 
   const mockCreateTransactionUseCase = {
     execute: jest.fn().mockResolvedValue({ id: 'tx-123', entries: [] }),
+  };
+
+  const mockUpdateTransactionUseCase = {
+    execute: jest.fn().mockResolvedValue({ id: 'tx-123', entries: [] }),
+  };
+
+  const mockDeleteTransactionUseCase = {
+    execute: jest.fn().mockResolvedValue({ id: 'tx-123', success: true }),
   };
 
   const mockReverseTransactionUseCase = {
@@ -52,6 +63,14 @@ describe('Ledger Endpoints Contract Tests', () => {
         {
           provide: CreateTransactionUseCase,
           useValue: mockCreateTransactionUseCase,
+        },
+        {
+          provide: UpdateTransactionUseCase,
+          useValue: mockUpdateTransactionUseCase,
+        },
+        {
+          provide: DeleteTransactionUseCase,
+          useValue: mockDeleteTransactionUseCase,
         },
         {
           provide: ReverseTransactionUseCase,

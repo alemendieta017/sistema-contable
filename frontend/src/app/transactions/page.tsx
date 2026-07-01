@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '../../services/api';
 import { useSearch } from '../../lib/search-context';
-import { useModal } from '../../lib/modal-context';
 import TransactionFilters from '../../components/TransactionFilters';
 import DailyView from '../../components/DailyView';
 import MonthlyView from '../../components/MonthlyView';
@@ -29,7 +29,6 @@ type Account = {
 
 export default function TransactionsPage() {
   const { searchQuery } = useSearch();
-  const { openTransactionModal } = useModal();
   const [view, setView] = useState<'daily' | 'calendar' | 'monthly'>('daily');
 
   // Date Range (default: current month)
@@ -130,6 +129,26 @@ export default function TransactionsPage() {
       fetchData();
     } catch (err: any) {
       setError(err.message || 'Error al anular transacción.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (
+      !confirm(
+        '¿Está seguro de que desea eliminar permanentemente este asiento contable? Esta acción no se puede deshacer.',
+      )
+    ) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await api.transactions.delete(id);
+      setSuccess('Asiento contable eliminado con éxito.');
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Error al eliminar transacción.');
     } finally {
       setLoading(false);
     }
@@ -344,13 +363,13 @@ export default function TransactionsPage() {
             </div>
 
             {/* Dedicated Desktop Agregar Transacción Button */}
-            <button
-              onClick={openTransactionModal}
+            <Link
+              href="/transactions/new"
               className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               <span>Agregar Transacción</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -441,6 +460,7 @@ export default function TransactionsPage() {
             <DailyView
               transactions={filteredTransactions}
               onReverse={handleReverse}
+              onDelete={handleDelete}
               baseCurrency={baseCurrency}
             />
           )}

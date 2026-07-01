@@ -111,7 +111,7 @@ export default function JournalEntryRow({
   const groups = ["ASSET", "LIABILITY", "INCOME", "EXPENSE", "EQUITY"];
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 items-end bg-slate-50/50 dark:bg-slate-900/40 p-2.5 rounded-sm border border-slate-200 dark:border-slate-700/60 w-full">
+    <div className="flex flex-col sm:flex-row gap-2 items-end bg-slate-50/50 dark:bg-slate-900/40 p-2.5 rounded-sm border border-slate-200 dark:border-slate-700/60 w-full animate-slide-in-row">
       {/* Searchable Account Selector */}
       <div className="flex-1 w-full relative">
         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">

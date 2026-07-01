@@ -48,3 +48,7 @@ export const CreateTransactionRequestSchema = z.object({
 });
 
 export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestSchema>;
+
+export const UpdateTransactionRequestSchema = CreateTransactionRequestSchema;
+export type UpdateTransactionRequest = CreateTransactionRequest;
+

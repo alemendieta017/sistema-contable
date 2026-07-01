@@ -6,14 +6,13 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import BottomNav from "./BottomNav";
 import FloatingActionButton from "./FloatingActionButton";
-import { useModal } from "../lib/modal-context";
-import TransactionModal from "./TransactionModal";
+
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { isTransactionModalOpen, closeTransactionModal } = useModal();
+
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -40,7 +39,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   const isAuthPage = pathname === "/";
-
+  const isTransactionEntryPage = pathname === "/transactions/new" || pathname?.startsWith("/transactions/new/");
+  
   if (isAuthPage) {
     return <>{children}</>;
   }
@@ -52,23 +52,26 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Main app container */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Top Header */}
-        <Header />
+        {/* Top Header - hidden on the dedicated transaction entry route */}
+        {!isTransactionEntryPage && <Header />}
 
         {/* Dynamic page content scrollarea */}
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8">
-          <div className="max-w-6xl mx-auto">{children}</div>
+        <main className={`flex-1 overflow-y-auto ${
+          isTransactionEntryPage
+            ? "p-0 overflow-hidden"
+            : "px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8"
+        }`}>
+          <div className={isTransactionEntryPage ? "h-full w-full flex flex-col" : "max-w-6xl mx-auto"}>{children}</div>
         </main>
       </div>
 
       {/* Floating Action Button */}
-      <FloatingActionButton />
+      {!isTransactionEntryPage && <FloatingActionButton />}
 
       {/* Mobile Bottom Navigation Bar */}
-      <BottomNav />
+      {!isTransactionEntryPage && <BottomNav />}
 
-      {/* Transaction Modal Form */}
-      {isTransactionModalOpen && <TransactionModal onClose={closeTransactionModal} />}
+
     </div>
   );
 }

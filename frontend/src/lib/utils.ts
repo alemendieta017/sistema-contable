@@ -86,3 +86,26 @@ export function formatLocalDateEndWithOffset(dateStr: string): string {
   const formattedDay = String(day).padStart(2, '0');
   return `${year}-${formattedMonth}-${formattedDay}T23:59:59.999${offsetStr}`;
 }
+
+export function formatLocalDateTimeWithOffset(dateTimeStr: string): string {
+  if (!dateTimeStr || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(dateTimeStr)) {
+    return dateTimeStr;
+  }
+  const [datePart, timePart] = dateTimeStr.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const localDate = new Date(year, month - 1, day, hour, minute);
+
+  const offsetMinutes = localDate.getTimezoneOffset();
+  const sign = offsetMinutes > 0 ? '-' : '+';
+  const absOffset = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
+  const mins = String(absOffset % 60).padStart(2, '0');
+  const offsetStr = `${sign}${hours}:${mins}`;
+
+  const formattedMonth = String(month).padStart(2, '0');
+  const formattedDay = String(day).padStart(2, '0');
+  const formattedHour = String(hour).padStart(2, '0');
+  const formattedMinute = String(minute).padStart(2, '0');
+  return `${year}-${formattedMonth}-${formattedDay}T${formattedHour}:${formattedMinute}:00.000${offsetStr}`;
+}

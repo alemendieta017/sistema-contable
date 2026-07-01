@@ -2,6 +2,7 @@ import {
   LoginRequest,
   CreateAccountRequest,
   CreateTransactionRequest,
+  UpdateTransactionRequest,
 } from '@sistema-contable/shared';
 
 const getApiBaseUrl = () => {
@@ -136,11 +137,36 @@ export const api = {
       return handleResponse(res);
     },
 
+    async get(id: string) {
+      const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
     async create(data: CreateTransactionRequest) {
       const res = await fetch(`${API_BASE_URL}/transactions`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async update(id: string, data: UpdateTransactionRequest) {
+      const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async delete(id: string) {
+      const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
       });
       return handleResponse(res);
     },

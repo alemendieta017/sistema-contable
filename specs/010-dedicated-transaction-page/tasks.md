@@ -12,9 +12,9 @@
 
 **Purpose**: Core model/type registration and client/server routing baseline setup
 
-- [ ] T001 [P] Register and export transaction update DTO schemas in [shared/src/index.ts](file:///Users/ale/dev/sistema-contable/shared/src/index.ts)
-- [ ] T002 [P] Register placeholder controller route handlers for `GET :id`, `PUT :id`, and `DELETE :id` in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
-- [ ] T003 [P] Add api transaction wrappers for single transaction retrieve, edit, and delete in [frontend/src/services/api.ts](file:///Users/ale/dev/sistema-contable/frontend/src/services/api.ts)
+- [x] T001 [P] Register and export transaction update DTO schemas in [shared/src/index.ts](file:///Users/ale/dev/sistema-contable/shared/src/index.ts)
+- [x] T002 [P] Register placeholder controller route handlers for `GET :id`, `PUT :id`, and `DELETE :id` in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
+- [x] T003 [P] Add api transaction wrappers for single transaction retrieve, edit, and delete in [frontend/src/services/api.ts](file:///Users/ale/dev/sistema-contable/frontend/src/services/api.ts)
 
 ---
 
@@ -22,8 +22,8 @@
 
 **Purpose**: Utilities and layout configurations required before user story pages can be successfully rendered and routed
 
-- [ ] T004 [P] Implement timezone offset formatter helper `formatLocalDateTimeWithOffset` in [frontend/src/lib/utils.ts](file:///Users/ale/dev/sistema-contable/frontend/src/lib/utils.ts)
-- [ ] T005 Setup responsive layout rules in [frontend/src/components/MainLayout.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/MainLayout.tsx) to hide standard sidebar, headers, and footer navigations on mobile for the dedicated entry route
+- [x] T004 [P] Implement timezone offset formatter helper `formatLocalDateTimeWithOffset` in [frontend/src/lib/utils.ts](file:///Users/ale/dev/sistema-contable/frontend/src/lib/utils.ts)
+- [x] T005 Setup responsive layout rules in [frontend/src/components/MainLayout.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/MainLayout.tsx) to hide standard sidebar, headers, and footer navigations on mobile for the dedicated entry route
 
 ---
 
@@ -34,10 +34,10 @@
 **Independent Test**: Navigate to `/transactions/new` on desktop, fill out a balanced transaction (Glosa, Date, 2 items), and click Save to successfully persist and return to lists.
 
 ### Implementation for User Story 1
-- [ ] T006 [P] [US1] Create full-page container structure and desktop sidebar layout in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T007 [P] [US1] Create form header, concept inputs, and datetime local selection in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T008 [US1] Implement wide table row loop supporting Debits, Credits, and basic account selection dropdowns in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T009 [US1] Modify [frontend/src/components/Sidebar.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/Sidebar.tsx) and [frontend/src/components/FloatingActionButton.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/FloatingActionButton.tsx) to redirect to `/transactions/new` instead of triggering the old modal
+- [x] T006 [P] [US1] Create full-page container structure and desktop sidebar layout in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T007 [P] [US1] Create form header, concept inputs, and datetime local selection in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T008 [US1] Implement wide table row loop supporting Debits, Credits, and basic account selection dropdowns in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T009 [US1] Modify [frontend/src/components/Sidebar.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/Sidebar.tsx) and [frontend/src/components/FloatingActionButton.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/FloatingActionButton.tsx) to redirect to `/transactions/new` instead of triggering the old modal
 
 ---
 
@@ -48,8 +48,8 @@
 **Independent Test**: Resize the browser to mobile viewport (< 640px) or navigate to `/transactions/new` on mobile. Verify standard sidebars/footers are hidden, and entry rows render in stacked layout.
 
 ### Implementation for User Story 2
-- [ ] T010 [P] [US2] Design touch-friendly stacked design or high-density vertical layout for entry rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T011 [US2] Implement a sticky footer summary panel containing totals (Debe / Haber) and submit triggers in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T010 [P] [US2] Design touch-friendly stacked design or high-density vertical layout for entry rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T011 [US2] Implement a sticky footer summary panel containing totals (Debe / Haber) and submit triggers in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 
 ---
 
@@ -60,9 +60,9 @@
 **Independent Test**: Create an unbalanced line (e.g. DEBIT 100), click "Agregar Apunte", and verify a CREDIT row is created with amount `100` auto-populated. Try to navigate back and confirm that the browser prompts for unsaved changes confirmation.
 
 ### Implementation for User Story 3
-- [ ] T012 [US3] Add balance-detection triggers to auto-calculate difference and pre-fill opposite entry types when adding rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T013 [P] [US3] Refactor entry rows account selector to use searchable combobox layout with grouping in [frontend/src/components/JournalEntryRow.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/JournalEntryRow.tsx)
-- [ ] T014 [P] [US3] Implement browser `beforeunload` event handler and state triggers to prevent accidental navigation data loss in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T012 [US3] Add balance-detection triggers to auto-calculate difference and pre-fill opposite entry types when adding rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T013 [P] [US3] Refactor entry rows account selector to use searchable combobox layout with grouping in [frontend/src/components/JournalEntryRow.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/JournalEntryRow.tsx)
+- [x] T014 [P] [US3] Implement browser `beforeunload` event handler and state triggers to prevent accidental navigation data loss in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 
 ---
 
@@ -73,14 +73,14 @@
 **Independent Test**: Click edit on an existing transaction card, verify it loads at `/transactions/new?edit=<id>`. Save edits and verify changes reflect on database. Ensure reversed transactions disable/hide editing.
 
 ### Tests for User Story 4
-- [ ] T015 [P] [US4] Write integration test cases for `UpdateTransactionUseCase` in [backend/tests/integration/update-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/update-transaction.spec.ts)
+- [x] T015 [P] [US4] Write integration test cases for `UpdateTransactionUseCase` in [backend/tests/integration/update-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/update-transaction.spec.ts)
 
 ### Implementation for User Story 4
-- [ ] T016 [US4] Implement transactional logic in `UpdateTransactionUseCase` inside [backend/src/application/ledger/update-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/update-transaction.use-case.ts)
-- [ ] T017 [US4] Bind new update providers and export dependencies in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
-- [ ] T018 [US4] Connect `GET :id` and `PUT :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
-- [ ] T019 [US4] Implement edit state detection, transaction fetching, and save modifications in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
-- [ ] T020 [P] [US4] Disable editing triggers for reversed or reversal transactions in transaction lists in [frontend/src/app/transactions/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx)
+- [x] T016 [US4] Implement transactional logic in `UpdateTransactionUseCase` inside [backend/src/application/ledger/update-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/update-transaction.use-case.ts)
+- [x] T017 [US4] Bind new update providers and export dependencies in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
+- [x] T018 [US4] Connect `GET :id` and `PUT :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
+- [x] T019 [US4] Implement edit state detection, transaction fetching, and save modifications in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T020 [P] [US4] Disable editing triggers for reversed or reversal transactions in transaction lists in [frontend/src/app/transactions/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx)
 
 ---
 
@@ -91,7 +91,7 @@
 **Independent Test**: Click duplicate/copy on a transaction, verify it opens `/transactions/new?cloneFrom=<id>` with date initialized to today. Save it and verify a new transaction is created without changing the source.
 
 ### Implementation for User Story 5
-- [ ] T021 [US5] Implement clone state detection, transaction fetching, and reset of date inputs in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
+- [x] T021 [US5] Implement clone state detection, transaction fetching, and reset of date inputs in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 
 ---
 
@@ -102,13 +102,13 @@
 **Independent Test**: Click delete on a transaction card, verify validation confirmation overlay, and verify it is removed from lists.
 
 ### Tests for User Story 6
-- [ ] T022 [P] [US6] Write integration test cases for `DeleteTransactionUseCase` in [backend/tests/integration/delete-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/delete-transaction.spec.ts)
+- [x] T022 [P] [US6] Write integration test cases for `DeleteTransactionUseCase` in [backend/tests/integration/delete-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/delete-transaction.spec.ts)
 
 ### Implementation for User Story 6
-- [ ] T023 [US6] Implement deletion logic in `DeleteTransactionUseCase` inside [backend/src/application/ledger/delete-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/delete-transaction.use-case.ts)
-- [ ] T024 [US6] Bind deletion provider and export configurations in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
-- [ ] T025 [US6] Connect `DELETE :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
-- [ ] T026 [US6] Implement custom delete buttons, confirmation modal overlays, and list refresh logic in [frontend/src/app/transactions/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx)
+- [x] T023 [US6] Implement deletion logic in `DeleteTransactionUseCase` inside [backend/src/application/ledger/delete-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/delete-transaction.use-case.ts)
+- [x] T024 [US6] Bind deletion provider and export configurations in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
+- [x] T025 [US6] Connect `DELETE :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
+- [x] T026 [US6] Implement custom delete buttons, confirmation modal overlays, and list refresh logic in [frontend/src/app/transactions/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx)
 
 ---
 
@@ -116,9 +116,9 @@
 
 **Purpose**: Validation, testing execution, lint compliance check, and walkthrough reporting
 
-- [ ] T027 [P] Run backend and frontend code quality checks (ESLint, Prettier)
-- [ ] T028 Run backend and frontend test suites to ensure 100% test passing
-- [ ] T029 Execute full manual validation workflow per [quickstart.md](file:///Users/ale/dev/sistema-contable/specs/010-dedicated-transaction-page/quickstart.md) and record visual/walkthrough notes in `walkthrough.md`
+- [x] T027 [P] Run backend and frontend code quality checks (ESLint, Prettier)
+- [x] T028 Run backend and frontend test suites to ensure 100% test passing
+- [x] T029 Execute full manual validation workflow per [quickstart.md](file:///Users/ale/dev/sistema-contable/specs/010-dedicated-transaction-page/quickstart.md) and record visual/walkthrough notes in `walkthrough.md`
 
 ---
 
@@ -162,3 +162,21 @@ graph TD
 4. Implement cloning modes (US5).
 5. Implement backend and frontend deletions (US6).
 6. Run full verification and polish styles (Phase 9).
+
+---
+
+## Phase 10: Convergence
+
+- [x] T030 [P] Replace `openTransactionModal` call with `router.push('/transactions/new')` (or `<Link>`) in the "Agregar Transacción" button inside [frontend/src/app/transactions/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx) per FR-050, US1/AC1 (contradicts)
+- [x] T031 [P] Remove `TransactionModal` import and `isTransactionModalOpen`/`closeTransactionModal` usage from [frontend/src/components/MainLayout.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/MainLayout.tsx) — the modal is replaced by the dedicated route per FR-050 (contradicts)
+- [x] T032 Rework `<Header />` visibility in [frontend/src/components/MainLayout.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/MainLayout.tsx) so it is hidden on ALL viewports (not just mobile) when on `/transactions/new`, eliminating the double-header on desktop per FR-002, US1 (contradicts)
+- [x] T033 Fix the TransactionForm root layout in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx) to integrate properly with the desktop MainLayout flex context — remove standalone `h-screen` from the root div and use flex-grow instead so the sidebar remains visible and the page fills only the available main-content area on desktop, per FR-002, US1 (contradicts)
+
+---
+
+## Phase 11: Convergence
+
+- [x] T034 [P] Remove stale `useModal` import and `openTransactionModal` destructure from [frontend/src/components/Sidebar.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/Sidebar.tsx) — modal pattern is decommissioned per FR-050 (contradicts)
+- [x] T035 Change sidebar breakpoint from `hidden lg:flex` to `hidden sm:flex` in [frontend/src/components/Sidebar.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/Sidebar.tsx) so the sidebar is visible at ≥640px (desktop per spec) rather than ≥1024px, aligning with FR-002/FR-003 that define desktop as ≥640px and mobile as <640px (partial)
+- [x] T036 [P] Add entry-mount animation (fade-in / slide-in) to journal entry rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx) when rows are added, per US3/AC2 (partial)
+- [x] T037 [P] Add a `CheckCircle2` icon next to the difference value and a smooth color-transition animation in the sticky footer balance indicator in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx) when the transaction becomes balanced, per US3/AC3 (partial)

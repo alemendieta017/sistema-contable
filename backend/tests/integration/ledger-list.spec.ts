@@ -3,6 +3,8 @@ import { LedgerController } from '../../src/infrastructure/controllers/ledger.co
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TransactionEntity } from '../../src/infrastructure/database/entities/transaction.entity';
 import { CreateTransactionUseCase } from '../../src/application/ledger/create-transaction.use-case';
+import { UpdateTransactionUseCase } from '../../src/application/ledger/update-transaction.use-case';
+import { DeleteTransactionUseCase } from '../../src/application/ledger/delete-transaction.use-case';
 import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-transaction.use-case';
 import { DataSource } from 'typeorm';
 
@@ -14,6 +16,8 @@ describe('LedgerController List Timezone Handling (ISO date strings)', () => {
     createQueryBuilder: jest.fn(),
   };
   const mockCreateTransactionUseCase = {};
+  const mockUpdateTransactionUseCase = {};
+  const mockDeleteTransactionUseCase = {};
   const mockReverseTransactionUseCase = {};
   const mockDataSource = {};
 
@@ -38,6 +42,14 @@ describe('LedgerController List Timezone Handling (ISO date strings)', () => {
         {
           provide: CreateTransactionUseCase,
           useValue: mockCreateTransactionUseCase,
+        },
+        {
+          provide: UpdateTransactionUseCase,
+          useValue: mockUpdateTransactionUseCase,
+        },
+        {
+          provide: DeleteTransactionUseCase,
+          useValue: mockDeleteTransactionUseCase,
         },
         {
           provide: ReverseTransactionUseCase,

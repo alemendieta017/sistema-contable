@@ -5,13 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ReceiptText, BarChart3, Wallet, Settings, LogOut, Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "../lib/theme-context";
-import { useModal } from "../lib/modal-context";
 import { api } from "../services/api";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const { openTransactionModal } = useModal();
 
   const handleLogout = () => {
     api.auth.logout();
@@ -26,7 +24,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-screen p-5 justify-between">
+    <aside className="hidden sm:flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-screen p-5 justify-between">
       <div className="space-y-6">
         {/* Logo */}
         <div className="flex items-center space-x-3 px-2 py-1.5">
@@ -53,13 +51,13 @@ export default function Sidebar() {
 
         {/* Desktop Quick Add Transaction Button */}
         <div className="px-2 pt-1 pb-3">
-          <button
-            onClick={openTransactionModal}
+          <Link
+            href="/transactions/new"
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition duration-150 active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Nueva Transacción</span>
-          </button>
+          </Link>
         </div>
 
         {/* Navigation Items */}

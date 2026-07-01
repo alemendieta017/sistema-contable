@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp, Trash2, Copy, Edit } from 'lucide-react';
+import Link from 'next/link';
 import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
 interface Entry {
@@ -30,10 +31,11 @@ interface Transaction {
 interface DailyViewProps {
   transactions: Transaction[];
   onReverse: (id: string) => void;
+  onDelete: (id: string) => void;
   baseCurrency?: CurrencyInfo;
 }
 
-export default function DailyView({ transactions, onReverse, baseCurrency }: DailyViewProps) {
+export default function DailyView({ transactions, onReverse, onDelete, baseCurrency }: DailyViewProps) {
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
@@ -280,13 +282,45 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                                   );
                                 })}
                               </tbody>
-
                             </table>
                           </div>
 
-                          {/* Reversal action if eligible */}
-                          {!isReversed && !isReversion && (
-                            <div className="flex justify-end pt-2 border-t border-slate-150 dark:border-slate-800">
+                          {/* Transaction action toolbar */}
+                          <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-150 dark:border-slate-800">
+                            {/* Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(tx.id);
+                              }}
+                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-500 hover:text-red-655 dark:text-slate-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Eliminar</span>
+                            </button>
+
+                            {/* Clone Button */}
+                            <Link
+                              href={`/transactions/new?cloneFrom=${tx.id}`}
+                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Duplicar</span>
+                            </Link>
+
+                            {/* Edit Button */}
+                            {!isReversed && !isReversion && (
+                              <Link
+                                href={`/transactions/new?edit=${tx.id}`}
+                                className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                              >
+                                <Edit className="w-3 h-3" />
+                                <span>Editar</span>
+                              </Link>
+                            )}
+
+                            {/* Reversal button if eligible */}
+                            {!isReversed && !isReversion && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -295,10 +329,10 @@ export default function DailyView({ transactions, onReverse, baseCurrency }: Dai
                                 className="flex items-center gap-1.5 py-1.5 px-3 border border-red-200 dark:border-red-900 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-655 dark:text-red-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                               >
                                 <RefreshCw className="w-3 h-3" />
-                                <span>Anular / Reversar Asiento</span>
+                                <span>Anular / Reversar</span>
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}

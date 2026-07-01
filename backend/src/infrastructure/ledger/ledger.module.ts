@@ -5,6 +5,8 @@ import { AccountEntity } from '../database/entities/account.entity';
 import { JournalEntryEntity } from '../database/entities/journal-entry.entity';
 import { CurrencyEntity } from '../database/entities/currency.entity';
 import { CreateTransactionUseCase } from '../../application/ledger/create-transaction.use-case';
+import { UpdateTransactionUseCase } from '../../application/ledger/update-transaction.use-case';
+import { DeleteTransactionUseCase } from '../../application/ledger/delete-transaction.use-case';
 import { ReverseTransactionUseCase } from '../../application/ledger/reverse-transaction.use-case';
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
@@ -25,6 +27,8 @@ import { AuthModule } from '../auth/auth.module';
   ],
   providers: [
     CreateTransactionUseCase,
+    UpdateTransactionUseCase,
+    DeleteTransactionUseCase,
     ReverseTransactionUseCase,
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
@@ -32,6 +36,8 @@ import { AuthModule } from '../auth/auth.module';
   controllers: [LedgerController, AccountController, CurrencyController],
   exports: [
     CreateTransactionUseCase,
+    UpdateTransactionUseCase,
+    DeleteTransactionUseCase,
     ReverseTransactionUseCase,
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
