@@ -2,6 +2,9 @@ import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { CurrencyEntity } from './entities/currency.entity';
+import { FiscalYearEntity } from './entities/fiscal-year.entity';
+import { PeriodEntity } from './entities/period.entity';
+import { AccountPeriodBalanceEntity } from './entities/account-period-balance.entity';
 
 @Module({
   imports: [
@@ -13,9 +16,14 @@ import { CurrencyEntity } from './entities/currency.entity';
       password: process.env.DATABASE_PASSWORD || 'postgres_password',
       database: process.env.DATABASE_NAME || 'sistema_contable',
       autoLoadEntities: true,
-      synchronize: true, // Set to true for dev/hot reload, but in prod we use migrations
+      synchronize: process.env.NODE_ENV !== 'production', // Habilitado solo en desarrollo local rápido, deshabilitado en producción
       logging: ['query', 'error'],
     }),
+    TypeOrmModule.forFeature([
+      FiscalYearEntity,
+      PeriodEntity,
+      AccountPeriodBalanceEntity,
+    ]),
   ],
 })
 export class DatabaseModule implements OnApplicationBootstrap {

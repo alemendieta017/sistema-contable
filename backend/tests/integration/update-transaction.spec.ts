@@ -7,6 +7,7 @@ import { AccountEntity } from '../../src/infrastructure/database/entities/accoun
 import { CurrencyEntity } from '../../src/infrastructure/database/entities/currency.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
 
 describe('Update Transaction Integration Tests', () => {
   let useCase: UpdateTransactionUseCase;
@@ -25,6 +26,12 @@ describe('Update Transaction Integration Tests', () => {
       delete: jest.fn(),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'saved-id' })),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -45,6 +52,12 @@ describe('Update Transaction Integration Tests', () => {
         {
           provide: DataSource,
           useValue: mockDataSource,
+        },
+        {
+          provide: BalanceUpdateService,
+          useValue: {
+            updateBalances: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();
@@ -131,6 +144,7 @@ describe('Update Transaction Integration Tests', () => {
       description: 'Old Description',
       status: 'REVERSED',
       reversalOfId: null,
+      entries: [],
     };
 
     mockEntityManager.findOne.mockResolvedValue(originalTx);
@@ -155,6 +169,7 @@ describe('Update Transaction Integration Tests', () => {
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: 'tx-original',
+      entries: [],
     };
 
     mockEntityManager.findOne.mockResolvedValue(originalTx);
@@ -182,6 +197,7 @@ describe('Update Transaction Integration Tests', () => {
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
+      entries: [],
     };
 
     const dto = {
@@ -227,6 +243,7 @@ describe('Update Transaction Integration Tests', () => {
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
+      entries: [],
     };
 
     const dto = {
@@ -272,6 +289,7 @@ describe('Update Transaction Integration Tests', () => {
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
+      entries: [],
     };
 
     const dto = {

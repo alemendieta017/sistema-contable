@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
+import { BalanceUpdateService } from '../periods/balance-update.service';
 
 @Injectable()
 export class ReverseTransactionUseCase {
@@ -12,6 +14,7 @@ export class ReverseTransactionUseCase {
     @InjectRepository(JournalEntryEntity)
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
+    private readonly balanceUpdateService: BalanceUpdateService,
   ) {}
 
   async execute(userId: string, transactionId: string) {
@@ -30,10 +33,6 @@ export class ReverseTransactionUseCase {
         throw new BadRequestException('Transaction is already reversed');
       }
 
-      // Mark original transaction as reversed
-      originalTx.status = 'REVERSED';
-      await entityManager.save(TransactionEntity, originalTx);
-
       // Create new reversal transaction
       const reversalTx = entityManager.create(TransactionEntity, {
         userId,
@@ -42,6 +41,26 @@ export class ReverseTransactionUseCase {
         status: 'POSTED',
         reversalOfId: originalTx.id,
       });
+
+      // 1. Check period lock on reversal date
+      const reversalDate = reversalTx.date;
+      const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.startDate <= :date', { date: reversalDate })
+        .andWhere('period.endDate >= :date', { date: reversalDate })
+        .getOne();
+
+      if (!period) {
+        throw new BadRequestException('No accounting period found for the reversal date');
+      }
+      if (period.status === 'CLOSED') {
+        throw new BadRequestException('The accounting period for the reversal date is closed');
+      }
+
+      // Mark original transaction as reversed
+      originalTx.status = 'REVERSED';
+      await entityManager.save(TransactionEntity, originalTx);
 
       const savedReversalTx = await entityManager.save(TransactionEntity, reversalTx);
 
@@ -59,6 +78,15 @@ export class ReverseTransactionUseCase {
         const savedEntry = await entityManager.save(JournalEntryEntity, offsetEntry);
         reversalEntries.push(savedEntry);
       }
+
+      // 2. Call balance-update.service to add reversal balances
+      const balanceChanges = reversalEntries.map((e) => ({
+        accountId: e.accountId,
+        debitDiff: e.entryType === 'DEBIT' ? Number(e.amountBase) : 0,
+        creditDiff: e.entryType === 'CREDIT' ? Number(e.amountBase) : 0,
+      }));
+
+      await this.balanceUpdateService.updateBalances(entityManager, userId, reversalDate, balanceChanges);
 
       return {
         id: savedReversalTx.id,
@@ -78,3 +106,4 @@ export class ReverseTransactionUseCase {
     });
   }
 }
+

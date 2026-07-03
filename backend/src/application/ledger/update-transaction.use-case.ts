@@ -5,8 +5,10 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../infrastructure/database/entities/currency.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
 import { CreateTransactionDto } from './create-transaction.use-case';
+import { BalanceUpdateService } from '../periods/balance-update.service';
 
 @Injectable()
 export class UpdateTransactionUseCase {
@@ -18,6 +20,7 @@ export class UpdateTransactionUseCase {
     @InjectRepository(JournalEntryEntity)
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
+    private readonly balanceUpdateService: BalanceUpdateService,
   ) {}
 
   async execute(userId: string, transactionId: string, dto: CreateTransactionDto) {
@@ -44,6 +47,47 @@ export class UpdateTransactionUseCase {
       if (originalTx.reversalOfId !== null && originalTx.reversalOfId !== undefined) {
         throw new BadRequestException('Cannot update a reversal transaction');
       }
+
+      // 1. Check period lock on old transaction date
+      const oldTxDate = originalTx.date;
+      const oldPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.startDate <= :date', { date: oldTxDate })
+        .andWhere('period.endDate >= :date', { date: oldTxDate })
+        .getOne();
+
+      if (!oldPeriod) {
+        throw new BadRequestException('No accounting period found for the original transaction date');
+      }
+      if (oldPeriod.status === 'CLOSED') {
+        throw new BadRequestException('The accounting period for the original transaction date is closed');
+      }
+
+      // 2. Check period lock on new transaction date
+      const newTxDate = new Date(dto.date);
+      const newPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.startDate <= :date', { date: newTxDate })
+        .andWhere('period.endDate >= :date', { date: newTxDate })
+        .getOne();
+
+      if (!newPeriod) {
+        throw new BadRequestException('No accounting period found for the new transaction date');
+      }
+      if (newPeriod.status === 'CLOSED') {
+        throw new BadRequestException('The accounting period for the new transaction date is closed');
+      }
+
+      // 3. Call balance-update.service to subtract old balances
+      const oldBalanceChanges = originalTx.entries.map((e) => ({
+        accountId: e.accountId,
+        debitDiff: e.entryType === 'DEBIT' ? -Number(e.amountBase) : 0,
+        creditDiff: e.entryType === 'CREDIT' ? -Number(e.amountBase) : 0,
+      }));
+
+      await this.balanceUpdateService.updateBalances(entityManager, userId, oldTxDate, oldBalanceChanges);
 
       // Delete the existing journal entries of this transaction
       await entityManager.delete(JournalEntryEntity, { transactionId });
@@ -89,7 +133,7 @@ export class UpdateTransactionUseCase {
       const transactionModel = new Transaction(
         originalTx.id,
         userId,
-        new Date(dto.date),
+        newTxDate,
         dto.description,
         journalEntries,
       );
@@ -101,7 +145,7 @@ export class UpdateTransactionUseCase {
       }
 
       // Update fields of originalTx
-      originalTx.date = new Date(dto.date);
+      originalTx.date = newTxDate;
       originalTx.description = dto.description;
       originalTx.status = 'POSTED';
 
@@ -121,6 +165,15 @@ export class UpdateTransactionUseCase {
         dbEntriesToSave.push(savedEntry);
       }
 
+      // 4. Call balance-update.service to add new balances
+      const newBalanceChanges = dbEntriesToSave.map((e) => ({
+        accountId: e.accountId,
+        debitDiff: e.entryType === 'DEBIT' ? Number(e.amountBase) : 0,
+        creditDiff: e.entryType === 'CREDIT' ? Number(e.amountBase) : 0,
+      }));
+
+      await this.balanceUpdateService.updateBalances(entityManager, userId, newTxDate, newBalanceChanges);
+
       return {
         id: originalTx.id,
         date: originalTx.date,
@@ -138,3 +191,4 @@ export class UpdateTransactionUseCase {
     });
   }
 }
+

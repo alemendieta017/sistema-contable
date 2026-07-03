@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReceiptText, BarChart3, Menu, Wallet, Settings, LogOut, Moon, Sun, X } from "lucide-react";
+import { ReceiptText, BarChart3, Menu, Wallet, Settings, LogOut, Moon, Sun, X, Calendar, FileText } from "lucide-react";
 import { useTheme } from "../lib/theme-context";
 import { api } from "../services/api";
 
@@ -18,6 +18,9 @@ export default function BottomNav() {
   };
 
   const menuItems = [
+    { name: "Períodos", href: "/periods", icon: Calendar },
+    { name: "Balance General", href: "/reports/balance-sheet", icon: FileText },
+    { name: "Estado de Resultados", href: "/reports/income-statement", icon: FileText },
     { name: "Ajustes", href: "/settings", icon: Settings },
   ];
 

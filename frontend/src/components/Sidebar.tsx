@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ReceiptText, BarChart3, Wallet, Settings, LogOut, Moon, Sun, Plus } from "lucide-react";
+import { LayoutDashboard, ReceiptText, BarChart3, Wallet, Settings, LogOut, Moon, Sun, Plus, Calendar, FileText } from "lucide-react";
 import { useTheme } from "../lib/theme-context";
 import { api } from "../services/api";
 
@@ -20,6 +20,9 @@ export default function Sidebar() {
     { name: "Transacciones", href: "/transactions", icon: ReceiptText },
     { name: "Estadísticas", href: "/stats", icon: BarChart3 },
     { name: "Cuentas", href: "/accounts", icon: Wallet },
+    { name: "Períodos", href: "/periods", icon: Calendar },
+    { name: "Balance General", href: "/reports/balance-sheet", icon: FileText },
+    { name: "Estado de Resultados", href: "/reports/income-statement", icon: FileText },
     { name: "Ajustes", href: "/settings", icon: Settings },
   ];
 

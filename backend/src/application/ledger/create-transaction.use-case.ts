@@ -5,7 +5,9 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../infrastructure/database/entities/currency.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
+import { BalanceUpdateService } from '../periods/balance-update.service';
 
 export interface CreateTransactionDto {
   date: string;
@@ -27,6 +29,7 @@ export class CreateTransactionUseCase {
     @InjectRepository(JournalEntryEntity)
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
+    private readonly balanceUpdateService: BalanceUpdateService,
   ) {}
 
   async execute(userId: string, dto: CreateTransactionDto) {
@@ -36,6 +39,22 @@ export class CreateTransactionUseCase {
 
     // Run within a database transaction with SERIALIZABLE isolation to ensure ledger consistency
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
+      // 1. Check period lock on transaction date
+      const txDate = new Date(dto.date);
+      const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.startDate <= :date', { date: txDate })
+        .andWhere('period.endDate >= :date', { date: txDate })
+        .getOne();
+
+      if (!period) {
+        throw new BadRequestException('No accounting period found for the transaction date');
+      }
+      if (period.status === 'CLOSED') {
+        throw new BadRequestException('The accounting period for the transaction date is closed');
+      }
+
       const journalEntries: JournalEntry[] = [];
       const dbEntriesToSave: JournalEntryEntity[] = [];
 
@@ -77,7 +96,7 @@ export class CreateTransactionUseCase {
       const transactionModel = new Transaction(
         undefined,
         userId,
-        new Date(dto.date),
+        txDate,
         dto.description,
         journalEntries,
       );
@@ -112,6 +131,15 @@ export class CreateTransactionUseCase {
         dbEntriesToSave.push(savedEntry);
       }
 
+      // 2. Call balance-update.service to add debits/credits
+      const balanceChanges = dbEntriesToSave.map((e) => ({
+        accountId: e.accountId,
+        debitDiff: e.entryType === 'DEBIT' ? Number(e.amountBase) : 0,
+        creditDiff: e.entryType === 'CREDIT' ? Number(e.amountBase) : 0,
+      }));
+
+      await this.balanceUpdateService.updateBalances(entityManager, userId, txDate, balanceChanges);
+
       return {
         id: savedTx.id,
         date: savedTx.date,
@@ -129,3 +157,4 @@ export class CreateTransactionUseCase {
     });
   }
 }
+

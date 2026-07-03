@@ -52,3 +52,27 @@ export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestSc
 export const UpdateTransactionRequestSchema = CreateTransactionRequestSchema;
 export type UpdateTransactionRequest = CreateTransactionRequest;
 
+// Create Fiscal Year Schema
+export const CreateFiscalYearRequestSchema = z.object({
+  year: z.number().int().min(1900).max(2100),
+  startDate: z.string(),
+  endDate: z.string()
+});
+
+export type CreateFiscalYearRequest = z.infer<typeof CreateFiscalYearRequestSchema>;
+
+// Close Fiscal Year Schema
+export const CloseFiscalYearRequestSchema = z.object({
+  retainedEarningsAccountId: z.string().uuid()
+});
+
+export type CloseFiscalYearRequest = z.infer<typeof CloseFiscalYearRequestSchema>;
+
+// Update Period Schema
+export const UpdatePeriodRequestSchema = z.object({
+  status: z.enum(['OPEN', 'CLOSED'])
+});
+
+export type UpdatePeriodRequest = z.infer<typeof UpdatePeriodRequestSchema>;
+
+

@@ -37,7 +37,6 @@ services:
       - /app/shared/node_modules
       - /app/backend/node_modules
       - /app/backend/dist
-      - /app/shared/dist
     depends_on:
       db:
         condition: service_healthy
@@ -59,7 +58,6 @@ services:
       - /app/shared/node_modules
       - /app/frontend/node_modules
       - /app/frontend/.next
-      - /app/shared/dist
     depends_on:
       - backend
 

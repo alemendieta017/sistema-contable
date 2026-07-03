@@ -211,6 +211,95 @@ export const api = {
       });
       return handleResponse(res);
     },
+
+    async balanceSheet(options: { mode?: string; periodId?: string; date?: string; periodIds?: string[]; depth?: number } | string) {
+      let url = `${API_BASE_URL}/reports/balance-sheet`;
+      if (typeof options === 'string') {
+        url += `?periodId=${options}`;
+      } else {
+        const queryParams = new URLSearchParams();
+        if (options.mode) queryParams.append('mode', options.mode);
+        if (options.periodId) queryParams.append('periodId', options.periodId);
+        if (options.date) queryParams.append('date', options.date);
+        if (options.depth) queryParams.append('depth', options.depth.toString());
+        if (options.periodIds && Array.isArray(options.periodIds)) {
+          options.periodIds.forEach((id) => queryParams.append('periodIds[]', id));
+        }
+        url += `?${queryParams.toString()}`;
+      }
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async incomeStatement(periodId: string) {
+      const res = await fetch(`${API_BASE_URL}/reports/income-statement?periodId=${periodId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async reconstructBalances() {
+      const res = await fetch(`${API_BASE_URL}/reports/reconstruct-balances`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+  },
+
+  fiscalYears: {
+    async list() {
+      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async create(data: { year: number; startDate: string; endDate: string }) {
+      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async close(id: string, data: { retainedEarningsAccountId: string }) {
+      const res = await fetch(`${API_BASE_URL}/fiscal-years/${id}/close`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+  },
+
+  periods: {
+    async list(fiscalYearId?: string) {
+      const url = new URL(`${API_BASE_URL}/periods`);
+      if (fiscalYearId) {
+        url.searchParams.append('fiscalYearId', fiscalYearId);
+      }
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async update(id: string, data: { status: 'OPEN' | 'CLOSED' }) {
+      const res = await fetch(`${API_BASE_URL}/periods/${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
   },
 
   currencies: {

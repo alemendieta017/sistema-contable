@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { api } from "../../services/api";
 import ThemeToggle from "../../components/ThemeToggle";
 import SecuritySettings from "../../components/SecuritySettings";
@@ -138,6 +139,24 @@ export default function SettingsPage() {
               Tipos de Divisas
             </span>
             <CurrencySettings />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+              Períodos Contables
+            </span>
+            <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Ejercicios y Cierres Mensuales</h4>
+              <p className="text-4xs text-slate-400 dark:text-slate-500 font-semibold leading-relaxed">
+                Configure el año fiscal, gestione los periodos contables mensuales, abra o cierre meses, y realice el cierre del ejercicio.
+              </p>
+              <Link
+                href="/periods"
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition duration-150 shadow-md shadow-indigo-500/5 text-center"
+              >
+                <span>Administrar Períodos</span>
+              </Link>
+            </div>
           </div>
         </div>
 
