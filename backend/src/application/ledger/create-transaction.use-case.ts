@@ -10,7 +10,7 @@ import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
 import { BalanceUpdateService } from '../periods/balance-update.service';
 
 export interface CreateTransactionDto {
-  date: string;
+  accountingDate: string;
   description: string;
   entries: {
     accountId: string;
@@ -40,7 +40,7 @@ export class CreateTransactionUseCase {
     // Run within a database transaction with SERIALIZABLE isolation to ensure ledger consistency
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Check period lock on transaction date
-      const txDate = new Date(dto.date);
+      const txDate = dto.accountingDate;
       const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
@@ -110,7 +110,7 @@ export class CreateTransactionUseCase {
       // Save Transaction Header
       const txEntity = entityManager.create(TransactionEntity, {
         userId,
-        date: transactionModel.date,
+        accountingDate: transactionModel.accountingDate,
         description: transactionModel.description,
         status: transactionModel.status,
       });
@@ -142,7 +142,7 @@ export class CreateTransactionUseCase {
 
       return {
         id: savedTx.id,
-        date: savedTx.date,
+        accountingDate: savedTx.accountingDate,
         description: savedTx.description,
         status: savedTx.status,
         entries: dbEntriesToSave.map((e) => ({

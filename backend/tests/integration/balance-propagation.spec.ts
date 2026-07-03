@@ -100,7 +100,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
     it('should block creating a transaction in a closed period', async () => {
       const userId = 'user-1';
       const dto = {
-        date: '2026-03-15T12:00:00Z',
+        accountingDate: '2026-03-15',
         description: 'Buying supplies',
         entries: [
           { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50 },
@@ -129,7 +129,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       mockEntityManager.findOne.mockResolvedValue({
         id: txId,
         userId,
-        date: new Date('2026-03-15T12:00:00Z'),
+        accountingDate: '2026-03-15',
         entries: [],
       });
 
@@ -153,7 +153,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       mockEntityManager.findOne.mockResolvedValue({
         id: txId,
         userId,
-        date: new Date('2026-03-15T12:00:00Z'),
+        accountingDate: '2026-03-15',
         status: 'POSTED',
         entries: [],
       });
@@ -175,15 +175,15 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
   describe('Real-time Balance Updates', () => {
     it('should correctly propagate balances when creating, deleting, and updating transactions', async () => {
       const userId = 'user-1';
-      const txDate = new Date('2026-03-15T12:00:00Z');
+      const txDate = '2026-03-15';
 
       // Mock active open period for the date, plus future periods for propagation
       const periodMock = {
         id: 'p-1',
         fiscalYearId: 'fy-2026',
         name: '2026-03',
-        startDate: new Date('2026-03-01T00:00:00Z'),
-        endDate: new Date('2026-03-31T23:59:59Z'),
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
         status: 'OPEN',
         fiscalYear: { userId, id: 'fy-2026', name: '2026' },
       };
@@ -191,8 +191,8 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         id: 'p-2',
         fiscalYearId: 'fy-2026',
         name: '2026-04',
-        startDate: new Date('2026-04-01T00:00:00Z'),
-        endDate: new Date('2026-04-30T23:59:59Z'),
+        startDate: '2026-04-01',
+        endDate: '2026-04-30',
         status: 'OPEN',
         fiscalYear: { userId, id: 'fy-2026', name: '2026' },
       };
@@ -289,8 +289,8 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
           id: 'p-1',
           fiscalYearId: 'fy-2026',
           name: '2026-01',
-          startDate: new Date('2026-01-01T00:00:00Z'),
-          endDate: new Date('2026-01-31T23:59:59Z'),
+          startDate: '2026-01-01',
+          endDate: '2026-01-31',
           status: 'OPEN',
           fiscalYear: { userId, id: 'fy-2026', name: '2026' },
         },
@@ -298,8 +298,8 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
           id: 'p-2',
           fiscalYearId: 'fy-2026',
           name: '2026-02',
-          startDate: new Date('2026-02-01T00:00:00Z'),
-          endDate: new Date('2026-02-28T23:59:59Z'),
+          startDate: '2026-02-01',
+          endDate: '2026-02-28',
           status: 'OPEN',
           fiscalYear: { userId, id: 'fy-2026', name: '2026' },
         },
@@ -328,7 +328,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
             {
               id: 'tx-1',
               userId,
-              date: new Date('2026-01-10T10:00:00Z'),
+              accountingDate: '2026-01-10',
               status: 'POSTED',
               entries: [
                 { accountId: 'acc-cash', entryType: 'DEBIT', amountBase: 500 },
@@ -338,7 +338,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
             {
               id: 'tx-2',
               userId,
-              date: new Date('2026-02-15T10:00:00Z'),
+              accountingDate: '2026-02-15',
               status: 'POSTED',
               entries: [
                 { accountId: 'acc-cash', entryType: 'CREDIT', amountBase: 200 },

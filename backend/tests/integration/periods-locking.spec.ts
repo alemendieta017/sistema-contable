@@ -98,7 +98,7 @@ describe('Periods Locking Integration Tests', () => {
   it('should block creating a transaction in a closed period', async () => {
     const userId = 'user-1';
     const dto = {
-      date: '2026-03-15T12:00:00Z',
+      accountingDate: '2026-03-15',
       description: 'Buying supplies',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50 },
@@ -126,7 +126,7 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue({
       id: txId,
       userId,
-      date: new Date('2026-03-15T12:00:00Z'),
+      accountingDate: '2026-03-15',
       entries: [],
     });
 
@@ -147,7 +147,7 @@ describe('Periods Locking Integration Tests', () => {
     const userId = 'user-1';
     const txId = 'tx-1';
     const dto = {
-      date: '2026-03-16T12:00:00Z',
+      accountingDate: '2026-03-16',
       description: 'Buying supplies updated',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
@@ -158,7 +158,7 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue({
       id: txId,
       userId,
-      date: new Date('2026-03-15T12:00:00Z'),
+      accountingDate: '2026-03-15',
       entries: [],
     });
 
@@ -179,7 +179,7 @@ describe('Periods Locking Integration Tests', () => {
     const userId = 'user-1';
     const txId = 'tx-1';
     const dto = {
-      date: '2026-03-16T12:00:00Z',
+      accountingDate: '2026-03-16',
       description: 'Buying supplies updated',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
@@ -190,7 +190,7 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue({
       id: txId,
       userId,
-      date: new Date('2026-03-15T12:00:00Z'),
+      accountingDate: '2026-03-15',
       entries: [],
     });
 
@@ -223,7 +223,7 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue({
       id: txId,
       userId,
-      date: new Date('2026-03-15T12:00:00Z'),
+      accountingDate: '2026-03-15',
       status: 'POSTED',
       entries: [],
     });

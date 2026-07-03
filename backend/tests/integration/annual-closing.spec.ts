@@ -100,11 +100,11 @@ describe('Annual Closing Integration Tests', () => {
   });
 
   it('should automatically close all open periods when closing the fiscal year', async () => {
-    const periodStartDate = new Date('2026-12-01T00:00:00Z');
-    const periodEndDate = new Date('2026-12-31T23:59:59Z');
+    const periodStartDate = '2026-12-01';
+    const periodEndDate = '2026-12-31';
 
     const mockPeriods = [
-      { id: 'p-1', name: '2026-11', status: 'CLOSED', startDate: new Date('2026-11-01T00:00:00Z'), endDate: new Date('2026-11-30T23:59:59Z') },
+      { id: 'p-1', name: '2026-11', status: 'CLOSED', startDate: '2026-11-01', endDate: '2026-11-30' },
       { id: 'p-2', name: '2026-12', status: 'OPEN', startDate: periodStartDate, endDate: periodEndDate },
     ];
 
@@ -157,8 +157,8 @@ describe('Annual Closing Integration Tests', () => {
   });
 
   it('should successfully execute closing entry and close the fiscal year', async () => {
-    const periodStartDate = new Date('2026-12-01T00:00:00Z');
-    const periodEndDate = new Date('2026-12-31T23:59:59Z');
+    const periodStartDate = '2026-12-01';
+    const periodEndDate = '2026-12-31';
 
     mockEntityManager.findOne.mockImplementation((cls, options) => {
       if (cls === FiscalYearEntity) {

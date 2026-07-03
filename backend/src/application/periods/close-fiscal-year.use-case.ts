@@ -58,7 +58,7 @@ export class CloseFiscalYearUseCase {
 
       // 4. Identify the last period of the fiscal year (usually period 12, e.g. latest endDate)
       const sortedPeriods = [...fiscalYear.periods].sort(
-        (a, b) => a.endDate.getTime() - b.endDate.getTime(),
+        (a, b) => a.endDate.localeCompare(b.endDate),
       );
       const lastPeriod = sortedPeriods[sortedPeriods.length - 1];
 
@@ -139,7 +139,7 @@ export class CloseFiscalYearUseCase {
         // Save closing transaction header
         const closingTx = entityManager.create(TransactionEntity, {
           userId,
-          date: fiscalYear.endDate,
+          accountingDate: fiscalYear.endDate,
           description: `Asiento de cierre anual: ${fiscalYear.name}`,
           status: 'POSTED',
         });

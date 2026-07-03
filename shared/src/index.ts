@@ -42,7 +42,7 @@ export type JournalEntryRequest = z.infer<typeof JournalEntryRequestSchema>;
 
 // Create Transaction Request Schema
 export const CreateTransactionRequestSchema = z.object({
-  date: z.string(),
+  accountingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD"),
   description: z.string().min(1),
   entries: z.array(JournalEntryRequestSchema).min(2)
 });
@@ -55,8 +55,8 @@ export type UpdateTransactionRequest = CreateTransactionRequest;
 // Create Fiscal Year Schema
 export const CreateFiscalYearRequestSchema = z.object({
   year: z.number().int().min(1900).max(2100),
-  startDate: z.string(),
-  endDate: z.string()
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD"),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD")
 });
 
 export type CreateFiscalYearRequest = z.infer<typeof CreateFiscalYearRequestSchema>;

@@ -51,7 +51,7 @@ export default function StatsPage() {
     // Sort transactions ascending by date
     const sorted = [...transactions]
       .filter((t) => t.status !== "REVERSED")
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => a.accountingDate.localeCompare(b.accountingDate));
 
     let runningNetWorth = 0;
     const historyPoints: { date: string; balance: number }[] = [];
@@ -71,7 +71,7 @@ export default function StatsPage() {
 
       runningNetWorth += assetChange - liabilityChange;
       
-      const dateStr = tx.date.substring(0, 10);
+      const dateStr = tx.accountingDate.substring(0, 10);
       // Group points on the same date or just add
       historyPoints.push({
         date: dateStr,
@@ -107,7 +107,7 @@ export default function StatsPage() {
 
     transactions.forEach((tx) => {
       if (tx.status === "REVERSED") return;
-      const txDate = new Date(tx.date);
+      const txDate = new Date(tx.accountingDate + 'T00:00:00');
       const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, "0")}`;
 
       if (comparative[key]) {

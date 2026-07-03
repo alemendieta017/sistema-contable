@@ -79,7 +79,7 @@ export class BalanceSheetUseCase {
         .innerJoin('entry.transaction', 'transaction')
         .where('transaction.userId = :userId', { userId })
         .andWhere('transaction.status = :status', { status: 'POSTED' })
-        .andWhere('transaction.date <= :date', { date: new Date(date) })
+        .andWhere('transaction.accountingDate <= :date', { date })
         .groupBy('entry.accountId')
         .addGroupBy('entry.entryType')
         .getRawMany();
@@ -112,8 +112,8 @@ export class BalanceSheetUseCase {
       const fiscalYear = await this.dataSource.getRepository(FiscalYearEntity)
         .createQueryBuilder('fy')
         .where('fy.userId = :userId', { userId })
-        .andWhere('fy.startDate <= :date', { date: new Date(date) })
-        .andWhere('fy.endDate >= :date', { date: new Date(date) })
+        .andWhere('fy.startDate <= :date', { date })
+        .andWhere('fy.endDate >= :date', { date })
         .getOne();
 
       let cumulativeNetIncome = 0;
@@ -126,8 +126,8 @@ export class BalanceSheetUseCase {
           .innerJoin('entry.account', 'account')
           .where('transaction.userId = :userId', { userId })
           .andWhere('transaction.status = :status', { status: 'POSTED' })
-          .andWhere('transaction.date >= :startDate', { startDate: fiscalYear.startDate })
-          .andWhere('transaction.date <= :endDate', { endDate: new Date(date) })
+          .andWhere('transaction.accountingDate >= :startDate', { startDate: fiscalYear.startDate })
+          .andWhere('transaction.accountingDate <= :endDate', { endDate: date })
           .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
           .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' })
           .groupBy('entry.entryType')
@@ -195,7 +195,7 @@ export class BalanceSheetUseCase {
       }
 
       // Sort chronologically
-      periods.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+      periods.sort((a, b) => a.startDate.localeCompare(b.startDate));
 
       const periodResults = await Promise.all(
         periods.map((p) => this.calculateForPeriod(userId, p, depth)),

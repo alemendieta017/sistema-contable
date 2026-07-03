@@ -33,17 +33,18 @@ export class ReverseTransactionUseCase {
         throw new BadRequestException('Transaction is already reversed');
       }
 
+      const reversalDate = new Date().toISOString().split('T')[0];
+
       // Create new reversal transaction
       const reversalTx = entityManager.create(TransactionEntity, {
         userId,
-        date: new Date(),
+        accountingDate: reversalDate,
         description: `Reversión de asiento: ${originalTx.description}`,
         status: 'POSTED',
         reversalOfId: originalTx.id,
       });
 
       // 1. Check period lock on reversal date
-      const reversalDate = reversalTx.date;
       const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
@@ -90,7 +91,7 @@ export class ReverseTransactionUseCase {
 
       return {
         id: savedReversalTx.id,
-        date: savedReversalTx.date,
+        accountingDate: savedReversalTx.accountingDate,
         description: savedReversalTx.description,
         status: savedReversalTx.status,
         reversalOfId: savedReversalTx.reversalOfId,

@@ -19,7 +19,7 @@ describe('MonthlyView Local Timezone Grouping', () => {
     const transactions = [
       {
         id: 'tx-1',
-        date: '2026-06-01T04:00:00.000Z', // In UTC-4, this is Jun 1, 00:00:00. In UTC, this is Jun 1, 04:00:00.
+        accountingDate: '2026-06-01',
         description: 'Ingreso Junio',
         entries: [
           {
@@ -40,7 +40,7 @@ describe('MonthlyView Local Timezone Grouping', () => {
       },
       {
         id: 'tx-2',
-        date: '2026-05-31T23:00:00.000Z', // In UTC-4, this is May 31, 19:00:00. In UTC, this is May 31, 23:00:00.
+        accountingDate: '2026-05-31',
         description: 'Gasto Mayo',
         entries: [
           {
@@ -70,8 +70,8 @@ describe('MonthlyView Local Timezone Grouping', () => {
     );
 
     // Get the expected month for each transaction based on the local Date parsing in the test environment
-    const m1Index = new Date(transactions[0].date).getMonth();
-    const m2Index = new Date(transactions[1].date).getMonth();
+    const m1Index = new Date(transactions[0].accountingDate + 'T00:00:00').getMonth();
+    const m2Index = new Date(transactions[1].accountingDate + 'T00:00:00').getMonth();
 
     const months = [
       'Enero',

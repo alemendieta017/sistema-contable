@@ -33,8 +33,8 @@ export class CreateFiscalYearUseCase {
 
   async execute(userId: string, dto: CreateFiscalYearRequest) {
     const name = `Ejercicio ${dto.year}`;
-    const startDate = new Date(dto.startDate);
-    const endDate = new Date(dto.endDate);
+    const startDate = dto.startDate;
+    const endDate = dto.endDate;
 
     // 1. Validate that the start date is before end date
     if (startDate >= endDate) {
@@ -76,14 +76,16 @@ export class CreateFiscalYearUseCase {
       const savedFy = await entityManager.save(FiscalYearEntity, fyEntity);
 
       const periods: PeriodEntity[] = [];
-      const offsetMs = startDate.getTime() - Date.UTC(dto.year, 0, 1, 0, 0, 0, 0);
+      const [startYear, startMonthVal] = dto.startDate.split('-').map(Number);
 
       for (let i = 0; i < 12; i++) {
-        // Calculate start and end date for each period in UTC with offset
-        const pStart = new Date(Date.UTC(dto.year, i, 1, 0, 0, 0, 0) + offsetMs);
-        const pEnd = new Date(Date.UTC(dto.year, i + 1, 0, 23, 59, 59, 999) + offsetMs);
+        const y = startYear + Math.floor((startMonthVal - 1 + i) / 12);
+        const m = (startMonthVal - 1 + i) % 12;
 
-        const periodName = `${dto.year}-${String(i + 1).padStart(2, '0')}`;
+        const pStart = y + '-' + String(m + 1).padStart(2, '0') + '-01';
+        const pEnd = new Date(Date.UTC(y, m + 1, 0)).toISOString().split('T')[0];
+
+        const periodName = `${y}-${String(m + 1).padStart(2, '0')}`;
 
         const periodEntity = entityManager.create(PeriodEntity, {
           fiscalYearId: savedFy.id,

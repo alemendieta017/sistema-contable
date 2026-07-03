@@ -71,7 +71,7 @@ describe('Multi-Item Split Ledger Validation Tests', () => {
     // Arrange
     const userId = 'user-uuid';
     const dto = {
-      date: new Date().toISOString(),
+      accountingDate: '2026-07-03',
       description: 'Compra supermercado partida doble partida libre',
       entries: [
         { accountId: 'acc-credit-card', entryType: 'CREDIT' as const, amount: 100000 },
@@ -105,7 +105,7 @@ describe('Multi-Item Split Ledger Validation Tests', () => {
     // Arrange
     const userId = 'user-uuid';
     const dto = {
-      date: new Date().toISOString(),
+      accountingDate: '2026-07-03',
       description: 'Descuadrado libre',
       entries: [
         { accountId: 'acc-credit-card', entryType: 'CREDIT' as const, amount: 100000 },

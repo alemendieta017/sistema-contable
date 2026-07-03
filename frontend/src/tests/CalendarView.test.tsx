@@ -20,7 +20,7 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
     const transactions = [
       {
         id: 'tx-1',
-        date: '2026-06-01T04:00:00.000Z', // June 1st in UTC-4
+        accountingDate: '2026-06-01',
         description: 'Salario',
         entries: [
           {
@@ -41,7 +41,7 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
       },
       {
         id: 'tx-2',
-        date: '2026-06-10T15:30:00.000Z',
+        accountingDate: '2026-06-10',
         description: 'Almuerzo',
         entries: [
           {
@@ -70,8 +70,8 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
       />
     );
 
-    const localDay1 = new Date(transactions[0].date).getDate();
-    const localDay2 = new Date(transactions[1].date).getDate();
+    const localDay1 = new Date(transactions[0].accountingDate + 'T00:00:00').getDate();
+    const localDay2 = new Date(transactions[1].accountingDate + 'T00:00:00').getDate();
 
     const day1Cells = screen.getAllByText(String(localDay1));
     expect(day1Cells.length).toBeGreaterThan(0);

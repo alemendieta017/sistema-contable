@@ -21,8 +21,8 @@ export async function closedYearScenario(
     fy2026 = em.create(FiscalYearEntity, {
       userId,
       name: fy2026Name,
-      startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: new Date('2026-12-31T23:59:59Z'),
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
       status: 'OPEN',
     });
     fy2026 = await em.save(FiscalYearEntity, fy2026);
@@ -31,8 +31,8 @@ export async function closedYearScenario(
       const period = em.create(PeriodEntity, {
         fiscalYearId: fy2026.id,
         name: `Periodo ${String(m + 1).padStart(2, '0')}/2026`,
-        startDate: new Date(Date.UTC(2026, m, 1)),
-        endDate: new Date(Date.UTC(2026, m + 1, 0, 23, 59, 59)),
+        startDate: '2026-' + String(m + 1).padStart(2, '0') + '-01',
+        endDate: new Date(Date.UTC(2026, m + 1, 0)).toISOString().split('T')[0],
         status: 'OPEN',
       });
       await em.save(PeriodEntity, period);

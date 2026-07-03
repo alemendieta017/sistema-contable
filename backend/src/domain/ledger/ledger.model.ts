@@ -26,7 +26,7 @@ export class Transaction {
   constructor(
     public readonly id: string | undefined,
     public readonly userId: string,
-    public readonly date: Date,
+    public readonly accountingDate: string,
     public readonly description: string,
     public readonly entries: JournalEntry[],
     public readonly status: 'POSTED' | 'REVERSED' = 'POSTED',

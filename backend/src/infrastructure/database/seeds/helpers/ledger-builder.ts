@@ -10,7 +10,7 @@ export class LedgerBuilder {
 
   async createTransaction(data: {
     description: string;
-    date: Date;
+    accountingDate: string;
     entries: { accountId: string; debit: number; credit: number }[];
   }) {
     const totalDebit = data.entries.reduce((sum, e) => sum + e.debit, 0);
@@ -26,7 +26,7 @@ export class LedgerBuilder {
     const transaction = this.em.create(TransactionEntity, {
       userId: this.userId,
       description: data.description,
-      date: data.date,
+      accountingDate: data.accountingDate,
       status: 'POSTED',
     });
     const savedTx = await this.em.save(TransactionEntity, transaction);

@@ -13,7 +13,7 @@ export class BalanceUpdateService {
   async updateBalances(
     entityManager: EntityManager,
     userId: string,
-    date: Date,
+    date: string,
     changes: { accountId: string; debitDiff: number; creditDiff: number }[],
     bypassLock: boolean = false,
   ): Promise<void> {
@@ -55,7 +55,7 @@ export class BalanceUpdateService {
       periodsByFy.get(p.fiscalYearId)!.push(p);
     }
     for (const [fyId, pList] of periodsByFy.entries()) {
-      pList.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+      pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
       if (pList.length > 0) {
         firstPeriodOfFiscalYear.set(fyId, pList[0].id);
       }
@@ -226,7 +226,7 @@ export class BalanceUpdateService {
       periodsByFy.get(p.fiscalYearId)!.push(p);
     }
     for (const [fyId, pList] of periodsByFy.entries()) {
-      pList.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+      pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
       if (pList.length > 0) {
         firstPeriodOfFiscalYear.set(fyId, pList[0].id);
       }

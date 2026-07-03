@@ -27,7 +27,7 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
   // Sort and format data
   const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
   const chartData = sorted.map((p) => ({
-    date: new Date(p.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
+    date: new Date(p.date + 'T00:00:00').toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
     balance: p.balance,
   }));
 

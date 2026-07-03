@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Plus, AlertCircle, CheckCircle2 } from "lucide-react";
 import { api } from "../services/api";
 import JournalEntryRow from "./JournalEntryRow";
-import { formatCurrency, formatLocalDateWithOffset } from "../lib/utils";
+import { formatCurrency } from "../lib/utils";
 
 interface Account {
   id: string;
@@ -138,7 +138,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
     try {
       const payload = {
-        date: formatLocalDateWithOffset(date),
+        accountingDate: date,
         description,
         entries: entries.map((e) => ({
           accountId: e.accountId,

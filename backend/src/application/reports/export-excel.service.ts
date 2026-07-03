@@ -15,7 +15,7 @@ export class ExportExcelService {
     const transactions = await this.transactionRepository.find({
       where: { userId },
       relations: ['entries', 'entries.account', 'entries.account.currency'],
-      order: { date: 'DESC' },
+      order: { accountingDate: 'DESC' },
     });
 
     const workbook = new ExcelJS.Workbook();
@@ -54,7 +54,7 @@ export class ExportExcelService {
       }
 
       const rowValue = {
-        fecha: tx.date.toISOString().substring(0, 10),
+        fecha: tx.accountingDate,
         cuenta: assetEntry?.account?.name || '',
         categoria: categoryEntry?.account?.name || '',
         subcategoria: '',

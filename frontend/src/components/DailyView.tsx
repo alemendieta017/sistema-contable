@@ -21,7 +21,7 @@ interface Entry {
 
 interface Transaction {
   id: string;
-  date: string;
+  accountingDate: string;
   description: string;
   status?: string;
   reversalOfId?: string | null;
@@ -45,11 +45,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
   // Group by date (YYYY-MM-DD)
   const grouped: Record<string, Transaction[]> = {};
   for (const tx of transactions) {
-    const d = new Date(tx.date);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const dStr = `${y}-${m}-${day}`;
+    const dStr = tx.accountingDate;
     if (!grouped[dStr]) {
       grouped[dStr] = [];
     }

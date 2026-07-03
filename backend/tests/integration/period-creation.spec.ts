@@ -58,8 +58,8 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     const userId = 'user-123';
     const dto = {
       year: 2026,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.999Z',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
     };
 
     mockFiscalYearRepo.findOne.mockResolvedValue(null);
@@ -85,8 +85,8 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     const userId = 'user-123';
     const dto = {
       year: 2026,
-      startDate: '2026-12-31T23:59:59.999Z',
-      endDate: '2026-01-01T00:00:00.000Z',
+      startDate: '2026-12-31',
+      endDate: '2026-01-01',
     };
 
     await expect(useCase.execute(userId, dto)).rejects.toThrow(BadRequestException);
@@ -96,8 +96,8 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     const userId = 'user-123';
     const dto = {
       year: 2026,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.999Z',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
     };
 
     mockFiscalYearRepo.findOne.mockResolvedValue({ id: 'existing-fy-id', name: 'Ejercicio 2026' });
@@ -111,8 +111,8 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     const userId = 'user-123';
     const dto = {
       year: 2026,
-      startDate: '2026-06-01T00:00:00.000Z',
-      endDate: '2027-05-31T23:59:59.999Z',
+      startDate: '2026-06-01',
+      endDate: '2027-05-31',
     };
 
     mockFiscalYearRepo.findOne.mockResolvedValue(null);
@@ -125,7 +125,9 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
     await expect(useCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException('Fiscal year dates overlap with existing fiscal year "Ejercicio 2026"'),
+      new BadRequestException(
+        'Fiscal year dates overlap with existing fiscal year "Ejercicio 2026"',
+      ),
     );
   });
 });

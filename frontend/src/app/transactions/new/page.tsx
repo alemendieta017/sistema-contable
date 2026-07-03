@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save, AlertCircle, CheckCircle2, Plus } from "lucide-react";
 import { api } from "../../../services/api";
 import JournalEntryRow from "../../../components/JournalEntryRow";
-import { formatCurrency, formatLocalDateTimeWithOffset } from "../../../lib/utils";
+import { formatCurrency } from "../../../lib/utils";
 
 interface Account {
   id: string;
@@ -21,15 +21,16 @@ interface Entry {
   amount: number | "";
 }
 
-function toLocalDateTimeString(dateInput: Date | string): string {
-  const date = new Date(dateInput);
+function toPureDateString(dateInput: Date | string): string {
+  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   if (isNaN(date.getTime())) return "";
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return `${year}-${month}-${day}`;
 }
 
 function TransactionForm() {
@@ -45,11 +46,12 @@ function TransactionForm() {
   const [currencies, setCurrencies] = useState<any[]>([]);
   
   // Set default datetime to local current date-time
-  const getInitialDateTimeString = () => {
-    return toLocalDateTimeString(new Date());
+  // Set default date to local current date
+  const getInitialDateString = () => {
+    return toPureDateString(new Date());
   };
 
-  const [dateTime, setDateTime] = useState(getInitialDateTimeString());
+  const [accountingDate, setAccountingDate] = useState(getInitialDateString());
   const [description, setDescription] = useState("");
   const [entries, setEntries] = useState<Entry[]>([
     { accountId: "", entryType: "DEBIT", amount: "" },
@@ -112,10 +114,10 @@ function TransactionForm() {
             setError("Los asientos de reversión no pueden ser editados.");
             return;
           }
-          setDateTime(toLocalDateTimeString(tx.date));
+          setAccountingDate(toPureDateString(tx.accountingDate || tx.date));
         } else {
           // Clone mode resets the date to now
-          setDateTime(getInitialDateTimeString());
+          setAccountingDate(getInitialDateString());
         }
         setDescription(tx.description);
         setEntries(
@@ -216,7 +218,7 @@ function TransactionForm() {
 
     try {
       const payload = {
-        date: formatLocalDateTimeWithOffset(dateTime),
+        accountingDate,
         description,
         entries: entries.map((e) => ({
           accountId: e.accountId,
@@ -322,14 +324,14 @@ function TransactionForm() {
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-sm border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                Fecha y Hora del Asiento
+                Fecha del Asiento
               </label>
               <input
-                type="datetime-local"
-                value={dateTime}
+                type="date"
+                value={accountingDate}
                 required
                 onChange={(e) => {
-                  setDateTime(e.target.value);
+                  setAccountingDate(e.target.value);
                   setIsDirty(true);
                 }}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-sm p-2 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-semibold"

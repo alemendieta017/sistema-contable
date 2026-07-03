@@ -89,9 +89,8 @@ export default function PeriodsPage() {
       setError('');
       setSuccess('');
 
-      // Compute start date (local midnight of Jan 1st) and end date (local 23:59:59.999 of Dec 31st)
-      const startDateISO = new Date(newFyYear, 0, 1, 0, 0, 0, 0).toISOString();
-      const endDateISO = new Date(newFyYear, 11, 31, 23, 59, 59, 999).toISOString();
+      const startDateISO = newFyYear + '-01-01';
+      const endDateISO = newFyYear + '-12-31';
 
       await api.fiscalYears.create({
         year: Number(newFyYear),

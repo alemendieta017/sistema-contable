@@ -17,7 +17,7 @@ import {
   DollarSign,
   Plus,
 } from 'lucide-react';
-import { formatCurrency, formatLocalDateWithOffset, formatLocalDateEndWithOffset } from '../../lib/utils';
+import { formatCurrency } from '../../lib/utils';
 
 type Account = {
   id: string;
@@ -99,8 +99,8 @@ export default function TransactionsPage() {
         api.accounts.list(),
         api.currencies.list(),
         api.transactions.list(
-          formatLocalDateWithOffset(activeStartDate),
-          formatLocalDateEndWithOffset(activeEndDate)
+          activeStartDate,
+          activeEndDate
         ),
       ]);
 

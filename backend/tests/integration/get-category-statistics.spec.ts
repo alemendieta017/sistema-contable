@@ -57,12 +57,12 @@ describe('GetCategoryStatisticsUseCase Timezone handling tests', () => {
 
     await useCase.execute(userId, period, type);
 
-    // Verify startDate and endDate were constructed in UTC for 2026-06-01 to 2026-06-30
+    // Verify startDate and endDate were constructed as YYYY-MM-DD strings for 2026-06-01 to 2026-06-30
     const startCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date >='),
+      call[0].includes('tx.accountingDate >='),
     );
     const endCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date <='),
+      call[0].includes('tx.accountingDate <='),
     );
 
     expect(startCall).toBeDefined();
@@ -71,8 +71,8 @@ describe('GetCategoryStatisticsUseCase Timezone handling tests', () => {
     const startDateVal = startCall[1].startDate;
     const endDateVal = endCall[1].endDate;
 
-    expect(startDateVal.toISOString()).toBe('2026-06-01T00:00:00.000Z');
-    expect(endDateVal.toISOString()).toBe('2026-06-30T23:59:59.999Z');
+    expect(startDateVal).toBe('2026-06-01');
+    expect(endDateVal).toBe('2026-06-30');
   });
 
   it('should shift UTC limits forward for positive timezoneOffset (e.g. UTC-4 / America/Asuncion)', async () => {
@@ -84,19 +84,18 @@ describe('GetCategoryStatisticsUseCase Timezone handling tests', () => {
     await useCase.execute(userId, period, type, timezoneOffset);
 
     const startCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date >='),
+      call[0].includes('tx.accountingDate >='),
     );
     const endCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date <='),
+      call[0].includes('tx.accountingDate <='),
     );
 
     const startDateVal = startCall[1].startDate;
     const endDateVal = endCall[1].endDate;
 
-    // 2026-06-01T00:00:00.000 in UTC-4 is 2026-06-01T04:00:00.000Z
-    expect(startDateVal.toISOString()).toBe('2026-06-01T04:00:00.000Z');
-    // 2026-06-30T23:59:59.999 in UTC-4 is 2026-07-01T03:59:59.999Z
-    expect(endDateVal.toISOString()).toBe('2026-07-01T03:59:59.999Z');
+    // Timezone-agnostic YYYY-MM-DD boundaries
+    expect(startDateVal).toBe('2026-06-01');
+    expect(endDateVal).toBe('2026-06-30');
   });
 
   it('should shift UTC limits backward for negative timezoneOffset (e.g. UTC+2 / Europe/Paris)', async () => {
@@ -108,18 +107,17 @@ describe('GetCategoryStatisticsUseCase Timezone handling tests', () => {
     await useCase.execute(userId, period, type, timezoneOffset);
 
     const startCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date >='),
+      call[0].includes('tx.accountingDate >='),
     );
     const endCall = mockQueryBuilder.andWhere.mock.calls.find((call: any) =>
-      call[0].includes('tx.date <='),
+      call[0].includes('tx.accountingDate <='),
     );
 
     const startDateVal = startCall[1].startDate;
     const endDateVal = endCall[1].endDate;
 
-    // 2026-06-01T00:00:00.000 in UTC+2 is 2026-05-31T22:00:00.000Z
-    expect(startDateVal.toISOString()).toBe('2026-05-31T22:00:00.000Z');
-    // 2026-06-30T23:59:59.999 in UTC+2 is 2026-06-30T21:59:59.999Z
-    expect(endDateVal.toISOString()).toBe('2026-06-30T21:59:59.999Z');
+    // Timezone-agnostic YYYY-MM-DD boundaries
+    expect(startDateVal).toBe('2026-06-01');
+    expect(endDateVal).toBe('2026-06-30');
   });
 });

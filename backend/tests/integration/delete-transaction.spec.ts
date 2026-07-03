@@ -60,7 +60,7 @@ describe('Delete Transaction Integration Tests', () => {
       id: transactionId,
       userId,
       description: 'Buying food',
-      date: new Date(),
+      accountingDate: '2026-07-03',
       entries: [],
     };
 

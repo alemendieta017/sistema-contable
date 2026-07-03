@@ -71,7 +71,7 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
     // Arrange
     const userId = 'user-uuid';
     const dto = {
-      date: new Date().toISOString(),
+      accountingDate: '2026-07-03',
       description: 'Compra supermercado',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50000 },
@@ -105,7 +105,7 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
     // Arrange
     const userId = 'user-uuid';
     const dto = {
-      date: new Date().toISOString(),
+      accountingDate: '2026-07-03',
       description: 'Asiento descuadrado',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50000 },

@@ -18,11 +18,11 @@ export class PeriodEntity {
   @Column()
   name: string; // e.g. "2026-03"
 
-  @Column({ name: 'start_date', type: 'timestamp with time zone' })
-  startDate: Date;
+  @Column({ name: 'start_date', type: 'date' })
+  startDate: string;
 
-  @Column({ name: 'end_date', type: 'timestamp with time zone' })
-  endDate: Date;
+  @Column({ name: 'end_date', type: 'date' })
+  endDate: string;
 
   @Column({ type: 'varchar', length: 10, default: 'OPEN' })
   status: 'OPEN' | 'CLOSED';

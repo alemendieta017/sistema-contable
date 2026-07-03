@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
 import { Trash2 } from "lucide-react";
-import { formatCurrency, formatLocalDateWithOffset } from "../../../lib/utils";
+import { formatCurrency } from "../../../lib/utils";
 
 type Account = {
   id: string;
@@ -107,7 +107,7 @@ export default function AsientoLibrePage() {
 
     try {
       await api.transactions.create({
-        date: formatLocalDateWithOffset(date),
+        accountingDate: date,
         description: description || "Asiento Libre",
         entries: payloadEntries,
       });

@@ -44,7 +44,7 @@ export class ReconstructBalancesUseCase {
       const transactions = await entityManager.find(TransactionEntity, {
         where: { userId, status: 'POSTED' },
         relations: ['entries'],
-        order: { date: 'ASC' },
+        order: { accountingDate: 'ASC' },
       });
 
       // 5. Precompute first periods of all fiscal years for the user
@@ -57,7 +57,7 @@ export class ReconstructBalancesUseCase {
         periodsByFy.get(p.fiscalYearId)!.push(p);
       }
       for (const [fyId, pList] of periodsByFy.entries()) {
-        pList.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+        pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
         if (pList.length > 0) {
           firstPeriodOfFiscalYear.set(fyId, pList[0].id);
         }
@@ -70,7 +70,7 @@ export class ReconstructBalancesUseCase {
       for (const period of periods) {
         // Group journal entries of POSTED transactions that fall inside this period's date range
         const periodEntries = transactions
-          .filter((t) => t.date >= period.startDate && t.date <= period.endDate)
+          .filter((t) => t.accountingDate >= period.startDate && t.accountingDate <= period.endDate)
           .flatMap((t) => t.entries);
 
         const debitsMap = new Map<string, number>();

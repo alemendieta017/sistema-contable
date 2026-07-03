@@ -57,8 +57,8 @@ export async function readyForClosingScenario(
     fy2025 = em.create(FiscalYearEntity, {
       userId: user.id,
       name: fyName,
-      startDate: new Date('2025-01-01T00:00:00Z'),
-      endDate: new Date('2025-12-31T23:59:59Z'),
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
       status: 'OPEN',
     });
     fy2025 = await em.save(FiscalYearEntity, fy2025);
@@ -69,8 +69,8 @@ export async function readyForClosingScenario(
       const period = em.create(PeriodEntity, {
         fiscalYearId: fy2025.id,
         name: `Periodo ${String(m + 1).padStart(2, '0')}/2025`,
-        startDate: new Date(Date.UTC(2025, m, 1)),
-        endDate: new Date(Date.UTC(2025, m + 1, 0, 23, 59, 59)),
+        startDate: '2025-' + String(m + 1).padStart(2, '0') + '-01',
+        endDate: new Date(Date.UTC(2025, m + 1, 0)).toISOString().split('T')[0],
         status: 'OPEN',
       });
       await em.save(PeriodEntity, period);
@@ -82,10 +82,10 @@ export async function readyForClosingScenario(
   const builder = new LedgerBuilder(em, user.id);
 
   // Transacción 1: Enero 2 - Apertura
-  const date1 = new Date('2025-01-02T09:00:00Z');
+  const date1 = '2025-01-02';
   await builder.createTransaction({
     description: 'Asiento de apertura de capital inicial',
-    date: date1,
+    accountingDate: date1,
     entries: [
       { accountId: acctEfectivo.id, debit: 120000, credit: 0 },
       { accountId: acctCapital.id, debit: 0, credit: 120000 },
@@ -97,10 +97,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 2: Enero 15 - Cobro de Sueldo
-  const date2 = new Date('2025-01-15T15:00:00Z');
+  const date2 = '2025-01-15';
   await builder.createTransaction({
     description: 'Cobro de sueldo mensual',
-    date: date2,
+    accountingDate: date2,
     entries: [
       { accountId: acctEfectivo.id, debit: 15000, credit: 0 },
       { accountId: acctSueldo.id, debit: 0, credit: 15000 },
@@ -112,10 +112,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 3: Febrero 10 - Gasto en Comida
-  const date3 = new Date('2025-02-10T12:30:00Z');
+  const date3 = '2025-02-10';
   await builder.createTransaction({
     description: 'Compra de víveres supermercado',
-    date: date3,
+    accountingDate: date3,
     entries: [
       { accountId: acctComida.id, debit: 2000, credit: 0 },
       { accountId: acctEfectivo.id, debit: 0, credit: 2000 },
@@ -127,10 +127,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 4: Marzo 22 - Gasto en Servicios
-  const date4 = new Date('2025-03-22T10:00:00Z');
+  const date4 = '2025-03-22';
   await builder.createTransaction({
     description: 'Pago factura de luz y agua',
-    date: date4,
+    accountingDate: date4,
     entries: [
       { accountId: acctServicios.id, debit: 4000, credit: 0 },
       { accountId: acctEfectivo.id, debit: 0, credit: 4000 },
@@ -142,10 +142,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 5: Mayo 14 - Ingresos Extra
-  const date5 = new Date('2025-05-14T17:00:00Z');
+  const date5 = '2025-05-14';
   await builder.createTransaction({
     description: 'Servicio de consultoría contable extra',
-    date: date5,
+    accountingDate: date5,
     entries: [
       { accountId: acctEfectivo.id, debit: 8000, credit: 0 },
       { accountId: acctOtrosIngresos.id, debit: 0, credit: 8000 },
@@ -157,10 +157,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 6: Septiembre 5 - Gasto en Comida
-  const date6 = new Date('2025-09-05T13:00:00Z');
+  const date6 = '2025-09-05';
   await builder.createTransaction({
     description: 'Almuerzo corporativo fin de mes',
-    date: date6,
+    accountingDate: date6,
     entries: [
       { accountId: acctComida.id, debit: 1500, credit: 0 },
       { accountId: acctEfectivo.id, debit: 0, credit: 1500 },
@@ -172,10 +172,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 7: Noviembre 18 - Gasto en Servicios
-  const date7 = new Date('2025-11-18T11:00:00Z');
+  const date7 = '2025-11-18';
   await builder.createTransaction({
     description: 'Pago mensual abono de internet',
-    date: date7,
+    accountingDate: date7,
     entries: [
       { accountId: acctServicios.id, debit: 3500, credit: 0 },
       { accountId: acctEfectivo.id, debit: 0, credit: 3500 },
@@ -187,10 +187,10 @@ export async function readyForClosingScenario(
   ]);
 
   // Transacción 8: Diciembre 20 - Gasto en Ropa
-  const date8 = new Date('2025-12-20T16:00:00Z');
+  const date8 = '2025-12-20';
   await builder.createTransaction({
     description: 'Compra de indumentaria fin de año',
-    date: date8,
+    accountingDate: date8,
     entries: [
       { accountId: acctRopa.id, debit: 1000, credit: 0 },
       { accountId: acctEfectivo.id, debit: 0, credit: 1000 },

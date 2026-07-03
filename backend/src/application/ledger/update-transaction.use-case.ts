@@ -49,7 +49,7 @@ export class UpdateTransactionUseCase {
       }
 
       // 1. Check period lock on old transaction date
-      const oldTxDate = originalTx.date;
+      const oldTxDate = originalTx.accountingDate;
       const oldPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
@@ -65,7 +65,7 @@ export class UpdateTransactionUseCase {
       }
 
       // 2. Check period lock on new transaction date
-      const newTxDate = new Date(dto.date);
+      const newTxDate = dto.accountingDate;
       const newPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
@@ -145,7 +145,7 @@ export class UpdateTransactionUseCase {
       }
 
       // Update fields of originalTx
-      originalTx.date = newTxDate;
+      originalTx.accountingDate = newTxDate;
       originalTx.description = dto.description;
       originalTx.status = 'POSTED';
 
@@ -176,7 +176,7 @@ export class UpdateTransactionUseCase {
 
       return {
         id: originalTx.id,
-        date: originalTx.date,
+        accountingDate: originalTx.accountingDate,
         description: originalTx.description,
         status: originalTx.status,
         entries: dbEntriesToSave.map((e) => ({

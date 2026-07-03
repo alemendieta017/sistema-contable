@@ -26,7 +26,7 @@ export class DeleteTransactionUseCase {
       }
 
       // 1. Check period lock on transaction date
-      const txDate = transaction.date;
+      const txDate = transaction.accountingDate;
       const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })

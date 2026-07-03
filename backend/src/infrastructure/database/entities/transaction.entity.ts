@@ -14,8 +14,8 @@ export class TransactionEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
-  @Column({ type: 'timestamp with time zone' })
-  date: Date;
+  @Column({ name: 'accounting_date', type: 'date' })
+  accountingDate: string;
 
   @Column()
   description: string;

@@ -264,12 +264,25 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         { accountId: 'acc-liability-1', name: 'Accounts Payable', balance: 1000.0 },
       ]);
       expect(result.balanced).toBe(true);
+
+      // Verify the query builder was called with accountingDate and pure string date parameter
+      expect(mockJournalEntryRepo.createQueryBuilder).toHaveBeenCalledWith('entry');
+      expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith('entry.transaction', 'transaction');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('transaction.userId = :userId', { userId });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('transaction.status = :status', { status: 'POSTED' });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('transaction.accountingDate <= :date', { date: '2026-07-02' });
+
+      // Verify fiscal year query checks are date string based
+      expect(mockFiscalYearRepo.createQueryBuilder).toHaveBeenCalledWith('fy');
+      expect(mockFyBuilder.where).toHaveBeenCalledWith('fy.userId = :userId', { userId });
+      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.startDate <= :date', { date: '2026-07-02' });
+      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.endDate >= :date', { date: '2026-07-02' });
     });
 
     it('should calculate comparative mode balance sheet correctly', async () => {
       const mockPeriods = [
-        { id: 'period-1', name: '2026-01', startDate: new Date('2026-01-01'), fiscalYearId: 'fy-uuid' } as PeriodEntity,
-        { id: 'period-2', name: '2026-02', startDate: new Date('2026-02-01'), fiscalYearId: 'fy-uuid' } as PeriodEntity,
+        { id: 'period-1', name: '2026-01', startDate: '2026-01-01', fiscalYearId: 'fy-uuid' } as unknown as PeriodEntity,
+        { id: 'period-2', name: '2026-02', startDate: '2026-02-01', fiscalYearId: 'fy-uuid' } as unknown as PeriodEntity,
       ];
 
       mockPeriodRepo.find!.mockResolvedValue(mockPeriods);

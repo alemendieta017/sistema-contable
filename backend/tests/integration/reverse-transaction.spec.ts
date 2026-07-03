@@ -67,7 +67,7 @@ describe('Reverse Transaction Integration Tests', () => {
       id: originalTxId,
       userId,
       description: 'Buying food',
-      date: new Date(),
+      accountingDate: '2026-07-03',
       status: 'POSTED',
       entries: [
         {
@@ -97,6 +97,7 @@ describe('Reverse Transaction Integration Tests', () => {
     expect(result.status).toBe('POSTED');
     expect(result.reversalOfId).toBe(originalTxId);
     expect(result.description).toBe('Reversión de asiento: Buying food');
+    expect(result.accountingDate).toBe(new Date().toISOString().split('T')[0]);
 
     // Confirm original transaction marked reversed
     expect(originalTx.status).toBe('REVERSED');
@@ -119,6 +120,7 @@ describe('Reverse Transaction Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue({
       id: 'tx-123',
       userId: 'user-123',
+      accountingDate: '2026-07-03',
       status: 'REVERSED',
     });
 

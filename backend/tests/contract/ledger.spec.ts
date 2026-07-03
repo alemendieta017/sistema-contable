@@ -119,7 +119,7 @@ describe('Ledger Endpoints Contract Tests', () => {
       await request(app.getHttpServer())
         .post('/api/transactions')
         .send({
-          date: 'invalid-date',
+          accountingDate: 'invalid-date',
           description: '',
           entries: [],
         })
@@ -130,7 +130,7 @@ describe('Ledger Endpoints Contract Tests', () => {
       await request(app.getHttpServer())
         .post('/api/transactions')
         .send({
-          date: new Date().toISOString(),
+          accountingDate: '2026-07-03',
           description: 'Valid transaction',
           entries: [
             { accountId: 'acc-1', entryType: 'DEBIT', amount: 100 },

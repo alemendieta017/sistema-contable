@@ -72,7 +72,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: transactionId,
       userId,
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
@@ -83,7 +83,7 @@ describe('Update Transaction Integration Tests', () => {
     };
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -116,7 +116,7 @@ describe('Update Transaction Integration Tests', () => {
     expect(result).toBeDefined();
     expect(result.id).toBe(transactionId);
     expect(result.description).toBe('New Description');
-    expect(result.date).toEqual(new Date(dto.date));
+    expect(result.accountingDate).toBe(dto.accountingDate);
     expect(result.entries).toHaveLength(2);
     expect(mockEntityManager.delete).toHaveBeenCalledWith(JournalEntryEntity, { transactionId });
   });
@@ -125,7 +125,7 @@ describe('Update Transaction Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(null);
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -140,7 +140,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: 'tx-123',
       userId: 'user-123',
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'REVERSED',
       reversalOfId: null,
@@ -150,7 +150,7 @@ describe('Update Transaction Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(originalTx);
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -165,7 +165,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: 'tx-123',
       userId: 'user-123',
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: 'tx-original',
@@ -175,7 +175,7 @@ describe('Update Transaction Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(originalTx);
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -193,7 +193,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: transactionId,
       userId,
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
@@ -201,7 +201,7 @@ describe('Update Transaction Integration Tests', () => {
     };
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -239,7 +239,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: transactionId,
       userId,
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
@@ -247,7 +247,7 @@ describe('Update Transaction Integration Tests', () => {
     };
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },
@@ -285,7 +285,7 @@ describe('Update Transaction Integration Tests', () => {
     const originalTx = {
       id: transactionId,
       userId,
-      date: new Date('2026-06-01T00:00:00Z'),
+      accountingDate: '2026-06-01',
       description: 'Old Description',
       status: 'POSTED',
       reversalOfId: null,
@@ -293,7 +293,7 @@ describe('Update Transaction Integration Tests', () => {
     };
 
     const dto = {
-      date: '2026-06-02T10:00:00Z',
+      accountingDate: '2026-06-02',
       description: 'New Description',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 200 },

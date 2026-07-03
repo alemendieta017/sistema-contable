@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TransactionModal from '../components/TransactionModal';
 import { api } from '../services/api';
-import { formatCurrency, formatLocalDateWithOffset } from '../lib/utils';
+import { formatCurrency } from '../lib/utils';
 
 // Mock the API service
 jest.mock('../services/api', () => ({
@@ -123,11 +123,11 @@ describe('TransactionModal Double-Entry Validation', () => {
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     };
-    const expectedDate = formatLocalDateWithOffset(getLocalDateString());
+    const expectedDate = getLocalDateString();
 
     await waitFor(() => {
       expect(api.transactions.create).toHaveBeenCalledWith({
-        date: expectedDate,
+        accountingDate: expectedDate,
         description: 'Asiento de Prueba',
         entries: [
           { accountId: 'acc-1', entryType: 'DEBIT', amount: 100 },

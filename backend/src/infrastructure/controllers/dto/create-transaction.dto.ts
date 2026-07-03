@@ -18,7 +18,7 @@ export class JournalEntryDto implements JournalEntryRequest {
 export class CreateTransactionDto implements CreateTransactionRequest {
   @IsString()
   @IsNotEmpty()
-  date: string;
+  accountingDate: string;
 
   @IsString()
   @IsNotEmpty()

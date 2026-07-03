@@ -21,9 +21,8 @@ export class GetCategoryStatisticsUseCase {
     return this.dataSource.transaction('READ UNCOMMITTED', async (entityManager) => {
       // Parse period boundaries
       const [year, month] = period.split('-').map(Number);
-      const offsetMs = (timezoneOffset !== undefined ? Number(timezoneOffset) : 0) * 60 * 1000;
-      const startDate = new Date(Date.UTC(year, month - 1, 1) + offsetMs);
-      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999) + offsetMs);
+      const startDate = `${period}-01`;
+      const endDate = new Date(Date.UTC(year, month, 0)).toISOString().split('T')[0];
 
       // Query aggregated sums for the chosen type in the period
       const sums = await entityManager
@@ -35,8 +34,8 @@ export class GetCategoryStatisticsUseCase {
         .innerJoin('entry.account', 'acc')
         .where('tx.userId = :userId', { userId })
         .andWhere('acc.type = :type', { type })
-        .andWhere('tx.date >= :startDate', { startDate })
-        .andWhere('tx.date <= :endDate', { endDate })
+        .andWhere('tx.accountingDate >= :startDate', { startDate })
+        .andWhere('tx.accountingDate <= :endDate', { endDate })
         // If it's an expense, we track DEBIT entries. If income, we track CREDIT entries.
         .andWhere('entry.entryType = :entryType', {
           entryType: type === 'EXPENSE' ? 'DEBIT' : 'CREDIT',

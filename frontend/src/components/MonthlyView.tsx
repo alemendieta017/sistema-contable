@@ -15,7 +15,7 @@ interface Entry {
 
 interface Transaction {
   id: string;
-  date: string;
+  accountingDate: string;
   status?: string;
   entries: Entry[];
 }
@@ -57,7 +57,7 @@ export default function MonthlyView({
   }));
 
   for (const tx of transactions) {
-    const dateObj = new Date(tx.date);
+    const dateObj = new Date(tx.accountingDate + 'T00:00:00');
     if (dateObj.getFullYear() !== currentYear) continue;
 
     if (tx.status === 'REVERSED') continue;

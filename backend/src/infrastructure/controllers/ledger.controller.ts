@@ -37,13 +37,13 @@ export class LedgerController {
       .where('tx.userId = :userId', { userId: user.id });
 
     if (startDate) {
-      query.andWhere('tx.date >= :startDate', { startDate: new Date(startDate) });
+      query.andWhere('tx.accountingDate >= :startDate', { startDate });
     }
     if (endDate) {
-      query.andWhere('tx.date <= :endDate', { endDate: new Date(endDate) });
+      query.andWhere('tx.accountingDate <= :endDate', { endDate });
     }
 
-    return query.orderBy('tx.date', 'DESC').getMany();
+    return query.orderBy('tx.accountingDate', 'DESC').getMany();
   }
 
   @Post()

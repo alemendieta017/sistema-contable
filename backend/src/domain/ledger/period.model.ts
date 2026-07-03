@@ -3,8 +3,8 @@ export class FiscalYear {
     public readonly id: string | undefined,
     public readonly userId: string,
     public readonly name: string,
-    public readonly startDate: Date,
-    public readonly endDate: Date,
+    public readonly startDate: string,
+    public readonly endDate: string,
     public readonly status: 'OPEN' | 'CLOSED' = 'OPEN',
     public readonly periods?: Period[],
   ) {}
@@ -15,8 +15,8 @@ export class Period {
     public readonly id: string | undefined,
     public readonly fiscalYearId: string,
     public readonly name: string,
-    public readonly startDate: Date,
-    public readonly endDate: Date,
+    public readonly startDate: string,
+    public readonly endDate: string,
     public readonly status: 'OPEN' | 'CLOSED' = 'OPEN',
   ) {}
 }

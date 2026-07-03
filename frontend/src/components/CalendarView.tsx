@@ -15,7 +15,7 @@ interface Entry {
 
 interface Transaction {
   id: string;
-  date: string;
+  accountingDate: string;
   status?: string;
   entries: Entry[];
 }
@@ -62,7 +62,7 @@ export default function CalendarView({
   }
 
   for (const tx of transactions) {
-    const txDateObj = new Date(tx.date);
+    const txDateObj = new Date(tx.accountingDate + 'T00:00:00');
     if (txDateObj.getFullYear() !== year || txDateObj.getMonth() !== month) continue;
 
     if (tx.status === 'REVERSED') continue;
