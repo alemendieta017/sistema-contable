@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Trash2, Search, ChevronDown } from "lucide-react";
 import type { CurrencyInfo } from "../lib/utils";
 
@@ -38,6 +38,8 @@ export default function JournalEntryRow({
 }: JournalEntryRowProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("ALL");
+  const [focusedIndex, setFocusedIndex] = useState<number>(0);
 
   // Extract currency symbol and decimal places matching formatCurrency in frontend/src/lib/utils.ts
   let currencySymbol = "$";
@@ -105,13 +107,101 @@ export default function JournalEntryRow({
 
   const filteredAccounts = accounts.filter((a) => {
     const fullName = formatAccountName(a).toLowerCase();
-    return fullName.includes(search.toLowerCase());
+    const matchesSearch = fullName.includes(search.toLowerCase());
+    const matchesTab = activeTab === "ALL" || a.type === activeTab;
+    return matchesSearch && matchesTab;
   });
 
-  const groups = ["ASSET", "LIABILITY", "INCOME", "EXPENSE", "EQUITY"];
+  const groups = ["ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE"];
+
+  // Construct flat list of displayed accounts in the exact rendering order (by groups)
+  const displayAccounts: Account[] = [];
+  groups.forEach((groupType) => {
+    if (activeTab === "ALL" || activeTab === groupType) {
+      const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
+      displayAccounts.push(...groupAccounts);
+    }
+  });
+
+  // Reset focused index when filtering criteria changes
+  useEffect(() => {
+    setFocusedIndex(displayAccounts.length > 0 ? 0 : -1);
+  }, [search, activeTab]);
+
+  // Scroll focused option into view
+  useEffect(() => {
+    if (focusedIndex >= 0 && isOpen) {
+      const activeEl = document.getElementById(`account-opt-${index}-${focusedIndex}`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [focusedIndex, isOpen, index]);
+
+  const highlightMatch = (text: string, query: string) => {
+    if (!query) return <span>{text}</span>;
+    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "gi"));
+    return (
+      <span>
+        {parts.map((part, i) =>
+          part.toLowerCase() === query.toLowerCase() ? (
+            <mark key={i} className="bg-indigo-100 text-indigo-950 dark:bg-indigo-950/60 dark:text-indigo-200 px-0.5 rounded-sm font-bold">
+              {part}
+            </mark>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </span>
+    );
+  };
+
+  const getCount = (tabId: string) => {
+    if (tabId === "ALL") {
+      return accounts.filter((a) => formatAccountName(a).toLowerCase().includes(search.toLowerCase())).length;
+    }
+    return accounts.filter((a) => a.type === tabId && formatAccountName(a).toLowerCase().includes(search.toLowerCase())).length;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen) {
+      if (e.key === "ArrowDown" || e.key === "Enter") {
+        setIsOpen(true);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev + 1 < displayAccounts.length ? prev + 1 : 0));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : displayAccounts.length - 1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < displayAccounts.length) {
+          const selected = displayAccounts[focusedIndex];
+          onUpdate(index, { accountId: selected.id });
+          setSearch(formatAccountName(selected));
+          setIsOpen(false);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setIsOpen(false);
+        break;
+      case "Tab":
+        setIsOpen(false);
+        break;
+    }
+  };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 items-end bg-slate-50/50 dark:bg-slate-900/40 p-2.5 rounded-sm border border-slate-200 dark:border-slate-700/60 w-full animate-slide-in-row">
+    <div className={`flex flex-col sm:flex-row gap-2 items-end bg-slate-50/50 dark:bg-slate-900/40 p-2.5 rounded-sm border border-slate-200 dark:border-slate-700/60 w-full animate-slide-in-row relative ${isOpen ? "z-20" : "z-10"}`}>
       {/* Searchable Account Selector */}
       <div className="flex-1 w-full relative">
         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
@@ -127,6 +217,7 @@ export default function JournalEntryRow({
             value={search}
             onFocus={() => setIsOpen(true)}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             onChange={(e) => {
               const val = e.target.value;
               setSearch(val);
@@ -138,54 +229,148 @@ export default function JournalEntryRow({
                 onUpdate(index, { accountId: matchedAccount.id });
               }
             }}
-            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-sm p-1.5 pl-7 pr-7 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-medium"
+            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-sm p-1.5 pl-7 pr-8 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-medium"
           />
           <Search className="absolute left-2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-          <ChevronDown className="absolute right-2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+          <button
+            type="button"
+            className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-350 focus:outline-none transition-colors"
+            onMouseDown={(e) => {
+              e.preventDefault(); // Prevents input blur
+            }}
+            onClick={() => {
+              setIsOpen((prev) => !prev);
+            }}
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </button>
         </div>
 
         {/* Dropdown Options */}
         {isOpen && (
-          <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-sm shadow-lg max-h-48 overflow-y-auto z-50">
-            {filteredAccounts.length === 0 ? (
-              <div className="px-3 py-2 text-slate-400 dark:text-slate-500 text-xs italic">
-                No se encontraron rubros
-              </div>
-            ) : (
-              groups.map((groupType) => {
-                const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
-                if (groupAccounts.length === 0) return null;
+          <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-sm shadow-lg max-h-56 overflow-hidden z-50 flex flex-col">
+            {/* Horizontal Tabs Bar */}
+            <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-slate-100 dark:border-slate-700/40 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0 select-none">
+              {[
+                { id: "ALL", label: "Todos", dot: null },
+                { id: "ASSET", label: "Activos", dot: "bg-emerald-500" },
+                { id: "LIABILITY", label: "Pasivos", dot: "bg-rose-500" },
+                { id: "EQUITY", label: "Patrimonio", dot: "bg-violet-500" },
+                { id: "INCOME", label: "Ingresos", dot: "bg-sky-500" },
+                { id: "EXPENSE", label: "Egresos", dot: "bg-amber-500" },
+              ].map((tab) => {
+                const count = getCount(tab.id);
+                const isActive = activeTab === tab.id;
                 return (
-                  <div key={groupType} className="border-b last:border-0 border-slate-100 dark:border-slate-700/40">
-                    <div className="px-2 py-0.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/60 sticky top-0">
-                      {groupType === "ASSET"
-                        ? "ACTIVOS"
-                        : groupType === "LIABILITY"
-                          ? "PASIVOS"
-                          : groupType === "INCOME"
-                            ? "INGRESOS"
-                            : groupType === "EXPENSE"
-                              ? "EGRESOS"
-                              : "PATRIMONIO NETO"}
-                    </div>
-                    {groupAccounts.map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        onMouseDown={() => {
-                          onUpdate(index, { accountId: a.id });
-                          setSearch(formatAccountName(a));
-                          setIsOpen(false);
-                        }}
-                        className="w-full text-left px-3.5 py-1 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold"
-                      >
-                        {formatAccountName(a)}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-full transition-all border shrink-0 ${
+                      isActive
+                        ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100"
+                        : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/60 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    {tab.dot && <span className={`w-1 h-1 rounded-full ${tab.dot}`} />}
+                    <span>{tab.label}</span>
+                    <span className="text-[8px] font-semibold opacity-75">({count})</span>
+                  </button>
                 );
-              })
-            )}
+              })}
+            </div>
+
+            {/* List Body */}
+            <div className="overflow-y-auto flex-1 max-h-44">
+              {displayAccounts.length === 0 ? (
+                <div className="px-3 py-3 text-slate-400 dark:text-slate-500 text-xs italic text-center">
+                  No se encontraron rubros
+                </div>
+              ) : (
+                (() => {
+                  let globalIndex = 0;
+                  return groups.map((groupType) => {
+                    if (activeTab !== "ALL" && activeTab !== groupType) return null;
+                    const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
+                    if (groupAccounts.length === 0) return null;
+                    return (
+                      <div key={groupType} className="border-b last:border-0 border-slate-100 dark:border-slate-750/30">
+                        {activeTab === "ALL" && (
+                          <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-900/40 sticky top-0 backdrop-blur-sm z-10">
+                            {groupType === "ASSET"
+                              ? "ACTIVOS"
+                              : groupType === "LIABILITY"
+                                ? "PASIVOS"
+                                : groupType === "INCOME"
+                                  ? "INGRESOS"
+                                  : groupType === "EXPENSE"
+                                    ? "EGRESOS"
+                                    : "PATRIMONIO NETO"}
+                          </div>
+                        )}
+                        <div className="divide-y divide-slate-50 dark:divide-slate-800/30">
+                          {groupAccounts.map((a) => {
+                            const itemIndex = globalIndex++;
+                            const isFocused = itemIndex === focusedIndex;
+                            return (
+                              <button
+                                key={a.id}
+                                id={`account-opt-${index}-${itemIndex}`}
+                                type="button"
+                                onMouseDown={() => {
+                                  onUpdate(index, { accountId: a.id });
+                                  setSearch(formatAccountName(a));
+                                  setIsOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 sm:py-2.5 transition text-xs font-semibold flex items-center justify-between outline-none ${
+                                  isFocused
+                                    ? "bg-indigo-50/50 text-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200"
+                                    : "text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                                }`}
+                              >
+                                <div className="flex flex-col">
+                                  {a.parentId ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                                        {accounts.find((p) => p.id === a.parentId)?.name} ›
+                                      </span>
+                                      <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                        {highlightMatch(a.name, search)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                      {highlightMatch(a.name, search)}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {activeTab === "ALL" && (
+                                  <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                    a.type === "ASSET"
+                                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                      : a.type === "LIABILITY"
+                                        ? "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"
+                                        : a.type === "EQUITY"
+                                          ? "bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400"
+                                          : a.type === "INCOME"
+                                            ? "bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400"
+                                            : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+                                  }`}>
+                                    {a.type === "ASSET" ? "Activo" : a.type === "LIABILITY" ? "Pasivo" : a.type === "EQUITY" ? "Patrimonio" : a.type === "INCOME" ? "Ingreso" : "Egreso"}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()
+              )}
+            </div>
           </div>
         )}
       </div>

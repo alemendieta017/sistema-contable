@@ -146,6 +146,51 @@ export class BalanceSheetUseCase {
         cumulativeNetIncome = tempCredits - tempDebits;
       }
 
+      // Calculate priorNetIncome (Resultados Acumulados)
+      const priorBoundaryDate = fiscalYear ? fiscalYear.startDate : null;
+
+      const priorQuery = this.dataSource.getRepository(JournalEntryEntity)
+        .createQueryBuilder('entry')
+        .select('entry.entryType', 'entryType')
+        .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
+        .innerJoin('entry.transaction', 'transaction')
+        .innerJoin('entry.account', 'account')
+        .where('transaction.userId = :userId', { userId })
+        .andWhere('transaction.status = :status', { status: 'POSTED' })
+        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
+        .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' });
+
+      if (priorBoundaryDate) {
+        priorQuery.andWhere('transaction.accountingDate < :boundaryDate', { boundaryDate: priorBoundaryDate });
+      } else {
+        priorQuery.andWhere('transaction.accountingDate <= :boundaryDate', { boundaryDate: date });
+      }
+
+      const priorEntrySums = await priorQuery
+        .groupBy('entry.entryType')
+        .getRawMany();
+
+      let priorDebits = 0;
+      let priorCredits = 0;
+      for (const row of priorEntrySums) {
+        const amount = Number(row.total);
+        if (row.entryType === 'DEBIT') {
+          priorDebits += amount;
+        } else {
+          priorCredits += amount;
+        }
+      }
+      const priorNetIncome = priorCredits - priorDebits;
+      const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
+
+      if (priorNetIncomeFixed !== 0) {
+        collapsed.equity.push({
+          accountId: 'virtual-accumulated-results',
+          name: 'Resultados Acumulados',
+          balance: priorNetIncomeFixed,
+        });
+      }
+
       // Append virtual Net Income
       collapsed.equity.push({
         accountId: 'virtual-net-income',
@@ -295,6 +340,47 @@ export class BalanceSheetUseCase {
       }
     }
     const netIncome = Number((totalIncome - totalExpense).toFixed(4));
+
+    // Calculate priorNetIncome (Resultados Acumulados)
+    const priorBoundaryDate = period.fiscalYear?.startDate;
+    let priorNetIncome = 0;
+
+    if (priorBoundaryDate) {
+      const priorEntrySums = await this.dataSource.getRepository(JournalEntryEntity)
+        .createQueryBuilder('entry')
+        .select('entry.entryType', 'entryType')
+        .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
+        .innerJoin('entry.transaction', 'transaction')
+        .innerJoin('entry.account', 'account')
+        .where('transaction.userId = :userId', { userId })
+        .andWhere('transaction.status = :status', { status: 'POSTED' })
+        .andWhere('transaction.accountingDate < :boundaryDate', { boundaryDate: priorBoundaryDate })
+        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
+        .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' })
+        .groupBy('entry.entryType')
+        .getRawMany();
+
+      let priorDebits = 0;
+      let priorCredits = 0;
+      for (const row of priorEntrySums) {
+        const amount = Number(row.total);
+        if (row.entryType === 'DEBIT') {
+          priorDebits += amount;
+        } else {
+          priorCredits += amount;
+        }
+      }
+      priorNetIncome = priorCredits - priorDebits;
+    }
+
+    const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
+    if (priorNetIncomeFixed !== 0) {
+      collapsed.equity.push({
+        accountId: 'virtual-accumulated-results',
+        name: 'Resultados Acumulados',
+        balance: priorNetIncomeFixed,
+      });
+    }
 
     // Append virtual Net Income
     collapsed.equity.push({

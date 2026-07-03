@@ -326,6 +326,135 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.totalLiabilities).toEqual([400, 500]);
       expect(result.balanced).toEqual([false, false]); // Equity is 0, so 1200 != 400 + 0
     });
+
+    it('should calculate Resultados Acumulados and Resultado del Ejercicio correctly in date mode when previous years are unclosed', async () => {
+      const mockAccounts = [
+        { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
+        { id: 'acc-ap', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+      ];
+
+      mockAccountRepo.find!.mockResolvedValue(mockAccounts);
+
+      // Mock queries sequentially:
+      // 1. entrySums (all entries <= 2026-06-15)
+      // 2. tempEntrySums (entries in [2026-01-01, 2026-06-15])
+      // 3. priorEntrySums (entries < 2026-01-01)
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        addGroupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn()
+          .mockResolvedValueOnce([
+            { accountId: 'acc-cash', entryType: 'DEBIT', total: '20000' },
+            { accountId: 'acc-ap', entryType: 'CREDIT', total: '9000' },
+          ])
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([
+            { entryType: 'CREDIT', total: '15000' },
+            { entryType: 'DEBIT', total: '4000' },
+          ]),
+      };
+      mockJournalEntryRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      // Mock Fiscal Year query builder returning 2026 fiscal year
+      const mockFyBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({
+          id: 'fy-2026',
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+        }),
+      };
+      mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockFyBuilder);
+
+      const result = (await balanceSheetUseCase.execute(userId, {
+        mode: 'date',
+        date: '2026-06-15',
+      })) as any;
+
+      expect(result.date).toBe('2026-06-15');
+      expect(result.assets).toEqual([
+        { accountId: 'acc-cash', name: 'Cash', balance: 20000.0 },
+      ]);
+      expect(result.liabilities).toEqual([
+        { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
+      ]);
+      expect(result.equity).toEqual([
+        { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
+        { accountId: 'virtual-accumulated-results', name: 'Resultados Acumulados', balance: 11000.0 },
+      ]);
+      expect(result.balanced).toBe(true);
+    });
+
+    it('should calculate Resultados Acumulados and Resultado del Ejercicio correctly in period mode', async () => {
+      const mockPeriod = {
+        id: periodId,
+        name: '2026-06',
+        fiscalYearId: 'fy-2026',
+        fiscalYear: {
+          id: 'fy-2026',
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+        },
+      } as unknown as PeriodEntity;
+
+      const mockAccounts = [
+        { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
+        { id: 'acc-ap', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+        { id: 'acc-rev', name: 'Revenue', type: 'INCOME', status: 'ACTIVE', userId } as AccountEntity,
+        { id: 'acc-exp', name: 'Expense', type: 'EXPENSE', status: 'ACTIVE', userId } as AccountEntity,
+      ];
+
+      mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
+      mockAccountRepo.find!.mockResolvedValue(mockAccounts);
+
+      // Mock balance sheet balances
+      mockBalanceRepo.find!
+        .mockResolvedValueOnce([
+          { accountId: 'acc-cash', periodId, closingBalance: 20000 } as AccountPeriodBalanceEntity,
+          { accountId: 'acc-ap', periodId, closingBalance: 9000 } as AccountPeriodBalanceEntity,
+        ])
+        .mockResolvedValueOnce([
+          { accountId: 'acc-rev', periodId, closingBalance: 0 } as AccountPeriodBalanceEntity,
+          { accountId: 'acc-exp', periodId, closingBalance: 0 } as AccountPeriodBalanceEntity,
+        ]);
+
+      // Mock prior year entries
+      const mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([
+          { entryType: 'CREDIT', total: '11000' },
+        ]),
+      };
+      mockJournalEntryRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const result = (await balanceSheetUseCase.execute(userId, {
+        mode: 'period',
+        periodId,
+      })) as any;
+
+      expect(result.assets).toEqual([
+        { accountId: 'acc-cash', name: 'Cash', balance: 20000.0 },
+      ]);
+      expect(result.liabilities).toEqual([
+        { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
+      ]);
+      expect(result.equity).toEqual([
+        { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
+        { accountId: 'virtual-accumulated-results', name: 'Resultados Acumulados', balance: 11000.0 },
+      ]);
+      expect(result.balanced).toBe(true);
+    });
   });
 
   describe('IncomeStatementUseCase', () => {
