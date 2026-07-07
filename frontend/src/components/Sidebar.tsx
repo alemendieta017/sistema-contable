@@ -18,11 +18,14 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Transacciones", href: "/transactions", icon: ReceiptText },
-    { name: "Estadísticas", href: "/stats", icon: BarChart3 },
     { name: "Cuentas", href: "/accounts", icon: Wallet },
-    { name: "Períodos", href: "/periods", icon: Calendar },
     { name: "Balance General", href: "/reports/balance-sheet", icon: FileText },
+    { name: "Estadísticas", href: "/stats", icon: BarChart3 },
+    { name: "Períodos", href: "/periods", icon: Calendar },
+    { name: "Presupuestos", href: "/budgets", icon: LayoutDashboard },
     { name: "Estado de Resultados", href: "/reports/income-statement", icon: FileText },
+    { name: "Resultados Proyectados", href: "/reports/income-statement/forecast", icon: FileText },
+    { name: "Caja Proyectada", href: "/reports/cash-flow", icon: FileText },
     { name: "Ajustes", href: "/settings", icon: Settings },
   ];
 
@@ -72,11 +75,10 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isActive
+                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
                     ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
                     : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
+                  }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
                 <span>{item.name}</span>

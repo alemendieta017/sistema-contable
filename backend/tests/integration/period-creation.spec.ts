@@ -3,6 +3,7 @@ import { CreateFiscalYearUseCase } from '../../src/application/periods/create-fi
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
+import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
@@ -20,9 +21,15 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
 
   beforeEach(async () => {
     mockEntityManager = {
-      create: jest.fn().mockImplementation((entityClass, plainObject) => plainObject),
+      create: jest.fn().mockImplementation((entityClass, plainObject) => {
+        // Return dummy ID for saved entities if needed
+        return {
+          id: `mock-${entityClass.name.toLowerCase()}-uuid`,
+          ...plainObject,
+        };
+      }),
       save: jest.fn().mockImplementation(async (entityClass, entity) => {
-        return { id: `mock-${entityClass.name.toLowerCase()}-uuid`, ...entity };
+        return { id: entity.id || `mock-${entityClass.name.toLowerCase()}-uuid`, ...entity };
       }),
     };
 
@@ -45,6 +52,10 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
           useValue: mockPeriodRepo,
         },
         {
+          provide: getRepositoryToken(BudgetEntity),
+          useValue: {},
+        },
+        {
           provide: DataSource,
           useValue: mockDataSource,
         },
@@ -54,7 +65,7 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     useCase = module.get<CreateFiscalYearUseCase>(CreateFiscalYearUseCase);
   });
 
-  it('should successfully create a fiscal year and 12 monthly periods', async () => {
+  it('should successfully create a fiscal year, 12 monthly periods, and 12 empty budgets', async () => {
     const userId = 'user-123';
     const dto = {
       year: 2026,
@@ -78,7 +89,25 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     expect(result.periods).toHaveLength(12);
     expect(result.periods[0].name).toBe('2026-01');
     expect(result.periods[11].name).toBe('2026-12');
-    expect(mockEntityManager.save).toHaveBeenCalledTimes(13); // 1 fiscal year + 12 periods
+    
+    // 1 fiscal year + 12 periods + 12 budgets = 25 saves
+    expect(mockEntityManager.save).toHaveBeenCalledTimes(25);
+
+    // Verify budget creation calls
+    const budgetCreateCalls = mockEntityManager.create.mock.calls.filter(
+      (args: any[]) => args[0] === BudgetEntity
+    );
+    expect(budgetCreateCalls).toHaveLength(12);
+    expect(budgetCreateCalls[0][1]).toEqual({
+      userId,
+      periodId: 'mock-periodentity-uuid',
+      name: 'Enero 2026',
+    });
+    expect(budgetCreateCalls[11][1]).toEqual({
+      userId,
+      periodId: 'mock-periodentity-uuid',
+      name: 'Diciembre 2026',
+    });
   });
 
   it('should throw BadRequestException if startDate is after or equal to endDate', async () => {
@@ -131,3 +160,4 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     );
   });
 });
+

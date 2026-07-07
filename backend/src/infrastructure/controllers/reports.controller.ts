@@ -8,6 +8,8 @@ import { ExportExcelService } from '../../application/reports/export-excel.servi
 import { ReconstructBalancesUseCase } from '../../application/periods/reconstruct-balances.use-case';
 import { BalanceSheetUseCase } from '../../application/periods/balance-sheet.use-case';
 import { IncomeStatementUseCase } from '../../application/periods/income-statement.use-case';
+import { IncomeStatementForecastUseCase } from '../../application/reports/income-statement-forecast.use-case';
+import { CashFlowStatementForecastUseCase } from '../../application/reports/cash-flow-statement.use-case';
 
 @Controller('api/reports')
 @UseGuards(JwtAuthGuard)
@@ -18,6 +20,8 @@ export class ReportsController {
     private readonly reconstructBalancesUseCase: ReconstructBalancesUseCase,
     private readonly balanceSheetUseCase: BalanceSheetUseCase,
     private readonly incomeStatementUseCase: IncomeStatementUseCase,
+    private readonly incomeStatementForecastUseCase: IncomeStatementForecastUseCase,
+    private readonly cashFlowStatementForecastUseCase: CashFlowStatementForecastUseCase,
   ) {}
 
   @Get('statistics')
@@ -86,5 +90,28 @@ export class ReportsController {
     }
     return this.incomeStatementUseCase.execute(user.id, periodId);
   }
+
+  @Get('income-statement/real-vs-projected')
+  async getIncomeStatementRealVsProjected(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+  ) {
+    if (!fiscalYearId) {
+      throw new BadRequestException('fiscalYearId is required');
+    }
+    return this.incomeStatementForecastUseCase.execute(user.id, fiscalYearId);
+  }
+
+  @Get('cash-flow/real-vs-projected')
+  async getCashFlowRealVsProjected(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+  ) {
+    if (!fiscalYearId) {
+      throw new BadRequestException('fiscalYearId is required');
+    }
+    return this.cashFlowStatementForecastUseCase.execute(user.id, fiscalYearId);
+  }
 }
+
 

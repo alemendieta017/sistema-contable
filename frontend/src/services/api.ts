@@ -115,6 +115,15 @@ export const api = {
       return handleResponse(res);
     },
 
+    async update(id: string, data: { name?: string; isCashOrBank?: boolean }) {
+      const res = await fetch(`${API_BASE_URL}/accounts/${id}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
     async delete(id: string) {
       const res = await fetch(`${API_BASE_URL}/accounts/${id}`, {
         method: 'DELETE',
@@ -197,6 +206,40 @@ export const api = {
       });
       return handleResponse(res);
     },
+
+    async getByPeriod(periodId: string) {
+      const res = await fetch(`${API_BASE_URL}/budgets/by-period/${periodId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async updateItems(periodId: string, data: { items: Array<{ accountId: string; amount: number }> }) {
+      const res = await fetch(`${API_BASE_URL}/budgets/by-period/${periodId}/items`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async replicate(data: { periodId: string; accountId: string; amount: number }) {
+      const res = await fetch(`${API_BASE_URL}/budgets/replicate`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async executionReport(periodId: string) {
+      const res = await fetch(`${API_BASE_URL}/budgets/execution-report?periodId=${periodId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
   },
 
   reports: {
@@ -236,6 +279,22 @@ export const api = {
 
     async incomeStatement(periodId: string) {
       const res = await fetch(`${API_BASE_URL}/reports/income-statement?periodId=${periodId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async realVsProjectedIncomeStatement(fiscalYearId: string) {
+      const res = await fetch(`${API_BASE_URL}/reports/income-statement/real-vs-projected?fiscalYearId=${fiscalYearId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async realVsProjectedCashFlow(fiscalYearId: string) {
+      const res = await fetch(`${API_BASE_URL}/reports/cash-flow/real-vs-projected?fiscalYearId=${fiscalYearId}`, {
         method: 'GET',
         headers: getHeaders(),
       });

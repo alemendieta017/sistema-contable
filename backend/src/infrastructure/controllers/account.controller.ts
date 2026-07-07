@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Body, Param, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AccountEntity } from '../database/entities/account.entity';
@@ -9,6 +9,7 @@ import { UserEntity } from '../database/entities/user.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
+import { UpdateAccountUseCase } from '../../application/accounts/update-account.use-case';
 
 @Controller('api/accounts')
 @UseGuards(JwtAuthGuard)
@@ -18,6 +19,7 @@ export class AccountController {
     private readonly accountRepository: Repository<AccountEntity>,
     private readonly getAccountsSummaryUseCase: GetAccountsSummaryUseCase,
     private readonly deleteAccountUseCase: DeleteAccountUseCase,
+    private readonly updateAccountUseCase: UpdateAccountUseCase,
   ) {}
 
   @Get()
@@ -58,8 +60,18 @@ export class AccountController {
     return this.accountRepository.save(account);
   }
 
+  @Patch(':id')
+  async update(
+    @CurrentUser() user: UserEntity,
+    @Param('id') id: string,
+    @Body() body: { name?: string; isCashOrBank?: boolean },
+  ) {
+    return this.updateAccountUseCase.execute(user.id, id, body);
+  }
+
   @Delete(':id')
   async delete(@CurrentUser() user: UserEntity, @Param('id') id: string) {
     return this.deleteAccountUseCase.execute(user.id, id);
   }
 }
+

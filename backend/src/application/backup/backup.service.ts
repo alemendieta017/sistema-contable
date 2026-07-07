@@ -110,7 +110,7 @@ export class BackupService {
         const txEntity = entityManager.create(TransactionEntity, {
           id: tx.id,
           userId,
-          date: new Date(tx.date),
+          accountingDate: tx.accountingDate || (tx.date ? new Date(tx.date).toISOString().split('T')[0] : undefined),
           description: tx.description,
           status: tx.status || 'POSTED',
           reversalOfId: tx.reversalOfId,

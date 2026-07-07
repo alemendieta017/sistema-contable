@@ -13,6 +13,7 @@ import { DeleteTransactionUseCase } from '../../application/ledger/delete-transa
 import { ReverseTransactionUseCase } from '../../application/ledger/reverse-transaction.use-case';
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
+import { UpdateAccountUseCase } from '../../application/accounts/update-account.use-case';
 import { CreateFiscalYearUseCase } from '../../application/periods/create-fiscal-year.use-case';
 import { UpdatePeriodUseCase } from '../../application/periods/update-period.use-case';
 import { CloseFiscalYearUseCase } from '../../application/periods/close-fiscal-year.use-case';
@@ -43,6 +44,7 @@ import { AuthModule } from '../auth/auth.module';
     ReverseTransactionUseCase,
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
+    UpdateAccountUseCase,
     CreateFiscalYearUseCase,
     UpdatePeriodUseCase,
     CloseFiscalYearUseCase,
@@ -56,6 +58,7 @@ import { AuthModule } from '../auth/auth.module';
     ReverseTransactionUseCase,
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
+    UpdateAccountUseCase,
     CreateFiscalYearUseCase,
     UpdatePeriodUseCase,
     CloseFiscalYearUseCase,

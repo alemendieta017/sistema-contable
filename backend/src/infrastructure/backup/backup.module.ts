@@ -5,6 +5,7 @@ import { TransactionEntity } from '../database/entities/transaction.entity';
 import { JournalEntryEntity } from '../database/entities/journal-entry.entity';
 import { BudgetEntity } from '../database/entities/budget.entity';
 import { CurrencyEntity } from '../database/entities/currency.entity';
+import { BudgetItemEntity } from '../database/entities/budget-item.entity';
 import { BackupService } from '../../application/backup/backup.service';
 import { BackupController } from '../controllers/backup.controller';
 import { AuthModule } from '../auth/auth.module';
@@ -17,6 +18,7 @@ import { AuthModule } from '../auth/auth.module';
       JournalEntryEntity,
       BudgetEntity,
       CurrencyEntity,
+      BudgetItemEntity,
     ]),
     AuthModule,
   ],

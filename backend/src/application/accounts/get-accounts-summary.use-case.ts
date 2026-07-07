@@ -79,6 +79,7 @@ export class GetAccountsSummaryUseCase {
           decimalPlaces: acc.currency?.decimalPlaces ?? 2,
           parentId: acc.parentId,
           status: acc.status,
+          isCashOrBank: acc.isCashOrBank,
           balance,
         };
       });

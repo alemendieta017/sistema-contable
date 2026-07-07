@@ -10,6 +10,7 @@ import { DeleteTransactionUseCase } from '../../src/application/ledger/delete-tr
 import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-transaction.use-case';
 import { GetAccountsSummaryUseCase } from '../../src/application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../src/application/accounts/delete-account.use-case';
+import { UpdateAccountUseCase } from '../../src/application/accounts/update-account.use-case';
 import { LedgerController } from '../../src/infrastructure/controllers/ledger.controller';
 import { AccountController } from '../../src/infrastructure/controllers/account.controller';
 import { JwtAuthGuard } from '../../src/infrastructure/auth/jwt-auth.guard';
@@ -56,6 +57,10 @@ describe('Ledger Endpoints Contract Tests', () => {
     execute: jest.fn().mockResolvedValue({ success: true, action: 'DEACTIVATED' }),
   };
 
+  const mockUpdateAccountUseCase = {
+    execute: jest.fn().mockResolvedValue({ success: true }),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [LedgerController, AccountController],
@@ -83,6 +88,10 @@ describe('Ledger Endpoints Contract Tests', () => {
         {
           provide: DeleteAccountUseCase,
           useValue: mockDeleteAccountUseCase,
+        },
+        {
+          provide: UpdateAccountUseCase,
+          useValue: mockUpdateAccountUseCase,
         },
         {
           provide: getRepositoryToken(TransactionEntity),

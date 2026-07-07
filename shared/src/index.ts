@@ -75,4 +75,33 @@ export const UpdatePeriodRequestSchema = z.object({
 
 export type UpdatePeriodRequest = z.infer<typeof UpdatePeriodRequestSchema>;
 
+// Update Account Flags (isCashOrBank)
+export const UpdateAccountFlagsRequestSchema = z.object({
+  isCashOrBank: z.boolean()
+});
+
+export type UpdateAccountFlagsRequest = z.infer<typeof UpdateAccountFlagsRequestSchema>;
+
+// Update Budget Items
+export const BudgetItemUpdateSchema = z.object({
+  accountId: z.string().uuid(),
+  amount: z.number()
+});
+
+export const UpdateBudgetItemsRequestSchema = z.object({
+  items: z.array(BudgetItemUpdateSchema)
+});
+
+export type UpdateBudgetItemsRequest = z.infer<typeof UpdateBudgetItemsRequestSchema>;
+
+// Replicate Budget Item to Fiscal Year
+export const ReplicateBudgetItemRequestSchema = z.object({
+  periodId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  amount: z.number()
+});
+
+export type ReplicateBudgetItemRequest = z.infer<typeof ReplicateBudgetItemRequestSchema>;
+
+
 

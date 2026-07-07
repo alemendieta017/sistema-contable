@@ -116,6 +116,19 @@ export default function AccountsPage() {
     }
   };
 
+  const handleToggleCashOrBank = async (id: string, isCashOrBank: boolean) => {
+    setSaving(true);
+    setError("");
+    try {
+      await api.accounts.update(id, { isCashOrBank });
+      loadSummary();
+    } catch (err: any) {
+      setError(err.message || "Error al actualizar tipo de cuenta líquida.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -212,7 +225,7 @@ export default function AccountsPage() {
             type="button"
             onClick={handleCreateDefaultAccounts}
             disabled={saving}
-            className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+            className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
           >
             {saving ? "Generando cuentas..." : "Generar Cuentas Predeterminadas"}
           </button>
@@ -226,6 +239,7 @@ export default function AccountsPage() {
             accounts={filteredAccounts}
             onDelete={handleDeleteAccount}
             deletingId={deletingId}
+            onToggleCashOrBank={handleToggleCashOrBank}
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
@@ -250,3 +264,4 @@ export default function AccountsPage() {
     </div>
   );
 }
+
