@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+  UpdateDateColumn,
+} from 'typeorm';
 import { AccountEntity } from './account.entity';
 import { PeriodEntity } from './period.entity';
 
@@ -22,16 +30,16 @@ export class AccountPeriodBalanceEntity {
   @JoinColumn({ name: 'period_id' })
   period: PeriodEntity;
 
-  @Column({ name: 'opening_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0000 })
+  @Column({ name: 'opening_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
   openingBalance: number;
 
-  @Column({ name: 'total_debits', type: 'decimal', precision: 18, scale: 4, default: 0.0000 })
+  @Column({ name: 'total_debits', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
   totalDebits: number;
 
-  @Column({ name: 'total_credits', type: 'decimal', precision: 18, scale: 4, default: 0.0000 })
+  @Column({ name: 'total_credits', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
   totalCredits: number;
 
-  @Column({ name: 'closing_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0000 })
+  @Column({ name: 'closing_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
   closingBalance: number;
 
   @UpdateDateColumn({ name: 'last_updated', type: 'timestamp with time zone' })

@@ -111,12 +111,15 @@ export class GetBudgetExecutionUseCase {
         },
         relations: ['account'],
       });
-      const initialCash = cashBalances.reduce((sum, item) => sum + Number(item.openingBalance || 0), 0);
+      const initialCash = cashBalances.reduce(
+        (sum, item) => sum + Number(item.openingBalance || 0),
+        0,
+      );
 
       // Helper function to format numbers to 2 decimals
       const formatAmount = (val: number): number => {
         const rounded = parseFloat(Number(val).toFixed(2));
-        return rounded === -0 ? 0 : rounded;
+        return Object.is(rounded, -0) ? 0 : rounded;
       };
 
       const income: any[] = [];

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { X, Plus, AlertCircle } from "lucide-react";
-import { api } from "../services/api";
+import React, { useState, useEffect } from 'react';
+import { X, Plus, AlertCircle } from 'lucide-react';
+import { api } from '../services/api';
 
 interface Currency {
   id: string;
@@ -26,13 +26,15 @@ interface AccountModalProps {
 }
 
 export default function AccountModal({ onClose, onSuccess, parentCandidates }: AccountModalProps) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE">("ASSET");
+  const [name, setName] = useState('');
+  const [type, setType] = useState<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>(
+    'ASSET',
+  );
   const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [selectedCurrencyId, setSelectedCurrencyId] = useState("");
-  const [selectedParentId, setSelectedParentId] = useState("");
+  const [selectedCurrencyId, setSelectedCurrencyId] = useState('');
+  const [selectedParentId, setSelectedParentId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchCurrencies();
@@ -47,7 +49,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
         setSelectedCurrencyId(base.id);
       }
     } catch (err: any) {
-      setError("Error al cargar monedas.");
+      setError('Error al cargar monedas.');
     }
   };
 
@@ -56,7 +58,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
     if (!name.trim()) return;
 
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
       await api.accounts.create({
@@ -68,21 +70,18 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Error al crear la cuenta.");
+      setError(err.message || 'Error al crear la cuenta.');
     } finally {
       setLoading(false);
     }
   };
 
   // Filter possible parent accounts (same type and no parent itself)
-  const filteredParents = parentCandidates.filter(
-    (a) => a.type === type && !a.parentId
-  );
+  const filteredParents = parentCandidates.filter((a) => a.type === type && !a.parentId);
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-        
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-150 dark:border-slate-700">
           <div>
@@ -132,7 +131,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               value={type}
               onChange={(e) => {
                 setType(e.target.value as any);
-                setSelectedParentId("");
+                setSelectedParentId('');
               }}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
             >
@@ -162,7 +161,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
             </select>
           </div>
 
-          {(type === "INCOME" || type === "EXPENSE") && filteredParents.length > 0 && (
+          {(type === 'INCOME' || type === 'EXPENSE') && filteredParents.length > 0 && (
             <div>
               <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
                 Categoría Padre (Opcional)
@@ -196,11 +195,10 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               disabled={loading || !name.trim()}
               className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50"
             >
-              {loading ? "Creando..." : "Crear Cuenta"}
+              {loading ? 'Creando...' : 'Crear Cuenta'}
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

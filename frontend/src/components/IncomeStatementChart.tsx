@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
-import { useTheme } from "../lib/theme-context";
+import React from 'react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { useTheme } from '../lib/theme-context';
 
 interface MonthlyBalance {
   monthName: string;
@@ -56,11 +56,11 @@ export default function IncomeStatementChart({ data }: IncomeStatementChartProps
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
-                border: theme === "dark" ? "1px solid #334155" : "1px solid #e2e8f0",
-                borderRadius: "12px",
-                fontSize: "10px",
-                color: theme === "dark" ? "#f8fafc" : "#0f172a",
+                backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0',
+                borderRadius: '12px',
+                fontSize: '10px',
+                color: theme === 'dark' ? '#f8fafc' : '#0f172a',
               }}
               formatter={(value: any) => [`$${value.toLocaleString()}`]}
             />
@@ -70,11 +70,11 @@ export default function IncomeStatementChart({ data }: IncomeStatementChartProps
               iconType="circle"
               iconSize={6}
               wrapperStyle={{
-                fontSize: "8px",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                fontWeight: "bold",
-                paddingTop: "12px",
+                fontSize: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontWeight: 'bold',
+                paddingTop: '12px',
               }}
             />
             <Bar

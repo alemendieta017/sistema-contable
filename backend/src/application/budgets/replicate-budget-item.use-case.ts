@@ -68,8 +68,18 @@ export class ReplicateBudgetItemUseCase {
           const [yearStr, monthStr] = p.name.split('-');
           const monthIndex = parseInt(monthStr, 10) - 1;
           const friendlyMonthNames = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+            'Enero',
+            'Febrero',
+            'Marzo',
+            'Abril',
+            'Mayo',
+            'Junio',
+            'Julio',
+            'Agosto',
+            'Septiembre',
+            'Octubre',
+            'Noviembre',
+            'Diciembre',
           ];
           const budgetFriendlyName = `${friendlyMonthNames[monthIndex]} ${yearStr}`;
 

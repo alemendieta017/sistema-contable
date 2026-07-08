@@ -122,7 +122,7 @@ export interface IBudgetExecutionReport {
 export interface IIncomeStatementMonthForecast {
   periodId: string;
   periodName: string;
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
   income: number;
   expense: number;
   netProfit: number;
@@ -137,7 +137,7 @@ export interface IIncomeStatementForecastReport {
 export interface ICashFlowMonthForecast {
   periodId: string;
   periodName: string;
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
   initialCash: number;
   netFlow: number;
   finalCash: number;

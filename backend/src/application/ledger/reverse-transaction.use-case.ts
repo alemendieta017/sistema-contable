@@ -45,7 +45,8 @@ export class ReverseTransactionUseCase {
       });
 
       // 1. Check period lock on reversal date
-      const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+      const period = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: reversalDate })
@@ -57,6 +58,9 @@ export class ReverseTransactionUseCase {
       }
       if (period.status === 'CLOSED') {
         throw new BadRequestException('The accounting period for the reversal date is closed');
+      }
+      if (period.status === 'PLANNING') {
+        throw new BadRequestException('The accounting period for the reversal date is in planning status');
       }
 
       // Mark original transaction as reversed
@@ -87,7 +91,12 @@ export class ReverseTransactionUseCase {
         creditDiff: e.entryType === 'CREDIT' ? Number(e.amountBase) : 0,
       }));
 
-      await this.balanceUpdateService.updateBalances(entityManager, userId, reversalDate, balanceChanges);
+      await this.balanceUpdateService.updateBalances(
+        entityManager,
+        userId,
+        reversalDate,
+        balanceChanges,
+      );
 
       return {
         id: savedReversalTx.id,
@@ -107,4 +116,3 @@ export class ReverseTransactionUseCase {
     });
   }
 }
-

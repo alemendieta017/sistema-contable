@@ -50,7 +50,8 @@ export class UpdateTransactionUseCase {
 
       // 1. Check period lock on old transaction date
       const oldTxDate = originalTx.accountingDate;
-      const oldPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+      const oldPeriod = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: oldTxDate })
@@ -58,15 +59,25 @@ export class UpdateTransactionUseCase {
         .getOne();
 
       if (!oldPeriod) {
-        throw new BadRequestException('No accounting period found for the original transaction date');
+        throw new BadRequestException(
+          'No accounting period found for the original transaction date',
+        );
       }
       if (oldPeriod.status === 'CLOSED') {
-        throw new BadRequestException('The accounting period for the original transaction date is closed');
+        throw new BadRequestException(
+          'The accounting period for the original transaction date is closed',
+        );
+      }
+      if (oldPeriod.status === 'PLANNING') {
+        throw new BadRequestException(
+          'The accounting period for the original transaction date is in planning status',
+        );
       }
 
       // 2. Check period lock on new transaction date
       const newTxDate = dto.accountingDate;
-      const newPeriod = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+      const newPeriod = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: newTxDate })
@@ -77,7 +88,14 @@ export class UpdateTransactionUseCase {
         throw new BadRequestException('No accounting period found for the new transaction date');
       }
       if (newPeriod.status === 'CLOSED') {
-        throw new BadRequestException('The accounting period for the new transaction date is closed');
+        throw new BadRequestException(
+          'The accounting period for the new transaction date is closed',
+        );
+      }
+      if (newPeriod.status === 'PLANNING') {
+        throw new BadRequestException(
+          'The accounting period for the new transaction date is in planning status',
+        );
       }
 
       // 3. Call balance-update.service to subtract old balances
@@ -87,7 +105,12 @@ export class UpdateTransactionUseCase {
         creditDiff: e.entryType === 'CREDIT' ? -Number(e.amountBase) : 0,
       }));
 
-      await this.balanceUpdateService.updateBalances(entityManager, userId, oldTxDate, oldBalanceChanges);
+      await this.balanceUpdateService.updateBalances(
+        entityManager,
+        userId,
+        oldTxDate,
+        oldBalanceChanges,
+      );
 
       // Delete the existing journal entries of this transaction
       await entityManager.delete(JournalEntryEntity, { transactionId });
@@ -172,7 +195,12 @@ export class UpdateTransactionUseCase {
         creditDiff: e.entryType === 'CREDIT' ? Number(e.amountBase) : 0,
       }));
 
-      await this.balanceUpdateService.updateBalances(entityManager, userId, newTxDate, newBalanceChanges);
+      await this.balanceUpdateService.updateBalances(
+        entityManager,
+        userId,
+        newTxDate,
+        newBalanceChanges,
+      );
 
       return {
         id: originalTx.id,
@@ -191,4 +219,3 @@ export class UpdateTransactionUseCase {
     });
   }
 }
-

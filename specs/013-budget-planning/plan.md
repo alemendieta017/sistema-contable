@@ -1,8 +1,10 @@
 # Implementation Plan: Presupuestos Financieros (Budgeting) y Proyecciones de Caja
 
-**Branch**: `013-budget-planning` | **Date**: 2026-07-05 | **Spec**: [spec.md](file:///Users/ale/dev/sistema-contable/specs/013-budget-planning/spec.md)
+**Branch**: `013-budget-planning` | **Date**: 2026-07-07 | **Spec**: [spec.md](file:///Users/ale/dev/sistema-contable/specs/013-budget-planning/spec.md)
 
 **Input**: Feature specification from `/specs/013-budget-planning/spec.md`
+
+---
 
 ## Summary
 
@@ -10,7 +12,7 @@ The objective is to implement a comprehensive budgeting system that tracks not o
 1. **Income Statement (Real vs. Projected)** (accrual basis).
 2. **Cash Flow Statement (Real vs. Projected)** (cash basis).
 
-The technical approach will refactor `BudgetEntity` to establish a 1-to-1 relationship with the existing `PeriodEntity`, introduce a new `BudgetItemEntity` to hold budget limits per account, add an `isCashOrBank` flag to `AccountEntity` to identify cash/bank equivalents, and build backend use cases to handle data storage, validation, execution tracking, and report calculations.
+The technical approach introduces a dynamic "add-on-demand" tabular entry UI, support for pre-opened planning periods (`PLANNING` status), and a rolling 12-month window for cash flow and profit-and-loss forecasting.
 
 ---
 
@@ -81,7 +83,8 @@ backend/
 │   │   │   ├── get-budget-detail.use-case.ts     # Fetches budget and items for editing
 │   │   │   ├── get-budget-execution.use-case.ts  # Generates execution comparison dashboard
 │   │   │   ├── replicate-budget-item.use-case.ts # Propagates item to entire fiscal year
-│   │   │   └── update-budget-items.use-case.ts   # Saves edited budget amounts
+│   │   │   ├── update-budget-items.use-case.ts   # Saves edited budget amounts
+│   │   │   └── copy-previous-budget.use-case.ts  # [NEW] Copies items from previous month
 │   │   └── reports/
 │   │       ├── cash-flow-statement.use-case.ts   # Real vs Projected Cash Flow report
 │   │       └── income-statement-forecast.use-case.ts # Real vs Projected Income Statement report
@@ -91,9 +94,11 @@ backend/
 │       │   └── reports.controller.ts # REST routes for reports
 │       └── database/
 │           └── entities/
-│               ├── account.entity.ts  # Added isCashOrBank
-│               ├── budget.entity.ts   # Refactored 1-1 with Period
-│               └── budget-item.entity.ts # New entity for limits per account
+│               ├── account.entity.ts     # Added isCashOrBank
+│               ├── budget.entity.ts      # Refactored 1-1 with Period
+│               ├── budget-item.entity.ts # New entity for limits per account
+│               ├── period.entity.ts      # [MODIFY] Added PLANNING status
+│               └── fiscal-year.entity.ts # [MODIFY] Added PLANNING status
 ```
 
 **Structure Decision**: Web application layout (Option 2) leveraging separate frontend and backend directories with centralized shared schemas.

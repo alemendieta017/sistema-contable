@@ -6,6 +6,12 @@
 - Added attribute `isCashOrBank: boolean` (name in database: `is_cash_or_bank`), type `boolean`, default `false`.
 - Validation: Block updates to `isCashOrBank` if there are any `JournalEntry` rows pointing to the account.
 
+### FiscalYear (`fiscal_years` table)
+- Updated status enum: `status` type `varchar(10)`, default `OPEN` (Values: `CLOSED`, `OPEN`, `PLANNING`).
+
+### Period (`periods` table)
+- Updated status enum: `status` type `varchar(10)`, default `OPEN` (Values: `CLOSED`, `OPEN`, `PLANNING`).
+
 ### Budget (`budgets` table)
 Refactored schema:
 - `id`: UUID, Primary Key.

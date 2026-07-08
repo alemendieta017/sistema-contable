@@ -19,7 +19,11 @@ export class UpdateBudgetItemsUseCase {
     private readonly dataSource: DataSource,
   ) {}
 
-  async execute(userId: string, periodId: string, dto: IBudgetUpdateDto): Promise<IBudgetUpdateResponse> {
+  async execute(
+    userId: string,
+    periodId: string,
+    dto: IBudgetUpdateDto,
+  ): Promise<IBudgetUpdateResponse> {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period and check if user owns it
       const period = await entityManager.findOne(PeriodEntity, {
@@ -45,8 +49,18 @@ export class UpdateBudgetItemsUseCase {
         const [yearStr, monthStr] = period.name.split('-');
         const monthIndex = parseInt(monthStr, 10) - 1;
         const friendlyMonthNames = [
-          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+          'Enero',
+          'Febrero',
+          'Marzo',
+          'Abril',
+          'Mayo',
+          'Junio',
+          'Julio',
+          'Agosto',
+          'Septiembre',
+          'Octubre',
+          'Noviembre',
+          'Diciembre',
         ];
         const budgetFriendlyName = `${friendlyMonthNames[monthIndex]} ${yearStr}`;
 
@@ -97,6 +111,13 @@ export class UpdateBudgetItemsUseCase {
       const existingItemMap = new Map<string, BudgetItemEntity>();
       for (const item of existingItems) {
         existingItemMap.set(item.accountId, item);
+      }
+
+      // Identify and remove omitted items
+      const incomingAccountIds = new Set(dto.items.map((item) => item.accountId));
+      const itemsToDelete = existingItems.filter((item) => !incomingAccountIds.has(item.accountId));
+      if (itemsToDelete.length > 0) {
+        await entityManager.remove(BudgetItemEntity, itemsToDelete);
       }
 
       const itemsToSave: BudgetItemEntity[] = [];

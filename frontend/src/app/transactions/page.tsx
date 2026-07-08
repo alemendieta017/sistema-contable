@@ -76,15 +76,15 @@ export default function TransactionsPage() {
     view === 'daily'
       ? dailyDates.startDate
       : view === 'calendar'
-      ? calendarDates.startDate
-      : monthlyDates.startDate;
+        ? calendarDates.startDate
+        : monthlyDates.startDate;
 
   const activeEndDate =
     view === 'daily'
       ? dailyDates.endDate
       : view === 'calendar'
-      ? calendarDates.endDate
-      : monthlyDates.endDate;
+        ? calendarDates.endDate
+        : monthlyDates.endDate;
 
   useEffect(() => {
     fetchData();
@@ -98,10 +98,7 @@ export default function TransactionsPage() {
       const [accs, curs, txs] = await Promise.all([
         api.accounts.list(),
         api.currencies.list(),
-        api.transactions.list(
-          activeStartDate,
-          activeEndDate
-        ),
+        api.transactions.list(activeStartDate, activeEndDate),
       ]);
 
       setAccounts(accs || []);
@@ -241,7 +238,9 @@ export default function TransactionsPage() {
       )}
 
       {/* Mobile View: Stacked Full-Width Row segments (pegados) */}
-      <div className={`sm:hidden -mx-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 shadow-sm ${(!success && !error) ? '-mt-6' : 'mt-2'}`}>
+      <div
+        className={`sm:hidden -mx-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 shadow-sm ${!success && !error ? '-mt-6' : 'mt-2'}`}
+      >
         {/* Segmented Control Row */}
         <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/40">
           <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-0.5 rounded-xl shadow-inner">

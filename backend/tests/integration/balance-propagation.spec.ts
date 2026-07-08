@@ -31,7 +31,11 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' }),
+        ),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
       remove: jest.fn().mockImplementation((cls, obj) => Promise.resolve(obj)),
@@ -226,7 +230,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
 
       mockEntityManager.findOne.mockImplementation((cls, options) => {
         if (cls === AccountEntity) {
-          const id = typeof options === 'string' ? options : (options.where?.id || options.id);
+          const id = typeof options === 'string' ? options : options.where?.id || options.id;
           return id === 'acc-cash' ? mockCashAccount : mockRentAccount;
         }
         if (cls === CurrencyEntity) {
@@ -258,12 +262,16 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       ]);
 
       // Check current period balance (p-1) cash
-      const cashBalanceCurrent = savedBalances.find((b) => b.accountId === 'acc-cash' && b.periodId === 'p-1');
+      const cashBalanceCurrent = savedBalances.find(
+        (b) => b.accountId === 'acc-cash' && b.periodId === 'p-1',
+      );
       expect(cashBalanceCurrent).toBeDefined();
       expect(Number(cashBalanceCurrent.closingBalance)).toBe(100);
 
       // Check propagation to future period (p-2) cash
-      const cashBalanceFuture = savedBalances.find((b) => b.accountId === 'acc-cash' && b.periodId === 'p-2');
+      const cashBalanceFuture = savedBalances.find(
+        (b) => b.accountId === 'acc-cash' && b.periodId === 'p-2',
+      );
       expect(cashBalanceFuture).toBeDefined();
       expect(Number(cashBalanceFuture.openingBalance)).toBe(100);
       expect(Number(cashBalanceFuture.closingBalance)).toBe(100);

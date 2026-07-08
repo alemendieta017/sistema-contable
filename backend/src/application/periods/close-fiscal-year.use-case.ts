@@ -57,8 +57,8 @@ export class CloseFiscalYearUseCase {
       }
 
       // 4. Identify the last period of the fiscal year (usually period 12, e.g. latest endDate)
-      const sortedPeriods = [...fiscalYear.periods].sort(
-        (a, b) => a.endDate.localeCompare(b.endDate),
+      const sortedPeriods = [...fiscalYear.periods].sort((a, b) =>
+        a.endDate.localeCompare(b.endDate),
       );
       const lastPeriod = sortedPeriods[sortedPeriods.length - 1];
 

@@ -41,9 +41,6 @@ Add validation in the update/edit account flow:
 - Essential for **FR-008** to differentiate operative cash/bank accounts from other assets (like investments, which are non-liquid and budgetable).
 - Prevents database state corruption by blocking the flag modification for accounts with transactions (**FR-014** and **FR-015**).
 
-### Alternatives considered
-- Dynamic pattern matching by account name (e.g., checking if the name starts with "Caja" or "Banco"). Rejected because it is fragile, localized, and prone to naming errors.
-
 ---
 
 ## 3. Real vs. Projected Cash Flow Calculations
@@ -54,7 +51,7 @@ The cash flow calculations will follow different rules based on the period statu
    - Sum of DEBIT amounts minus CREDIT amounts of journal entries where `account.isCashOrBank = true` and `transaction.accountingDate` is within the period's date range.
    - Initial cash balance = sum of actual opening balances of cash/bank accounts.
    - Ending cash balance = sum of actual closing balances of cash/bank accounts.
-2. **Projected Cash Flow (Open/Future Periods)**:
+2. **Projected Cash Flow (Open/Future/Planning Periods)**:
    - Initial cash balance of period `P` = Ending cash balance of period `P-1`. (If no preceding period exists, use the actual opening balances of cash/bank accounts for `P`).
    - Net cash flow = `Sum(INCOME.budgeted) - Sum(EXPENSE.budgeted) + Sum(ASSET.budgeted) + Sum(LIABILITY.budgeted)`.
    - Ending cash balance = Initial cash balance + Net cash flow.
@@ -63,5 +60,21 @@ The cash flow calculations will follow different rules based on the period statu
 - Adheres to requirement **FR-013**.
 - Accurately models cash inflows/outflows for assets and liabilities (where asset savings and liability repayments are negative flows, and loan receipts or asset liquidations are positive flows).
 
-### Alternatives considered
-- Using accrual income and expenses directly for projected cash flows. Rejected because it ignores asset savings and liability loan flows, which have a massive impact on family liquidity.
+---
+
+## 4. Period and Fiscal Year Status
+
+### Decision
+Introduce three states for the period and fiscal year entities:
+- `CLOSED` (Cerrado): Read-only period for past data.
+- `OPEN` (Abierto): Active period for posting actual entries and comparing with budgets.
+- `PLANNING` (Planificación): Future virtual period. Blocks real ledger entries but allows full budgeting and forecasting.
+
+---
+
+## 5. Dynamic Tabular Budget Sync
+
+### Decision
+Instead of pre-populating all accounts in the database or UI:
+- `GET /api/budgets/by-period/:periodId` returns only the budgeted `BudgetItemEntity` entries that have non-zero limits, along with a list of `eligibleAccounts`.
+- `PUT /api/budgets/by-period/:periodId/items` performs a full synchronization: deletes existing database records that are omitted from the incoming payload, and creates/updates the remaining.

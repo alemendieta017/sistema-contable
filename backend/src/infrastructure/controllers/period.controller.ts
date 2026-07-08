@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FiscalYearEntity } from '../database/entities/fiscal-year.entity';
@@ -6,9 +16,15 @@ import { PeriodEntity } from '../database/entities/period.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UserEntity } from '../database/entities/user.entity';
-import { CreateFiscalYearUseCase, CreateFiscalYearDto } from '../../application/periods/create-fiscal-year.use-case';
+import {
+  CreateFiscalYearUseCase,
+  CreateFiscalYearDto,
+} from '../../application/periods/create-fiscal-year.use-case';
 import { UpdatePeriodUseCase } from '../../application/periods/update-period.use-case';
-import { CloseFiscalYearUseCase, CloseFiscalYearDto } from '../../application/periods/close-fiscal-year.use-case';
+import {
+  CloseFiscalYearUseCase,
+  CloseFiscalYearDto,
+} from '../../application/periods/close-fiscal-year.use-case';
 import { UpdatePeriodRequestSchema, CloseFiscalYearRequestSchema } from '@sistema-contable/shared';
 
 @Controller('api')
@@ -33,10 +49,7 @@ export class PeriodController {
   }
 
   @Post('fiscal-years')
-  async createFiscalYear(
-    @CurrentUser() user: UserEntity,
-    @Body() dto: CreateFiscalYearDto,
-  ) {
+  async createFiscalYear(@CurrentUser() user: UserEntity, @Body() dto: CreateFiscalYearDto) {
     return this.createFiscalYearUseCase.execute(user.id, dto);
   }
 
@@ -54,10 +67,7 @@ export class PeriodController {
   }
 
   @Get('periods')
-  async listPeriods(
-    @CurrentUser() user: UserEntity,
-    @Query('fiscalYearId') fiscalYearId?: string,
-  ) {
+  async listPeriods(@CurrentUser() user: UserEntity, @Query('fiscalYearId') fiscalYearId?: string) {
     const query = this.periodRepository
       .createQueryBuilder('period')
       .innerJoin('period.fiscalYear', 'fiscalYear')
@@ -71,11 +81,7 @@ export class PeriodController {
   }
 
   @Patch('periods/:id')
-  async updatePeriod(
-    @CurrentUser() user: UserEntity,
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  async updatePeriod(@CurrentUser() user: UserEntity, @Param('id') id: string, @Body() body: any) {
     const parseResult = UpdatePeriodRequestSchema.safeParse(body);
     if (!parseResult.success) {
       throw new BadRequestException(parseResult.error.message);

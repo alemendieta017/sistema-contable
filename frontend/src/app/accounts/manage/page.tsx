@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../../services/api";
-import AccountModal from "../../../components/AccountModal";
-import { ArrowLeft, Plus, ToggleLeft, ToggleRight, Check, AlertTriangle } from "lucide-react";
-import Link from "next/link";
-import { formatCurrency } from "../../../lib/utils";
-import { useSearch } from "../../../lib/search-context";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../../services/api';
+import AccountModal from '../../../components/AccountModal';
+import { ArrowLeft, Plus, ToggleLeft, ToggleRight, Check, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { formatCurrency } from '../../../lib/utils';
+import { useSearch } from '../../../lib/search-context';
 
 interface AccountSummary {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   balance: number;
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
   parentId?: string | null;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
 }
 
 export default function AccountsManagePage() {
   const { searchQuery } = useSearch();
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -35,25 +35,25 @@ export default function AccountsManagePage() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
       const data = await api.accounts.summary();
       setAccounts(data?.accounts || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar las cuentas.");
+      setError(err.message || 'Error al cargar las cuentas.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeactivate = async (id: string) => {
-    if (!confirm("¿Está seguro de que desea desactivar o eliminar este rubro?")) return;
+    if (!confirm('¿Está seguro de que desea desactivar o eliminar este rubro?')) return;
     setSaving(true);
-    setError("");
+    setError('');
     try {
       await api.accounts.delete(id);
       fetchAccounts();
     } catch (err: any) {
-      setError(err.message || "Error al actualizar estado de la cuenta.");
+      setError(err.message || 'Error al actualizar estado de la cuenta.');
     } finally {
       setSaving(false);
     }
@@ -124,12 +124,12 @@ export default function AccountsManagePage() {
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
             {filteredAccounts.map((a) => {
-              const isInactive = a.status === "INACTIVE";
+              const isInactive = a.status === 'INACTIVE';
               return (
                 <tr
                   key={a.id}
                   className={`hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition ${
-                    isInactive ? "opacity-60 bg-slate-50/20 dark:bg-slate-900/10" : ""
+                    isInactive ? 'opacity-60 bg-slate-50/20 dark:bg-slate-900/10' : ''
                   }`}
                 >
                   <td className="p-4">

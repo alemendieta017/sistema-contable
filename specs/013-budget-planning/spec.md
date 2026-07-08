@@ -3,11 +3,11 @@
 **Feature Branch**: `013-budget-planning`
 
 **Created**: 2026-07-04
-**Updated**: 2026-07-05
+**Updated**: 2026-07-07
 
 **Status**: Draft
 
-**Input**: User description: "Tenemos que agregar todo esto a nuestro plan actual, que solo contempla presupuestos por ingresos y egresos, pero debemos incorporar tambien los presupuestos de ahorros e inversiones (movimiento de activos), y financiamiento (movimientos de pasivo). Esto es necesario para tener los siguientes reportes: Flujo de caja, Flujo de caja proyectado, Estado de resultados, Estado de resultados proyectado."
+**Input**: User description: "Tenemos que agregar todo esto a nuestro plan actual, que solo contempla presupuestos por ingresos y egresos, pero debemos incorporar tambien los presupuestos de ahorros e inversiones (movimiento de activos), y financiamiento (movimientos de pasivo). Esto es necesario para tener los siguientes reportes: Flujo de caja, Flujo de caja proyectado, Estado de resultados, Estado de resultados proyectado. Ademas, la experiencia de creacion de presupuesto quiero que sea ir agregando items al presupuesto, no que ya esten predefinidos y ocupando mucho lugar por fila, es decir, quiero que sea similar a una tabla, bien bonita y clean pero tabla al final, por cada rubro/fila. La agrupacion de ingresos egresos movimientos de caja etc obviamente deben ir agrupados. Puedes basarte en el diseño de Ejecución Presupuestaria como base."
 
 ---
 
@@ -24,9 +24,9 @@
 
 ### User Story 1 - Inicialización Automática de Presupuestos (Priority: P1)
 
-Como administrador del sistema, cuando inicializo un nuevo Ejercicio Fiscal (Fiscal Year), quiero que el sistema genere automáticamente los periodos contables y un presupuesto vacío asociado a cada periodo para evitar tener que configurar los presupuestos de forma manual.
+Como administrador del sistema, cuando inicializo un nuevo Ejercicio Fiscal (Fiscal Year), quiero que el sistema genere automáticamente los periodos contables mensuales y un presupuesto vacío (con montos en cero) asociado a cada periodo para evitar tener que configurar los presupuestos de forma manual.
 
-**Why this priority**: Es la base del flujo automatizado. Garantiza que todos los periodos contables tengan un presupuesto pre-generado listo para ser editado desde el inicio del ejercicio fiscal.
+**Why this priority**: Es la base de la automatización. Asegura la coherencia de datos vinculando cada periodo mensual a su correspondiente estructura de presupuesto desde su creación.
 
 **Independent Test**: Crear un nuevo Ejercicio Fiscal "2026". Verificar en la base de datos o en la interfaz que se crearon los 12 periodos mensuales correspondientes y que cada uno posee un registro de Presupuesto asociado con montos presupuestados inicializados en cero.
 
@@ -36,72 +36,86 @@ Como administrador del sistema, cuando inicializo un nuevo Ejercicio Fiscal (Fis
 
 ---
 
-### User Story 2 - Formulario de Presupuesto Unificado y Flexible (Priority: P1)
+### User Story 2 - Formulario de Presupuesto Mensual Granular y Tabular (Pantalla 1) (Priority: P1)
 
-Como administrador financiero o usuario hogareño, quiero presupuestar no solo mis consumos (Ingresos/Gastos) sino también mi ahorro, inversión y deudas en una sola pantalla visualmente dividida, para planificar la totalidad del movimiento de mi dinero en el mes.
+Como administrador financiero o usuario hogareño, quiero presupuestar mensualmente agregando partidas (rubros/cuentas) bajo demanda sobre una interfaz de tabla limpia (similar al diseño de Ejecución Presupuestaria) agrupando ingresos, egresos y movimientos de caja, evitando ver un listado interminable de cuentas vacías predefinidas para agilizar y simplificar la carga.
 
-**Why this priority**: Permite ingresar la planificación real y modificar los límites presupuestarios ante contingencias operativas o cambios del negocio sin barreras técnicas.
+**Why this priority**: Es la pantalla central para la carga de datos del presupuesto, permitiendo el ingreso detallado de estimaciones de ingresos, egresos y variaciones patrimoniales.
 
-**Independent Test**: Ir a la edición de un presupuesto mensual, validar que el formulario esté dividido en 3 bloques (Consumos, Ahorros e Inversiones, Deudas y Tarjetas). Completar los inputs en cada sección, guardar y verificar que persistan los datos en las secciones correspondientes al recargar.
+**Independent Test**: Ir a la edición de un presupuesto mensual, verificar que la tabla se inicie limpia (mostrando únicamente las partidas presupuestadas existentes) y permita agregar un nuevo rubro (cuenta contable) de forma dinámica, asignarle un monto y guardarlo correctamente.
 
 **Acceptance Scenarios**:
-1. **Given** la pantalla de edición de presupuesto, **When** se despliega el formulario, **Then** se muestran tres secciones claramente rotuladas:
-   - **Consumos**: Cuentas de tipo `INCOME` y `EXPENSE`.
-   - **Ahorros e Inversiones**: Cuentas de tipo `ASSET` (excluyendo efectivo/bancos).
-   - **Deudas y Tarjetas**: Cuentas de tipo `LIABILITY`.
-2. **Given** las secciones patrimoniales (Ahorros e Inversiones, Deudas y Tarjetas), **When** se cargan montos, **Then** la UI provee columnas de acción intuitivas:
-   - Para Activos: "Ahorrar/Prestar" (guarda como valor negativo en la BD para representar salida de caja) y "Retirar/Cobrar" (guarda como valor positivo en la BD para representar entrada de caja).
-   - Para Pasivos: "Pagar Deuda" (guarda como valor negativo para representar salida de caja) y "Recibir Préstamo/Financiar" (guarda como valor positivo para representar entrada de caja).
+1. **Given** la pantalla de edición de presupuesto, **When** se visualiza el control maestro, **Then** se disponen selectores de Año Fiscal, Mes/Periodo, un botón "Copiar del mes anterior" (para duplicar de forma masiva los montos planificados del periodo N-1 al periodo actual) y un resumen de KPIs.
+2. **Given** el presupuesto mensual, **When** se visualiza su contenido, **Then** se presenta en una estructura tabular limpia de tres secciones/pestañas:
+   - **Ingresos**: Cuentas de tipo `INCOME` presupuestadas.
+   - **Egresos**: Cuentas de tipo `EXPENSE` presupuestadas.
+   - **Balance y Estructura (Act/Pas)**: Cuentas patrimoniales (`ASSET` excluyendo efectivo/bancos, y `LIABILITY`) presupuestadas.
+3. **Given** cualquier sección del formulario, **When** se desea presupuestar una nueva partida, **Then** el usuario dispone de un botón "+ Agregar Partida" que añade una fila a la tabla con un selector de cuentas contables filtrado por la naturaleza de la pestaña.
+4. **Given** la pestaña de Balance y Estructura, **When** se agrega una partida patrimonial, **Then** la fila provee un selector de "Tipo de Movimiento" (Débito/Crédito) e inputs en línea para el monto e impacto de caja, calculando el "TOTAL IMPACTO EN CAJA/BANCO" en el pie.
+5. **Given** una fila añadida en cualquiera de las tablas, **When** el usuario requiere eliminarla o replicarla, **Then** se dispone de un botón para eliminar la partida de forma instantánea y una opción de "Replicar a todo el Ejercicio".
 
 ---
 
-### User Story 3 - Carga Masiva Anual con Variaciones Manuales (Priority: P2)
+### User Story 3 - Matriz Anual de Presupuestos (Pantalla 2) (Priority: P2)
 
-Como administrador financiero, quiero definir el presupuesto de una cuenta específica de forma idéntica para todo el año y poder ajustar manualmente solo ciertos meses con variaciones leves, para optimizar el tiempo de carga del presupuesto anual.
+Como planificador, quiero ver el presupuesto consolidado de todas las cuentas del plan de cuentas a lo largo de los 12 meses en una única vista matricial para analizar la estacionalidad y poder navegar directamente a ajustar cualquier mes.
 
-**Why this priority**: Mejora significativamente la experiencia de usuario (UX) al evitar tener que cargar repetitivamente el mismo monto 12 veces por cuenta.
+**Why this priority**: Optimiza el análisis del plan anual al consolidar las estimaciones mensuales en una única tabla de lectura masiva.
 
-**Independent Test**: Ir a la edición de "Enero 2026", escribir `3.000.000 ₲` en la cuenta de gasto "Alquileres", hacer clic en "Replicar a todo el Ejercicio" y guardar. Luego, abrir la edición de "Junio 2026", verificar que "Alquileres" tiene `3.000.000 ₲`, cambiar el valor a `3.500.000 ₲` (variación manual) y guardar. Al consultar otros meses (como Diciembre), deben mantener `3.000.000 ₲`.
+**Independent Test**: Acceder a la matriz anual de presupuestos para el año "2026". Confirmar que la tabla tiene 12 columnas correspondientes a los meses y que al hacer clic sobre el nombre del mes "Marzo" se navega al formulario de edición de presupuesto de Marzo 2026.
 
 **Acceptance Scenarios**:
-1. **Given** el formulario de edición de presupuesto de un periodo mensual, **When** el usuario hace clic en el botón "Replicar a todo el Ejercicio" al lado de una cuenta, **Then** el sistema propaga ese valor a la misma cuenta en los otros 11 presupuestos vinculados al mismo Ejercicio Fiscal.
-2. **Given** que se ha replicado un monto anualmente para una cuenta, **When** el usuario modifica manualmente esa cuenta en un mes específico y guarda, **Then** el cambio se aplica únicamente a ese mes, sin alterar el resto de los meses del año.
+1. **Given** la vista matricial anual, **When** se selecciona un Ejercicio Fiscal, **Then** se renderiza una tabla donde las filas corresponden al árbol de cuentas contables (Ingresos y Gastos) y las columnas corresponden a los 12 meses.
+2. **Given** las cabeceras de columna de la matriz mensual, **When** el usuario hace clic sobre el nombre de un mes, **Then** es redirigido a la Pantalla 1 (Carga Mensual) posicionada en ese periodo.
 
 ---
 
-### User Story 4 - Dashboard de Ejecución Presupuestaria Unificado (Priority: P1)
+### User Story 4 - Reporte de Control de Desviaciones (Real vs. Presupuesto) (Pantalla 3) (Priority: P1)
 
-Como socio o administrador, quiero consultar la ejecución en tiempo real de mi presupuesto para contrastar la planificación con las transacciones reales ocurridas en las fechas del Periodo.
+Como administrador financiero, quiero contrastar en tiempo real las cuentas planificadas con las transacciones reales ocurridas en periodos abiertos o cerrados, visualizando desvíos absolutos e índices de alerta para tomar medidas correctoras.
 
-**Why this priority**: Permite el análisis financiero en tiempo real y la detección temprana de sobregastos o desviaciones del plan.
+**Why this priority**: Permite la auditoría en tiempo real y el control de la salud financiera del periodo.
 
-**Independent Test**: Hacer clic en "Ver Informe" en un presupuesto. El sistema debe calcular el Real Ejecutado sumando dinámicamente las líneas de asientos confirmados cuyas fechas contables caigan dentro de los límites del periodo del presupuesto, y mostrar la tabla comparativa con alertas en rojo para los desvíos.
+**Independent Test**: Registrar una transacción real en una cuenta contable en el mes actual. Consultar el Reporte de Control del mes actual y verificar que la columna "Ejecutado Real" incrementa por el monto respectivo y la columna "Variación" se recalcula correctamente.
 
 **Acceptance Scenarios**:
-1. **Given** el informe de ejecución de un periodo mensual, **When** se visualiza la tabla de Consumos, **Then** el "Disponible" para gastos se calcula como `Presupuestado - Real` y se resalta en rojo si es negativo (sobregasto).
-2. **Given** el informe de ejecución, **When** se visualiza la tabla de Movimientos Financieros (Activos y Pasivos), **Then** la columna "Desviación de Caja" refleja la diferencia de liquidez real vs presupuestada y resalta en rojo los desvíos negativos en caja.
-3. **Given** el informe de ejecución, **When** el usuario baja al final, **Then** se renderiza un cuadro de "Resumen de Liquidez" consolidado que muestra:
-   - Saldo de Caja Inicial Real.
-   - Flujo Neto de Consumos (Presupuestado vs. Real).
-   - Flujo Neto Financiero (Presupuestado vs. Real).
-   - Flujo de Caja Neto del Mes (Presupuestado vs. Real).
-   - Saldo de Caja Final (Proyectado vs. Real).
+1. **Given** el reporte de control de un periodo mensual `ABIERTO` o `CERRADO`, **When** se consulta la tabla, **Then** se listan las columnas: Cuenta | Presupuestado | Ejecutado Real (acumulado del libro diario) | Variación Absoluta ($) | Variación Porcentual (%) | Alertas visuales.
+2. **Given** el reporte de control, **When** se evalúa la desviación, **Then**:
+   - Para gastos/consumos, se destaca en rojo (alerta de desvío crítico) si el Ejecutado Real es mayor al Presupuestado (sobregasto).
+   - Para movimientos financieros (Activos/Pasivos), se calcula una "Desviación de Caja" basada en el impacto de liquidez; cobros reales inferiores o salidas reales superiores a lo planificado se alertan en rojo.
 
 ---
 
-### User Story 5 - Reportes de Flujo de Caja y Resultados (Real vs. Proyectado) (Priority: P1)
+### User Story 5 - Reportes de Proyecciones Financieras (Caja y Estado de Resultados) (Pantallas 4 y 5) (Priority: P1)
 
-Como tomador de decisiones o administrador del hogar, quiero acceder a reportes dedicados de Flujo de Caja y Estado de Resultados, tanto en su versión histórica (real) como en su proyección a futuro basada en el presupuesto, para tomar decisiones financieras informadas.
+Como tomador de decisiones, quiero ver un reporte consolidado plurimensual con una ventana móvil (Rolling Forecast) que combine datos reales pasados y proyecciones futuras, permitiendo alternar entre el Flujo de Caja (efecto líquido) y el Estado de Resultados (rentabilidad/devengado), para asegurar la solvencia futura del negocio.
 
-**Why this priority**: Es el objetivo final de valor de negocio que justifica el módulo de presupuestos.
+**Why this priority**: Es el entregable estratégico de mayor valor del módulo de presupuestos contables. Evita la falta de liquidez imprevista.
 
-**Independent Test**: Ir a la sección de Reportes, seleccionar un Ejercicio Fiscal e ingresar al reporte de Flujo de Caja. Verificar que muestre una grilla mensual comparando lo real histórico con la proyección futura de caja para los meses que aún no han transcurrido o que poseen presupuesto.
+**Independent Test**: Seleccionar la vista de reporte proyectado, validar la ventana móvil por defecto (último mes real + actual + 10 meses proyectados). Alternar entre Flujo de Caja y Estado de Resultados, y verificar que el arrastre del saldo de caja inicial coincide exactamente con el saldo final del último mes real.
 
 **Acceptance Scenarios**:
-1. **Given** el reporte **Estado de Resultados (Real vs. Proyectado)**, **When** el usuario selecciona un rango de períodos, **Then** el sistema calcula los ingresos y gastos devengados reales para los períodos pasados/cerrados y los ingresos y gastos presupuestados para los períodos futuros.
-2. **Given** el reporte **Flujo de Caja (Real vs. Proyectado)**, **When** el usuario lo consulta, **Then** el sistema:
-   - Para períodos históricos (Reales): Suma las entradas y restas las salidas reales ocurridas en las cuentas marcadas como efectivo y equivalentes (Caja y Bancos).
-   - Para períodos proyectados (Futuros): Calcula la caja partiendo del saldo real del último período cerrado, sumando algebraicamente los presupuestos de resultados (`INCOME` y `EXPENSE`) y los presupuestos de movimientos patrimoniales (`ASSET` y `LIABILITY` con sus respectivos signos de afectación de caja).
+1. **Given** el reporte de proyecciones, **When** se despliega la pantalla, **Then** se muestran dos controles clave:
+   - Selector de Vista: [Flujo de Caja] / [Estado de Resultados].
+   - Selector de Rango: [Año Calendario Completo] o [Ventana Móvil de 12 Meses (Rolling Forecast)].
+2. **Given** la Ventana Móvil de 12 meses en Noviembre de 2026, **When** se renderizan las columnas de tiempo, **Then** el sistema muestra: Octubre 2026 (REAL) | Noviembre 2026 (PROYECTADO) | ... | Septiembre 2027 (PROYECTADO), cruzando límites de ejercicios fiscales.
+3. **Given** las columnas de meses en proyecciones, **When** se visualizan, **Then** las columnas con datos reales e históricos tienen un fondo sutilmente diferente al de los meses proyectados, y muestran en sus cabeceras botones de acción contextuales:
+   - Para mes REAL: Botón "Ver Asientos" (abre desglose de transacciones reales).
+   - Para mes PROYECTADO: Botón "Ajustar Proyección" (redirige a la edición del presupuesto de ese mes).
+4. **Given** la vista de **Flujo de Caja Proyectado**, **When** se calculan las filas, **Then** la tabla se desglosa estrictamente en:
+   - **(+) Saldo Inicial de Caja**: (Saldo real conciliado para el primer mes; saldo final del mes anterior para los siguientes).
+   - **(+) Ingresos Operativos**: (Cuentas de tipo `INCOME` cobradas / proyectadas).
+   - **(+) Entradas de Activo/Pasivo**: (Amortizaciones cobradas, préstamos recibidos).
+   - **(=) Total Entradas de Caja**
+   - **(-) Egresos Operativos**: (Cuentas de tipo `EXPENSE` pagadas / proyectadas).
+   - **(-) Salidas de Activo/Pasivo**: (Ahorro/inversión realizados, cuotas de amortización pagadas).
+   - **(=) Total Salidas de Caja**
+   - **(=) Flujo Neto del Periodo**: (Total Entradas - Total Salidas).
+   - **(=) SALDO FINAL DE CAJA**: (Saldo Inicial + Flujo Neto).
+5. **Given** la vista de **Estado de Resultados Proyectado**, **When** se calculan las filas, **Then** la tabla aplica estrictamente el principio de devengado (P&L):
+   - Muestra Ingresos y Gastos devengados reales (meses pasados) y presupuestados (meses futuros).
+   - Excluye amortizaciones de capital de pasivos (solo incluye los intereses devengados).
+   - Excluye compras de bienes de uso / maquinaria (incluye las cuotas de depreciación proyectadas para el mes).
 
 ---
 
@@ -112,19 +126,29 @@ Como tomador de decisiones o administrador del hogar, quiero acceder a reportes 
 - **FR-001**: El sistema MUST generar de forma automática un registro de Presupuesto (Budget) en relación 1-a-1 por cada Periodo (Period) que se cree al inicializar un Ejercicio Fiscal (Fiscal Year).
 - **FR-002**: El presupuesto generado automáticamente MUST tomar el nombre de su Periodo correspondiente (por ejemplo: "Enero 2026") como nombre identificador.
 - **FR-003**: El formulario de edición de presupuesto MUST mostrar el Nombre (Periodo) y las fechas del período como campos no editables (sólo lectura).
-- **FR-004**: El formulario de edición de presupuesto MUST dividir visualmente las cuentas contables activas en tres bloques: Consumos (Ingresos y Gastos), Ahorros e Inversiones (Activos no líquidos), y Deudas y Tarjetas (Pasivos).
+- **FR-004**: El formulario de edición de presupuesto MUST estructurar las partidas en una interfaz tabular limpia dividida en tres pestañas/agrupaciones principales: Ingresos (cuentas `INCOME`), Egresos (cuentas `EXPENSE`), y Balance y Estructura (cuentas patrimoniales `ASSET` y `LIABILITY` excluyendo disponibilidad).
 - **FR-005**: El sistema MUST permitir presupuestar montos tanto positivos como negativos en las cuentas patrimoniales del presupuesto (`ASSET` y `LIABILITY`) para representar de forma directa entradas o salidas de dinero en caja.
-- **FR-006**: El sistema MUST pre-cargar los montos guardados anteriormente en los inputs del formulario de edición.
-- **FR-007**: El sistema MUST proveer una opción de "Replicar a todo el Ejercicio" junto a cada cuenta en el formulario de edición, propagando el valor ingresado a los otros 11 meses del Ejercicio Fiscal.
+- **FR-006**: El sistema MUST cargar y mostrar en la tabla de presupuesto únicamente aquellas cuentas que posean montos presupuestados previamente guardados, evitando pre-poblar celdas en cero innecesarias.
+- **FR-007**: El sistema MUST proveer una opción de "Replicar a todo el Ejercicio" junto a cada cuenta en la tabla del presupuesto mensual, propagando el valor y la cuenta ingresada a los otros 11 meses del Ejercicio Fiscal.
 - **FR-008**: El sistema MUST admitir un atributo `isCashOrBank` (boolean) en la entidad de cuentas contables (`Account`) para identificar cuáles cuentas del activo representan disponibilidad de efectivo/banco líquido.
 - **FR-009**: El informe de ejecución presupuestaria MUST calcular en tiempo real las transacciones reales ocurridas en las fechas del Periodo.
-- **FR-010**: El informe de ejecución presupuestaria MUST estructurar la información en tres bloques equivalentes a la pantalla de edición, resaltando en rojo cualquier desvío negativo en el Disponible o Desviación de Caja.
+- **FR-010**: El informe de ejecución presupuestaria MUST estructurar la información en tres bloques equivalentes a la pantalla de edición, resaltando en rojo cualquier desvío de caja negativo.
 - **FR-011**: El informe de ejecución presupuestaria MUST incluir un cuadro de consolidación de liquidez al final del reporte para contrastar la caja neta real con la proyectada.
 - **FR-012**: El sistema MUST proveer un reporte de **Estado de Resultados (Real vs. Proyectado)** mensualizado.
 - **FR-013**: El sistema MUST proveer un reporte de **Flujo de Caja (Real vs. Proyectado)** mensualizado, calculando la proyección financiera a partir del presupuesto unificado y las políticas de afectación de caja asociadas a las cuentas patrimoniales.
 - **FR-014**: El sistema MUST bloquear cualquier cambio al flag `isCashOrBank` de una cuenta si ésta ya posee transacciones (`JournalEntry`) asociadas en el libro diario.
 - **FR-015**: El sistema MUST excluir las cuentas de tipo `EQUITY` del formulario de edición del presupuesto y de la lógica de proyecciones financieras.
 - **FR-016**: La "Desviación de Caja" para cuentas de activos y pasivos en el informe de ejecución MUST calcularse basándose en el impacto de liquidez del mes corriente (salidas mayores o cobros menores a lo planificado son desvíos negativos).
+- **FR-017**: El sistema MUST admitir tres estados en los periodos / ejercicios fiscales: `CERRADO`, `ABIERTO` y `PLANIFICACION`.
+- **FR-018**: El estado `PLANIFICACION` de un Ejercicio Fiscal MUST deshabilitar el registro de transacciones contables reales (`JournalEntry`) pero MUST permitir la carga y persistencia de presupuestos.
+- **FR-019**: El formulario de edición de presupuesto MUST incluir un botón maestro "Copiar del mes anterior" en la cabecera para duplicar de forma masiva los rubros y montos planificados del periodo N-1 al periodo actual.
+- **FR-020**: El sistema MUST proveer una funcionalidad dinámica de "+ Agregar Partida" en cada pestaña/tabla que añade una nueva fila con un selector interactivo de cuentas contables que permite al usuario escoger rubros del catálogo.
+- **FR-021**: La visualización de proyecciones de caja y estados de resultados MUST soportar scroll horizontal para los periodos temporales y colapso/expansión vertical (drill-down) en las filas del árbol de cuentas.
+- **FR-022**: El reporte de Flujo de Caja Proyectado MUST arrastrar de forma continua los saldos: el Saldo Final de Caja del último mes `REAL` o `CERRADO` es automáticamente el Saldo Inicial del primer mes proyectado, y los saldos subsiguientes se arrastran en efecto dominó usando valores presupuestados.
+- **FR-023**: El sistema MUST permitir alternar en la UI de reportes proyectados entre la visualización de "Año Calendario Completo" y "Ventana Móvil de 12 Meses" (Rolling 12 Months) cruzando ejercicios contables.
+- **FR-024**: Las cabeceras de los meses en la matriz proyectada MUST incluir botones dinámicos interactivos: `Ver Asientos` para periodos cerrados/reales, y `Ajustar Proyección` para periodos futuros de planificación.
+- **FR-025**: El sistema MUST pintar de colores visualmente diferenciados las columnas y/o indicadores de cabecera de los meses Reales históricos respecto a los meses Proyectados.
+- **FR-026**: Las tablas de edición mensual MUST presentar una interfaz de fila compacta, limpia y tabular (estilo Ejecución Presupuestaria), donde cada fila cuente con una acción rápida de "Eliminar Partida".
 
 ---
 
@@ -133,16 +157,20 @@ Como tomador de decisiones o administrador del hogar, quiero acceder a reportes 
 - **Intento de modificación de `isCashOrBank`**: Si el usuario intenta cambiar el flag `isCashOrBank` de una cuenta que ya tiene movimientos, la API retornará un código HTTP 400 Bad Request y la UI deshabilitará esta opción.
 - **Exclusión de EQUITY**: Las cuentas patrimoniales de tipo `EQUITY` no aparecerán en el planificador ni afectarán las proyecciones; cualquier movimiento patrimonial extraordinario (ej. aporte de capital) se presupuestará en cuentas de ingresos o pasivos autorizadas.
 - **Ahorro de más (Impacto de caja)**: Si el usuario presupuesta ahorrar `-200` y transfiere `-250` reales, el Dashboard de Ejecución alertará un desvío negativo en la caja de `$50`, ya que se retiró más efectivo de la cuenta operativa del que estaba planificado.
+- **Fin de Año Fiscal Rígido**: Cuando se consulta una ventana móvil en Noviembre 2026, si el Ejercicio Fiscal 2027 aún no se ha creado o pre-abierto en estado `PLANIFICACION`, el sistema generará automáticamente por debajo el Ejercicio 2027 con sus 12 periodos en estado `PLANIFICACION` para evitar cortes bruscos de visualización en el Rolling Forecast.
 
 ---
 
 ### Key Entities *(include if feature involves data)*
 
+- **FiscalYear (Ejercicio Fiscal)**: Entidad contable extendida.
+  - Atributos: ID, Año (ej: 2026), Estado (Enum: `CERRADO`, `ABIERTO`, `PLANIFICACION`).
+- **Period (Periodo)**: Entidad contable extendida. Relación única con `FiscalYear`.
+  - Atributos: ID, ID Ejercicio, Nombre, Fecha Inicio, Fecha Fin, Estado (heredado del Ejercicio o propio).
 - **Budget (Presupuesto)**: Relación 1-a-1 con `Period`.
   - Atributos: ID, ID Periodo (Relación única/Foreign Key), Fecha de Creación, Fecha de Actualización.
 - **BudgetItem (Línea de Presupuesto)**: Detalle del monto presupuestado por cuenta.
-  - Atributos: ID, ID Presupuesto (Relación), ID Cuenta Contable (Relación), Monto Presupuestado (número positivo o negativo).
-- **Period (Periodo)**: Entidad contable existente. Su ciclo de vida controla la creación del Presupuesto.
+  - Atributos: ID, ID Presupuesto (Relación), ID Cuenta Contable (Relación), Monto Presupuestado (número positivo o negativo), Notas (texto).
 - **Account (Cuenta Contable)**: Entidad contable existente.
   - Atributos extendidos: `isCashOrBank: boolean` (para marcar cuentas de disponibilidad líquida).
 
@@ -152,11 +180,11 @@ Como tomador de decisiones o administrador del hogar, quiero acceder a reportes 
 
 ### Measurable Outcomes
 
-- **SC-001**: Al crear un Ejercicio Fiscal, el sistema genera el 100% de los presupuestos correspondientes (12 registros en total) de forma síncrona.
+- **SC-001**: Al crear un Ejercicio Fiscal (ya sea `ABIERTO` o `PLANIFICACION`), el sistema genera el 100% de los presupuestos correspondientes (12 registros en total) de forma síncrona.
 - **SC-002**: La pantalla de edición del presupuesto clasifica correctamente el 100% de las cuentas del plan de cuentas en las tres secciones de la UI en menos de 1 segundo.
-- **SC-003**: La replicación de un monto (positivo o negativo) a los 12 meses de un Ejercicio Fiscal se procesa con una sola interacción de usuario y se guarda correctamente en la base de datos.
-- **SC-004**: Los reportes consolidados de Estado de Resultados y Flujo de Caja (Histórico y Proyectado) responden en menos de 1.5 segundos calculando dinámicamente los movimientos.
-- **SC-005**: La interfaz resalta en color rojo al 100% de las cuentas que superen el límite de gasto o que presenten un desvío negativo en el flujo de caja del mes.
+- **SC-003**: La replicación de un monto a los 12 meses de un Ejercicio Fiscal o la duplicación del mes anterior (`Copiar del mes anterior`) se procesan con una sola interacción de usuario y se guardan correctamente en la base de datos.
+- **SC-004**: Los reportes consolidados de Estado de Resultados y Flujo de Caja (Histórico y Proyectado) responden en menos de 1.5 segundos calculando dinámicamente los movimientos y arrastre de saldos.
+- **SC-005**: La interfaz resalta en color rojo al 100% de las cuentas que superen el límite de gasto o que presenten un desvío de caja negativo en el flujo de caja del mes.
 
 ---
 

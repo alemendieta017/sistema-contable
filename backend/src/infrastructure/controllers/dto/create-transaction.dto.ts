@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsArray, ValidateNested, IsEnum, IsNumber, IsPositive } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+  IsNumber,
+  IsPositive,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateTransactionRequest, JournalEntryRequest } from '@sistema-contable/shared';
 

@@ -1,34 +1,34 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import React, { useState } from 'react';
+import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
 export default function SecuritySettings() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     if (newPassword.length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres.");
+      setError('La nueva contraseña debe tener al menos 6 caracteres.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      setError('Las contraseñas no coinciden.');
       return;
     }
 
-    setSuccess("Contraseña actualizada con éxito (simulado).");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    setSuccess('Contraseña actualizada con éxito (simulado).');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
   };
 
   return (
@@ -61,7 +61,7 @@ export default function SecuritySettings() {
           </label>
           <div className="relative">
             <input
-              type={showPass ? "text" : "password"}
+              type={showPass ? 'text' : 'password'}
               value={currentPassword}
               required
               placeholder="••••••••"
@@ -77,7 +77,7 @@ export default function SecuritySettings() {
               Nueva Contraseña
             </label>
             <input
-              type={showPass ? "text" : "password"}
+              type={showPass ? 'text' : 'password'}
               value={newPassword}
               required
               placeholder="Mínimo 6 caracteres"
@@ -90,7 +90,7 @@ export default function SecuritySettings() {
               Confirmar Contraseña
             </label>
             <input
-              type={showPass ? "text" : "password"}
+              type={showPass ? 'text' : 'password'}
               value={confirmPassword}
               required
               placeholder="Confirmar"
@@ -106,7 +106,7 @@ export default function SecuritySettings() {
             onClick={() => setShowPass(!showPass)}
             className="text-4xs font-bold uppercase text-slate-450 dark:text-slate-400 hover:text-slate-655 hover:underline"
           >
-            {showPass ? "Ocultar contraseña" : "Ver contraseña"}
+            {showPass ? 'Ocultar contraseña' : 'Ver contraseña'}
           </button>
 
           <button

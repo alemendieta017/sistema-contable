@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { UserEntity } from './user.entity';
 import { PeriodEntity } from './period.entity';
 
@@ -25,8 +33,11 @@ export class FiscalYearEntity {
   endDate: string;
 
   @Column({ type: 'varchar', length: 10, default: 'OPEN' })
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
 
-  @OneToMany(() => PeriodEntity, (period) => period.fiscalYear, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => PeriodEntity, (period) => period.fiscalYear, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   periods: PeriodEntity[];
 }

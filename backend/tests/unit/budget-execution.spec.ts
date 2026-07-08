@@ -75,10 +75,10 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
           periodId,
           userId,
           items: [
-            { accountId: 'inc-salary', amount: 10000000.00 }, // Salary budget: 10,000,000
-            { accountId: 'inc-bonus', amount: 1000000.00 },  // Bonus budget: 1,000,000
-            { accountId: 'exp-rent', amount: 3000000.00 },   // Rent budget: 3,000,000
-            { accountId: 'exp-food', amount: 1500000.00 },   // Food budget: 1,500,000
+            { accountId: 'inc-salary', amount: 10000000.0 }, // Salary budget: 10,000,000
+            { accountId: 'inc-bonus', amount: 1000000.0 }, // Bonus budget: 1,000,000
+            { accountId: 'exp-rent', amount: 3000000.0 }, // Rent budget: 3,000,000
+            { accountId: 'exp-food', amount: 1500000.0 }, // Food budget: 1,500,000
           ],
         };
       }
@@ -101,10 +101,34 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     mockEntityManager.find.mockImplementation(async (entity) => {
       if (entity.name === 'AccountEntity') {
         return [
-          { id: 'inc-salary', name: 'Salario', type: 'INCOME', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'inc-bonus', name: 'Aguinaldo', type: 'INCOME', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'exp-rent', name: 'Alquiler', type: 'EXPENSE', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'exp-food', name: 'Comida', type: 'EXPENSE', status: 'ACTIVE', isCashOrBank: false },
+          {
+            id: 'inc-salary',
+            name: 'Salario',
+            type: 'INCOME',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'inc-bonus',
+            name: 'Aguinaldo',
+            type: 'INCOME',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'exp-rent',
+            name: 'Alquiler',
+            type: 'EXPENSE',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'exp-food',
+            name: 'Comida',
+            type: 'EXPENSE',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
         ];
       }
       if (entity.name === 'AccountPeriodBalanceEntity') {
@@ -124,38 +148,38 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     // Verify Income
     const salary = result.consumos.income.find((i) => i.accountId === 'inc-salary');
     expect(salary).toBeDefined();
-    expect(salary.budgeted).toBe(10000000.00);
-    expect(salary.real).toBe(10000000.00);
-    expect(salary.deviation).toBe(0.00);
+    expect(salary.budgeted).toBe(10000000.0);
+    expect(salary.real).toBe(10000000.0);
+    expect(salary.deviation).toBe(0.0);
     expect(salary.isNegativeDeviation).toBe(false);
 
     const bonus = result.consumos.income.find((i) => i.accountId === 'inc-bonus');
     expect(bonus).toBeDefined();
-    expect(bonus.budgeted).toBe(1000000.00);
-    expect(bonus.real).toBe(800000.00);
-    expect(bonus.deviation).toBe(-200000.00); // deviation = real - budgeted = 800k - 1M = -200k
+    expect(bonus.budgeted).toBe(1000000.0);
+    expect(bonus.real).toBe(800000.0);
+    expect(bonus.deviation).toBe(-200000.0); // deviation = real - budgeted = 800k - 1M = -200k
     expect(bonus.isNegativeDeviation).toBe(true); // negative deviation since real < budgeted
 
     // Verify Expense
     const rent = result.consumos.expense.find((e) => e.accountId === 'exp-rent');
     expect(rent).toBeDefined();
-    expect(rent.budgeted).toBe(3000000.00);
-    expect(rent.real).toBe(3000000.00);
-    expect(rent.available).toBe(0.00); // available = budgeted - real
+    expect(rent.budgeted).toBe(3000000.0);
+    expect(rent.real).toBe(3000000.0);
+    expect(rent.available).toBe(0.0); // available = budgeted - real
     expect(rent.isNegativeDeviation).toBe(false);
 
     const food = result.consumos.expense.find((e) => e.accountId === 'exp-food');
     expect(food).toBeDefined();
-    expect(food.budgeted).toBe(1500000.00);
-    expect(food.real).toBe(1800000.00);
-    expect(food.available).toBe(-300000.00); // available = budgeted - real = 1.5M - 1.8M = -300k
+    expect(food.budgeted).toBe(1500000.0);
+    expect(food.real).toBe(1800000.0);
+    expect(food.available).toBe(-300000.0); // available = budgeted - real = 1.5M - 1.8M = -300k
     expect(food.isNegativeDeviation).toBe(true); // negative deviation since real > budgeted
 
     // Verify Consumos Totals
-    expect(result.consumos.totalBudgetedIncome).toBe(11000000.00);
-    expect(result.consumos.totalRealIncome).toBe(10800000.00);
-    expect(result.consumos.totalBudgetedExpense).toBe(4500000.00);
-    expect(result.consumos.totalRealExpense).toBe(4800000.00);
+    expect(result.consumos.totalBudgetedIncome).toBe(11000000.0);
+    expect(result.consumos.totalRealIncome).toBe(10800000.0);
+    expect(result.consumos.totalBudgetedExpense).toBe(4500000.0);
+    expect(result.consumos.totalRealExpense).toBe(4800000.0);
   });
 
   it('should calculate budget execution, cash deviations, and negative deviation rules for ASSETS and LIABILITIES', async () => {
@@ -180,10 +204,10 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
           periodId,
           userId,
           items: [
-            { accountId: 'ast-inv', amount: -500000.00 },   // Plan to save: -500,000 (outflow)
-            { accountId: 'ast-inv2', amount: -1000000.00 }, // Plan to save: -1,000,000 (outflow)
-            { accountId: 'lbl-debt', amount: -2000000.00 },  // Plan to pay debt: -2,000,000 (outflow)
-            { accountId: 'lbl-loan', amount: 5000000.00 },   // Plan to receive loan: 5,000,000 (inflow)
+            { accountId: 'ast-inv', amount: -500000.0 }, // Plan to save: -500,000 (outflow)
+            { accountId: 'ast-inv2', amount: -1000000.0 }, // Plan to save: -1,000,000 (outflow)
+            { accountId: 'lbl-debt', amount: -2000000.0 }, // Plan to pay debt: -2,000,000 (outflow)
+            { accountId: 'lbl-loan', amount: 5000000.0 }, // Plan to receive loan: 5,000,000 (inflow)
           ],
         };
       }
@@ -210,10 +234,34 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     mockEntityManager.find.mockImplementation(async (entity) => {
       if (entity.name === 'AccountEntity') {
         return [
-          { id: 'ast-inv', name: 'Ahorro Mutual', type: 'ASSET', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'ast-inv2', name: 'Fondo Plazo', type: 'ASSET', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'lbl-debt', name: 'Préstamo Auto', type: 'LIABILITY', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'lbl-loan', name: 'Crédito Personal', type: 'LIABILITY', status: 'ACTIVE', isCashOrBank: false },
+          {
+            id: 'ast-inv',
+            name: 'Ahorro Mutual',
+            type: 'ASSET',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'ast-inv2',
+            name: 'Fondo Plazo',
+            type: 'ASSET',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'lbl-debt',
+            name: 'Préstamo Auto',
+            type: 'LIABILITY',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'lbl-loan',
+            name: 'Crédito Personal',
+            type: 'LIABILITY',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
         ];
       }
       if (entity.name === 'AccountPeriodBalanceEntity') {
@@ -227,31 +275,31 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     // Verify Asset Execution (ahorrosInversiones)
     const inv = result.ahorrosInversiones.find((a) => a.accountId === 'ast-inv');
     expect(inv).toBeDefined();
-    expect(inv.budgeted).toBe(-500000.00);
-    expect(inv.real).toBe(-600000.00);
-    expect(inv.deviation).toBe(-100000.00); // real - budgeted = -600k - (-500k) = -100k
+    expect(inv.budgeted).toBe(-500000.0);
+    expect(inv.real).toBe(-600000.0);
+    expect(inv.deviation).toBe(-100000.0); // real - budgeted = -600k - (-500k) = -100k
     expect(inv.isNegativeDeviation).toBe(true); // saved more than planned (more cash outflow, deviation < 0)
 
     const inv2 = result.ahorrosInversiones.find((a) => a.accountId === 'ast-inv2');
     expect(inv2).toBeDefined();
-    expect(inv2.budgeted).toBe(-1000000.00);
-    expect(inv2.real).toBe(-800000.00);
-    expect(inv2.deviation).toBe(200000.00); // real - budgeted = -800k - (-1M) = +200k
+    expect(inv2.budgeted).toBe(-1000000.0);
+    expect(inv2.real).toBe(-800000.0);
+    expect(inv2.deviation).toBe(200000.0); // real - budgeted = -800k - (-1M) = +200k
     expect(inv2.isNegativeDeviation).toBe(false); // saved less than planned (less cash outflow, deviation > 0)
 
     // Verify Liability Execution (deudasTarjetas)
     const debt = result.deudasTarjetas.find((l) => l.accountId === 'lbl-debt');
     expect(debt).toBeDefined();
-    expect(debt.budgeted).toBe(-2000000.00);
-    expect(debt.real).toBe(-2000000.00);
-    expect(debt.deviation).toBe(0.00);
+    expect(debt.budgeted).toBe(-2000000.0);
+    expect(debt.real).toBe(-2000000.0);
+    expect(debt.deviation).toBe(0.0);
     expect(debt.isNegativeDeviation).toBe(false);
 
     const loan = result.deudasTarjetas.find((l) => l.accountId === 'lbl-loan');
     expect(loan).toBeDefined();
-    expect(loan.budgeted).toBe(5000000.00);
-    expect(loan.real).toBe(4000000.00);
-    expect(loan.deviation).toBe(-1000000.00); // real - budgeted = 4M - 5M = -1M
+    expect(loan.budgeted).toBe(5000000.0);
+    expect(loan.real).toBe(4000000.0);
+    expect(loan.deviation).toBe(-1000000.0); // real - budgeted = 4M - 5M = -1M
     expect(loan.isNegativeDeviation).toBe(true); // received less loan than planned (less cash inflow, deviation < 0)
   });
 
@@ -277,10 +325,10 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
           periodId,
           userId,
           items: [
-            { accountId: 'inc-salary', amount: 10000000.00 },
-            { accountId: 'exp-rent', amount: 3000000.00 },
-            { accountId: 'ast-inv', amount: -500000.00 },
-            { accountId: 'lbl-debt', amount: -1000000.00 },
+            { accountId: 'inc-salary', amount: 10000000.0 },
+            { accountId: 'exp-rent', amount: 3000000.0 },
+            { accountId: 'ast-inv', amount: -500000.0 },
+            { accountId: 'lbl-debt', amount: -1000000.0 },
           ],
         };
       }
@@ -299,17 +347,49 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     mockEntityManager.find.mockImplementation(async (entity) => {
       if (entity.name === 'AccountEntity') {
         return [
-          { id: 'inc-salary', name: 'Salario', type: 'INCOME', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'exp-rent', name: 'Alquiler', type: 'EXPENSE', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'ast-inv', name: 'Ahorro Mutual', type: 'ASSET', status: 'ACTIVE', isCashOrBank: false },
-          { id: 'lbl-debt', name: 'Préstamo Auto', type: 'LIABILITY', status: 'ACTIVE', isCashOrBank: false },
+          {
+            id: 'inc-salary',
+            name: 'Salario',
+            type: 'INCOME',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'exp-rent',
+            name: 'Alquiler',
+            type: 'EXPENSE',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'ast-inv',
+            name: 'Ahorro Mutual',
+            type: 'ASSET',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
+          {
+            id: 'lbl-debt',
+            name: 'Préstamo Auto',
+            type: 'LIABILITY',
+            status: 'ACTIVE',
+            isCashOrBank: false,
+          },
         ];
       }
       if (entity.name === 'AccountPeriodBalanceEntity') {
         // Mock cash & bank accounts for initial cash balance
         return [
-          { accountId: 'cash-1', openingBalance: 4000000.00, account: { isCashOrBank: true, userId } },
-          { accountId: 'cash-2', openingBalance: 1000000.00, account: { isCashOrBank: true, userId } },
+          {
+            accountId: 'cash-1',
+            openingBalance: 4000000.0,
+            account: { isCashOrBank: true, userId },
+          },
+          {
+            accountId: 'cash-2',
+            openingBalance: 1000000.0,
+            account: { isCashOrBank: true, userId },
+          },
         ];
       }
       return [];
@@ -319,30 +399,30 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
 
     // Verify Resumen de Liquidez
     // Initial cash = 4,000,000 + 1,000,000 = 5,000,000
-    expect(result.resumenLiquidez.saldoCajaInicialReal).toBe(5000000.00);
+    expect(result.resumenLiquidez.saldoCajaInicialReal).toBe(5000000.0);
 
     // Flujo neto consumos:
     // budgeted = 10,000,000 (inc) - 3,000,000 (exp) = 7,000,000
     // real = 10,000,000 (inc) - 3,200,000 (exp) = 6,800,000
-    expect(result.resumenLiquidez.flujoNetoConsumos.budgeted).toBe(7000000.00);
-    expect(result.resumenLiquidez.flujoNetoConsumos.real).toBe(6800000.00);
+    expect(result.resumenLiquidez.flujoNetoConsumos.budgeted).toBe(7000000.0);
+    expect(result.resumenLiquidez.flujoNetoConsumos.real).toBe(6800000.0);
 
     // Flujo neto financiero:
     // budgeted = -500,000 (ast) + -1,000,000 (lbl) = -1,500,000
     // real = -600,000 (ast) + -1,000,000 (lbl) = -1,600,000
-    expect(result.resumenLiquidez.flujoNetoFinanciero.budgeted).toBe(-1500000.00);
-    expect(result.resumenLiquidez.flujoNetoFinanciero.real).toBe(-1600000.00);
+    expect(result.resumenLiquidez.flujoNetoFinanciero.budgeted).toBe(-1500000.0);
+    expect(result.resumenLiquidez.flujoNetoFinanciero.real).toBe(-1600000.0);
 
     // Flujo de caja neto del mes:
     // budgeted = 7,000,000 - 1,500,000 = 5,500,000
     // real = 6,800,000 - 1,600,000 = 5,200,000
-    expect(result.resumenLiquidez.flujoCajaNetoMes.budgeted).toBe(5500000.00);
-    expect(result.resumenLiquidez.flujoCajaNetoMes.real).toBe(5200000.00);
+    expect(result.resumenLiquidez.flujoCajaNetoMes.budgeted).toBe(5500000.0);
+    expect(result.resumenLiquidez.flujoCajaNetoMes.real).toBe(5200000.0);
 
     // Saldo de caja final:
     // projected = 5,000,000 + 5,500,000 = 10,500,000
     // real = 5,000,000 + 5,200,000 = 10,200,000
-    expect(result.resumenLiquidez.saldoCajaFinal.projected).toBe(10500000.00);
-    expect(result.resumenLiquidez.saldoCajaFinal.real).toBe(10200000.00);
+    expect(result.resumenLiquidez.saldoCajaFinal.projected).toBe(10500000.0);
+    expect(result.resumenLiquidez.saldoCajaFinal.real).toBe(10200000.0);
   });
 });

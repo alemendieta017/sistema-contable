@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../services/api";
-import PieChart from "../../components/PieChart";
-import NetWorthChart from "../../components/NetWorthChart";
-import IncomeStatementChart from "../../components/IncomeStatementChart";
-import { BarChart3, TrendingUp, ShieldAlert } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import PieChart from '../../components/PieChart';
+import NetWorthChart from '../../components/NetWorthChart';
+import IncomeStatementChart from '../../components/IncomeStatementChart';
+import { BarChart3, TrendingUp, ShieldAlert } from 'lucide-react';
 
 type StatItem = {
   accountId: string;
@@ -16,12 +16,12 @@ type StatItem = {
 
 export default function StatsPage() {
   const [period, setPeriod] = useState(new Date().toISOString().substring(0, 7)); // 'YYYY-MM'
-  const [type, setType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
-  
+  const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
+
   const [stats, setStats] = useState<StatItem[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -30,7 +30,7 @@ export default function StatsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       // 1. Fetch category aggregates for selected month
       const statData = await api.reports.statistics(period, type, new Date().getTimezoneOffset());
@@ -40,7 +40,7 @@ export default function StatsPage() {
       const txList = await api.transactions.list();
       setTransactions(txList || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar estadísticas contables.");
+      setError(err.message || 'Error al cargar estadísticas contables.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function StatsPage() {
   const getNetWorthHistory = () => {
     // Sort transactions ascending by date
     const sorted = [...transactions]
-      .filter((t) => t.status !== "REVERSED")
+      .filter((t) => t.status !== 'REVERSED')
       .sort((a, b) => a.accountingDate.localeCompare(b.accountingDate));
 
     let runningNetWorth = 0;
@@ -62,15 +62,21 @@ export default function StatsPage() {
       let liabilityChange = 0;
 
       tx.entries.forEach((entry: any) => {
-        if (entry.account?.type === "ASSET") {
-          assetChange += entry.entryType === "DEBIT" ? Number(entry.amountBase || entry.amount) : -Number(entry.amountBase || entry.amount);
-        } else if (entry.account?.type === "LIABILITY") {
-          liabilityChange += entry.entryType === "CREDIT" ? Number(entry.amountBase || entry.amount) : -Number(entry.amountBase || entry.amount);
+        if (entry.account?.type === 'ASSET') {
+          assetChange +=
+            entry.entryType === 'DEBIT'
+              ? Number(entry.amountBase || entry.amount)
+              : -Number(entry.amountBase || entry.amount);
+        } else if (entry.account?.type === 'LIABILITY') {
+          liabilityChange +=
+            entry.entryType === 'CREDIT'
+              ? Number(entry.amountBase || entry.amount)
+              : -Number(entry.amountBase || entry.amount);
         }
       });
 
       runningNetWorth += assetChange - liabilityChange;
-      
+
       const dateStr = tx.accountingDate.substring(0, 10);
       // Group points on the same date or just add
       historyPoints.push({
@@ -85,18 +91,31 @@ export default function StatsPage() {
   // Build Monthly income vs expense comparative data (last 6 months)
   const getMonthlyComparative = () => {
     const months = [
-      "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-      "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
 
     const currentYear = new Date().getFullYear();
-    const comparative: Record<string, { monthName: string; income: number; expense: number; monthVal: number }> = {};
+    const comparative: Record<
+      string,
+      { monthName: string; income: number; expense: number; monthVal: number }
+    > = {};
 
     // Initialize past 6 months
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       comparative[key] = {
         monthName: `${months[d.getMonth()]} ${String(d.getFullYear()).substring(2)}`,
         income: 0,
@@ -106,16 +125,16 @@ export default function StatsPage() {
     }
 
     transactions.forEach((tx) => {
-      if (tx.status === "REVERSED") return;
+      if (tx.status === 'REVERSED') return;
       const txDate = new Date(tx.accountingDate + 'T00:00:00');
-      const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, "0")}`;
+      const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
 
       if (comparative[key]) {
         tx.entries.forEach((entry: any) => {
-          if (entry.entryType === "CREDIT" && entry.account?.type === "INCOME") {
+          if (entry.entryType === 'CREDIT' && entry.account?.type === 'INCOME') {
             comparative[key].income += Number(entry.amountBase || entry.amount);
           }
-          if (entry.entryType === "DEBIT" && entry.account?.type === "EXPENSE") {
+          if (entry.entryType === 'DEBIT' && entry.account?.type === 'EXPENSE') {
             comparative[key].expense += Number(entry.amountBase || entry.amount);
           }
         });
@@ -174,21 +193,21 @@ export default function StatsPage() {
         {/* Expense/Income Toggle tabs */}
         <div className="grid grid-cols-2 gap-1 bg-slate-55 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 p-0.5 rounded-xl w-full sm:w-60 text-xs">
           <button
-            onClick={() => setType("EXPENSE")}
+            onClick={() => setType('EXPENSE')}
             className={`py-2 font-bold rounded-lg transition duration-150 ${
-              type === "EXPENSE"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                : "text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-800"
+              type === 'EXPENSE'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
+                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             Egresos
           </button>
           <button
-            onClick={() => setType("INCOME")}
+            onClick={() => setType('INCOME')}
             className={`py-2 font-bold rounded-lg transition duration-150 ${
-              type === "INCOME"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/10"
-                : "text-slate-550 dark:text-slate-455 hover:bg-slate-100 dark:hover:bg-slate-800"
+              type === 'INCOME'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
+                : 'text-slate-550 dark:text-slate-455 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             Ingresos
@@ -198,11 +217,10 @@ export default function StatsPage() {
 
       {/* Main Charts Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
         {/* Doughnut Chart Distribution */}
         <div className="space-y-2">
           <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
-            Distribución de {type === "EXPENSE" ? "Gastos" : "Ingresos"}
+            Distribución de {type === 'EXPENSE' ? 'Gastos' : 'Ingresos'}
           </span>
           <PieChart data={stats} type={type} />
         </div>
@@ -222,7 +240,6 @@ export default function StatsPage() {
           </span>
           <NetWorthChart data={getNetWorthHistory()} />
         </div>
-
       </div>
     </div>
   );

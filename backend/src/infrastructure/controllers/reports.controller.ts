@@ -81,10 +81,7 @@ export class ReportsController {
   }
 
   @Get('income-statement')
-  async getIncomeStatement(
-    @CurrentUser() user: UserEntity,
-    @Query('periodId') periodId: string,
-  ) {
+  async getIncomeStatement(@CurrentUser() user: UserEntity, @Query('periodId') periodId: string) {
     if (!periodId) {
       throw new BadRequestException('periodId is required');
     }
@@ -95,23 +92,25 @@ export class ReportsController {
   async getIncomeStatementRealVsProjected(
     @CurrentUser() user: UserEntity,
     @Query('fiscalYearId') fiscalYearId: string,
+    @Query('rolling') rolling?: string,
   ) {
     if (!fiscalYearId) {
       throw new BadRequestException('fiscalYearId is required');
     }
-    return this.incomeStatementForecastUseCase.execute(user.id, fiscalYearId);
+    const isRolling = rolling === 'true';
+    return this.incomeStatementForecastUseCase.execute(user.id, fiscalYearId, isRolling);
   }
 
   @Get('cash-flow/real-vs-projected')
   async getCashFlowRealVsProjected(
     @CurrentUser() user: UserEntity,
     @Query('fiscalYearId') fiscalYearId: string,
+    @Query('rolling') rolling?: string,
   ) {
     if (!fiscalYearId) {
       throw new BadRequestException('fiscalYearId is required');
     }
-    return this.cashFlowStatementForecastUseCase.execute(user.id, fiscalYearId);
+    const isRolling = rolling === 'true';
+    return this.cashFlowStatementForecastUseCase.execute(user.id, fiscalYearId, isRolling);
   }
 }
-
-

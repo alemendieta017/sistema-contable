@@ -22,7 +22,11 @@ describe('Reverse Transaction Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-reversal-id', ...obj })),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: 'mock-reversal-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: 'mock-reversal-id' }),
+        ),
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),

@@ -1,38 +1,39 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { api } from "../../services/api";
-import ThemeToggle from "../../components/ThemeToggle";
-import SecuritySettings from "../../components/SecuritySettings";
-import CurrencySettings from "../../components/CurrencySettings";
-import { Download, Upload, FileSpreadsheet, ShieldAlert, CheckCircle2 } from "lucide-react";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { api } from '../../services/api';
+import ThemeToggle from '../../components/ThemeToggle';
+import SecuritySettings from '../../components/SecuritySettings';
+import CurrencySettings from '../../components/CurrencySettings';
+import { Download, Upload, FileSpreadsheet, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   const handleExcelExport = async () => {
     try {
       setLoading(true);
-      setError("");
-      setSuccess("");
+      setError('');
+      setSuccess('');
 
-      const token = localStorage.getItem("auth_token");
-      const API_BASE_URL = api.baseUrl || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-      
+      const token = localStorage.getItem('auth_token');
+      const API_BASE_URL =
+        api.baseUrl || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
       const response = await fetch(`${API_BASE_URL}/reports/excel`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) throw new Error("Error al exportar Excel");
+      if (!response.ok) throw new Error('Error al exportar Excel');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `RegistroContable-${new Date().toISOString().substring(0, 10)}.xlsx`;
       document.body.appendChild(a);
@@ -40,9 +41,9 @@ export default function SettingsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      setSuccess("Reporte Excel descargado con éxito.");
+      setSuccess('Reporte Excel descargado con éxito.');
     } catch (err: any) {
-      setError(err.message || "Fallo al exportar archivo Excel.");
+      setError(err.message || 'Fallo al exportar archivo Excel.');
     } finally {
       setLoading(false);
     }
@@ -51,15 +52,15 @@ export default function SettingsPage() {
   const handleBackupExport = async () => {
     try {
       setLoading(true);
-      setError("");
-      setSuccess("");
+      setError('');
+      setSuccess('');
 
       const backup = await api.backup.export();
       const blob = new Blob([JSON.stringify(backup, null, 2)], {
-        type: "application/json",
+        type: 'application/json',
       });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = `BackupContable-${new Date().toISOString().substring(0, 10)}.json`;
       document.body.appendChild(a);
@@ -67,9 +68,9 @@ export default function SettingsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      setSuccess("Copia de seguridad exportada con éxito.");
+      setSuccess('Copia de seguridad exportada con éxito.');
     } catch (err: any) {
-      setError(err.message || "Fallo al exportar copia de seguridad.");
+      setError(err.message || 'Fallo al exportar copia de seguridad.');
     } finally {
       setLoading(false);
     }
@@ -80,17 +81,17 @@ export default function SettingsPage() {
     if (!file) return;
 
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
         await api.backup.import(json);
-        setSuccess("Copia de seguridad restaurada con éxito.");
+        setSuccess('Copia de seguridad restaurada con éxito.');
       } catch (err: any) {
-        setError(err.message || "Fallo al importar respaldo. Verifique el formato JSON.");
+        setError(err.message || 'Fallo al importar respaldo. Verifique el formato JSON.');
       } finally {
         setLoading(false);
       }
@@ -146,9 +147,12 @@ export default function SettingsPage() {
               Períodos Contables
             </span>
             <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3">
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Ejercicios y Cierres Mensuales</h4>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Ejercicios y Cierres Mensuales
+              </h4>
               <p className="text-4xs text-slate-400 dark:text-slate-500 font-semibold leading-relaxed">
-                Configure el año fiscal, gestione los periodos contables mensuales, abra o cierre meses, y realice el cierre del ejercicio.
+                Configure el año fiscal, gestione los periodos contables mensuales, abra o cierre
+                meses, y realice el cierre del ejercicio.
               </p>
               <Link
                 href="/periods"
@@ -174,13 +178,16 @@ export default function SettingsPage() {
             <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
               Respaldo e Informes
             </span>
-            
+
             <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
               {/* Excel Report Download */}
               <div className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Exportar Planilla RealByte</h4>
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Exportar Planilla RealByte
+                </h4>
                 <p className="text-4xs text-slate-400 dark:text-slate-500 font-semibold leading-relaxed">
-                  Descarga un reporte consolidado compatible para importación en planillas de contabilidad Excel.
+                  Descarga un reporte consolidado compatible para importación en planillas de
+                  contabilidad Excel.
                 </p>
                 <button
                   onClick={handleExcelExport}
@@ -194,9 +201,12 @@ export default function SettingsPage() {
 
               {/* Backups export/import */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Copia de Seguridad</h4>
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Copia de Seguridad
+                </h4>
                 <p className="text-4xs text-slate-400 dark:text-slate-500 font-semibold leading-relaxed">
-                  Cree copias de seguridad de sus transacciones y cuentas en archivos JSON o restáurelas en cualquier momento.
+                  Cree copias de seguridad de sus transacciones y cuentas en archivos JSON o
+                  restáurelas en cualquier momento.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
@@ -223,7 +233,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

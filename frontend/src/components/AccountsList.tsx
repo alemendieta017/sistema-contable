@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Trash2 } from "lucide-react";
-import { formatCurrency } from "../lib/utils";
+import React from 'react';
+import { Trash2 } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 
 interface AccountSummary {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   balance: number;
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
   parentId?: string | null;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
   isCashOrBank?: boolean;
 }
 
@@ -24,7 +24,12 @@ interface AccountsListProps {
   onToggleCashOrBank: (id: string, isCashOrBank: boolean) => void;
 }
 
-export default function AccountsList({ accounts, onDelete, deletingId, onToggleCashOrBank }: AccountsListProps) {
+export default function AccountsList({
+  accounts,
+  onDelete,
+  deletingId,
+  onToggleCashOrBank,
+}: AccountsListProps) {
   const renderAccountList = (list: AccountSummary[]) => {
     const roots = list.filter((a) => !a.parentId);
     const children = list.filter((a) => a.parentId);
@@ -40,17 +45,19 @@ export default function AccountsList({ accounts, onDelete, deletingId, onToggleC
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 shadow-sm overflow-hidden">
         {ordered.map((a) => {
           const isChild = !!a.parentId;
-          const isInactive = a.status === "INACTIVE";
+          const isInactive = a.status === 'INACTIVE';
           return (
             <div
               key={a.id}
               className={`flex justify-between items-center p-3.5 text-xs transition duration-150 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 ${
                 isChild
-                  ? "pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20"
-                  : ""
-              } ${isInactive ? "opacity-50" : ""}`}
+                  ? 'pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20'
+                  : ''
+              } ${isInactive ? 'opacity-50' : ''}`}
             >
-              <span className={`${isChild ? "text-slate-500 dark:text-slate-450 font-medium" : "font-bold text-slate-700 dark:text-slate-200"}`}>
+              <span
+                className={`${isChild ? 'text-slate-500 dark:text-slate-450 font-medium' : 'font-bold text-slate-700 dark:text-slate-200'}`}
+              >
                 {isChild && <span className="mr-1 text-slate-400">└─</span>}
                 {a.name}
                 {isInactive && (
@@ -65,7 +72,7 @@ export default function AccountsList({ accounts, onDelete, deletingId, onToggleC
                 )}
               </span>
               <div className="flex items-center gap-4">
-                {a.type === "ASSET" && !isInactive && (
+                {a.type === 'ASSET' && !isInactive && (
                   <label className="flex items-center gap-1.5 cursor-pointer select-none text-5xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold bg-slate-50 dark:bg-slate-900/30 hover:bg-slate-100 py-1 px-2 border border-slate-150 dark:border-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition">
                     <input
                       type="checkbox"
@@ -78,13 +85,13 @@ export default function AccountsList({ accounts, onDelete, deletingId, onToggleC
                 )}
                 <span
                   className={`font-extrabold ${
-                    a.type === "ASSET"
-                      ? "text-green-600 dark:text-green-400"
-                      : a.type === "LIABILITY"
-                        ? "text-red-500"
-                        : a.type === "INCOME"
-                          ? "text-indigo-500"
-                          : "text-slate-500"
+                    a.type === 'ASSET'
+                      ? 'text-green-600 dark:text-green-400'
+                      : a.type === 'LIABILITY'
+                        ? 'text-red-500'
+                        : a.type === 'INCOME'
+                          ? 'text-indigo-500'
+                          : 'text-slate-500'
                   }`}
                 >
                   {formatCurrency(a.balance, {
@@ -112,11 +119,11 @@ export default function AccountsList({ accounts, onDelete, deletingId, onToggleC
     );
   };
 
-  const assets = accounts.filter((a) => a.type === "ASSET") || [];
-  const liabilities = accounts.filter((a) => a.type === "LIABILITY") || [];
-  const equity = accounts.filter((a) => a.type === "EQUITY") || [];
-  const incomes = accounts.filter((a) => a.type === "INCOME") || [];
-  const expenses = accounts.filter((a) => a.type === "EXPENSE") || [];
+  const assets = accounts.filter((a) => a.type === 'ASSET') || [];
+  const liabilities = accounts.filter((a) => a.type === 'LIABILITY') || [];
+  const equity = accounts.filter((a) => a.type === 'EQUITY') || [];
+  const incomes = accounts.filter((a) => a.type === 'INCOME') || [];
+  const expenses = accounts.filter((a) => a.type === 'EXPENSE') || [];
 
   return (
     <div className="space-y-6">

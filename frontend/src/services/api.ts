@@ -215,7 +215,10 @@ export const api = {
       return handleResponse(res);
     },
 
-    async updateItems(periodId: string, data: { items: Array<{ accountId: string; amount: number }> }) {
+    async updateItems(
+      periodId: string,
+      data: { items: Array<{ accountId: string; amount: number }> },
+    ) {
       const res = await fetch(`${API_BASE_URL}/budgets/by-period/${periodId}/items`, {
         method: 'PUT',
         headers: getHeaders(),
@@ -229,6 +232,14 @@ export const api = {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async copyPrevious(periodId: string) {
+      const res = await fetch(`${API_BASE_URL}/budgets/by-period/${periodId}/copy-previous`, {
+        method: 'POST',
+        headers: getHeaders(),
       });
       return handleResponse(res);
     },
@@ -255,7 +266,11 @@ export const api = {
       return handleResponse(res);
     },
 
-    async balanceSheet(options: { mode?: string; periodId?: string; date?: string; periodIds?: string[]; depth?: number } | string) {
+    async balanceSheet(
+      options:
+        | { mode?: string; periodId?: string; date?: string; periodIds?: string[]; depth?: number }
+        | string,
+    ) {
       let url = `${API_BASE_URL}/reports/balance-sheet`;
       if (typeof options === 'string') {
         url += `?periodId=${options}`;
@@ -285,16 +300,24 @@ export const api = {
       return handleResponse(res);
     },
 
-    async realVsProjectedIncomeStatement(fiscalYearId: string) {
-      const res = await fetch(`${API_BASE_URL}/reports/income-statement/real-vs-projected?fiscalYearId=${fiscalYearId}`, {
+    async realVsProjectedIncomeStatement(fiscalYearId: string, rolling?: boolean) {
+      let url = `${API_BASE_URL}/reports/income-statement/real-vs-projected?fiscalYearId=${fiscalYearId}`;
+      if (rolling !== undefined) {
+        url += `&rolling=${rolling}`;
+      }
+      const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
       });
       return handleResponse(res);
     },
 
-    async realVsProjectedCashFlow(fiscalYearId: string) {
-      const res = await fetch(`${API_BASE_URL}/reports/cash-flow/real-vs-projected?fiscalYearId=${fiscalYearId}`, {
+    async realVsProjectedCashFlow(fiscalYearId: string, rolling?: boolean) {
+      let url = `${API_BASE_URL}/reports/cash-flow/real-vs-projected?fiscalYearId=${fiscalYearId}`;
+      if (rolling !== undefined) {
+        url += `&rolling=${rolling}`;
+      }
+      const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -351,7 +374,15 @@ export const api = {
       return handleResponse(res);
     },
 
-    async update(id: string, data: { status: 'OPEN' | 'CLOSED' }) {
+    async listFiscalYears() {
+      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async update(id: string, data: { status: 'OPEN' | 'CLOSED' | 'PLANNING' }) {
       const res = await fetch(`${API_BASE_URL}/periods/${id}`, {
         method: 'PATCH',
         headers: getHeaders(),

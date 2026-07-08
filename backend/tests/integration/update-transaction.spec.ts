@@ -25,7 +25,11 @@ describe('Update Transaction Integration Tests', () => {
       findOne: jest.fn(),
       delete: jest.fn(),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: entity.id || 'saved-id' }),
+        ),
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -133,7 +137,9 @@ describe('Update Transaction Integration Tests', () => {
       ],
     };
 
-    await expect(useCase.execute('user-123', 'non-existent', dto)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('user-123', 'non-existent', dto)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should throw BadRequestException if transaction status is REVERSED', async () => {

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
-import { useTheme } from "../lib/theme-context";
+import React from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { useTheme } from '../lib/theme-context';
 
 interface HistoryPoint {
   date: string;
@@ -27,7 +27,10 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
   // Sort and format data
   const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
   const chartData = sorted.map((p) => ({
-    date: new Date(p.date + 'T00:00:00').toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
+    date: new Date(p.date + 'T00:00:00').toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+    }),
     balance: p.balance,
   }));
 
@@ -75,13 +78,13 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
-                border: theme === "dark" ? "1px solid #334155" : "1px solid #e2e8f0",
-                borderRadius: "12px",
-                fontSize: "10px",
-                color: theme === "dark" ? "#f8fafc" : "#0f172a",
+                backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                border: theme === 'dark' ? '1px solid #334155' : '1px solid #e2e8f0',
+                borderRadius: '12px',
+                fontSize: '10px',
+                color: theme === 'dark' ? '#f8fafc' : '#0f172a',
               }}
-              formatter={(value: any) => [`$${value.toLocaleString()}`, "Patrimonio"]}
+              formatter={(value: any) => [`$${value.toLocaleString()}`, 'Patrimonio']}
             />
             <Area
               type="monotone"

@@ -26,11 +26,7 @@ interface MonthlyViewProps {
   currentYear: number;
 }
 
-export default function MonthlyView({
-  transactions,
-  baseCurrency,
-  currentYear,
-}: MonthlyViewProps) {
+export default function MonthlyView({ transactions, baseCurrency, currentYear }: MonthlyViewProps) {
   const months = [
     'Enero',
     'Febrero',

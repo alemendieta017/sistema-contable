@@ -69,9 +69,9 @@ describe('Budget Tracking and Spending Aggregation Tests', () => {
     ]);
 
     // Mock spent journal entries for "comida" (acc-food) in June: sum is $200,000
-    mockEntityManager.createQueryBuilder().getRawMany.mockResolvedValue([
-      { accountId: 'acc-food', sum: '200000.0000' },
-    ]);
+    mockEntityManager
+      .createQueryBuilder()
+      .getRawMany.mockResolvedValue([{ accountId: 'acc-food', sum: '200000.0000' }]);
 
     // Act
     const result = await useCase.execute(userId, period);
@@ -104,9 +104,9 @@ describe('Budget Tracking and Spending Aggregation Tests', () => {
     ]);
 
     // Mock spent journal entries for "comida" in June: sum is $30,000
-    mockEntityManager.createQueryBuilder().getRawMany.mockResolvedValue([
-      { accountId: 'acc-food', sum: '30000.0000' },
-    ]);
+    mockEntityManager
+      .createQueryBuilder()
+      .getRawMany.mockResolvedValue([{ accountId: 'acc-food', sum: '30000.0000' }]);
 
     // Act
     const result = await useCase.execute(userId, period);

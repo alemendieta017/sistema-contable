@@ -7,7 +7,7 @@ This document specifies the REST API endpoints and data transfer objects (DTOs) 
 ## 1. Budget Management
 
 ### Get Budget Details for Editing
-Retrieves the budget metadata and a list of all accounts eligible for budgeting, paired with their currently budgeted amounts.
+Retrieves the budget metadata and a list of budgeted items, paired with a list of remaining accounts eligible for budgeting in this period.
 
 - **Endpoint**: `GET /api/budgets/by-period/:periodId`
 - **Headers**: `Authorization: Bearer <token>`
@@ -23,20 +23,21 @@ Retrieves the budget metadata and a list of all accounts eligible for budgeting,
     "isLocked": false,
     "items": [
       {
-        "accountId": "account-uuid-1",
-        "accountName": "Alquileres",
-        "accountType": "EXPENSE",
-        "parentId": null,
-        "isCashOrBank": false,
-        "amount": 3000000.00
-      },
-      {
         "accountId": "account-uuid-2",
         "accountName": "Inversiones Bolsa",
         "accountType": "ASSET",
         "parentId": "assets-parent-uuid",
         "isCashOrBank": false,
         "amount": -500000.00
+      }
+    ],
+    "eligibleAccounts": [
+      {
+        "accountId": "account-uuid-1",
+        "accountName": "Alquileres",
+        "accountType": "EXPENSE",
+        "parentId": null,
+        "isCashOrBank": false
       }
     ]
   }
@@ -45,7 +46,7 @@ Retrieves the budget metadata and a list of all accounts eligible for budgeting,
 ---
 
 ### Update Budget Items
-Saves/updates the budgeted amounts for multiple accounts within a budget.
+Saves/updates the budgeted amounts. Synchronizes the list: deletes items missing from the request body, and creates/updates the rest.
 
 - **Endpoint**: `PUT /api/budgets/by-period/:periodId/items`
 - **Headers**: `Authorization: Bearer <token>`
@@ -69,6 +70,21 @@ Saves/updates the budgeted amounts for multiple accounts within a budget.
   {
     "success": true,
     "updatedCount": 2
+  }
+  ```
+
+---
+
+### Copy Previous Period Budget
+Clones all budget items from period N-1 to the current period.
+
+- **Endpoint**: `POST /api/budgets/by-period/:periodId/copy-previous`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response** (`200 OK`):
+  ```json
+  {
+    "success": true,
+    "copiedCount": 3
   }
   ```
 
@@ -187,10 +203,10 @@ Retrieves the execution dashboard comparing plan vs. actual spending, savings, a
 ## 3. Financial Forecast Reports
 
 ### Get Income Statement (Real vs. Projected)
-Retrieves monthly income statement data for a range of periods.
+Retrieves monthly income statement data. Supports calendar year range or rolling 12-month window.
 
 - **Endpoint**: `GET /api/reports/income-statement/real-vs-projected`
-- **Query Params**: `fiscalYearId=<fiscal-year-uuid>`
+- **Query Params**: `fiscalYearId=<fiscal-year-uuid>&rolling=<boolean>`
 - **Response** (`200 OK`):
   ```json
   {
@@ -221,10 +237,10 @@ Retrieves monthly income statement data for a range of periods.
 ---
 
 ### Get Cash Flow Statement (Real vs. Projected)
-Retrieves monthly cash flow data for a range of periods.
+Retrieves monthly cash flow data. Supports calendar year range or rolling 12-month window.
 
 - **Endpoint**: `GET /api/reports/cash-flow/real-vs-projected`
-- **Query Params**: `fiscalYearId=<fiscal-year-uuid>`
+- **Query Params**: `fiscalYearId=<fiscal-year-uuid>&rolling=<boolean>`
 - **Response** (`200 OK`):
   ```json
   {

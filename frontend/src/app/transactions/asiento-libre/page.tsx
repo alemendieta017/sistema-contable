@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../../services/api";
-import { Trash2 } from "lucide-react";
-import { formatCurrency } from "../../../lib/utils";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../../services/api';
+import { Trash2 } from 'lucide-react';
+import { formatCurrency } from '../../../lib/utils';
 
 type Account = {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
 };
 
 type EntryLine = {
   accountId: string;
-  entryType: "DEBIT" | "CREDIT";
+  entryType: 'DEBIT' | 'CREDIT';
   amount: string;
 };
 
@@ -23,21 +23,21 @@ export default function AsientoLibrePage() {
   const getLocalDateString = () => {
     const d = new Date();
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
 
   const [date, setDate] = useState(getLocalDateString());
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [entries, setEntries] = useState<EntryLine[]>([
-    { accountId: "", entryType: "DEBIT", amount: "" },
-    { accountId: "", entryType: "CREDIT", amount: "" },
+    { accountId: '', entryType: 'DEBIT', amount: '' },
+    { accountId: '', entryType: 'CREDIT', amount: '' },
   ]);
 
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchInitialData();
@@ -45,19 +45,16 @@ export default function AsientoLibrePage() {
 
   const fetchInitialData = async () => {
     try {
-      const [accList, curList] = await Promise.all([
-        api.accounts.list(),
-        api.currencies.list(),
-      ]);
+      const [accList, curList] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accList || []);
       setCurrencies(curList || []);
     } catch (err: any) {
-      setError("Error al cargar datos iniciales.");
+      setError('Error al cargar datos iniciales.');
     }
   };
 
   const addLine = () => {
-    setEntries([...entries, { accountId: "", entryType: "DEBIT", amount: "" }]);
+    setEntries([...entries, { accountId: '', entryType: 'DEBIT', amount: '' }]);
   };
 
   const removeLine = (index: number) => {
@@ -71,17 +68,23 @@ export default function AsientoLibrePage() {
     setEntries(updated);
   };
 
-  const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
-  const currencySymbol = baseCurrency.symbol || "$";
-  const amountPlaceholder = (0).toFixed(baseCurrency.decimalPlaces !== undefined ? baseCurrency.decimalPlaces : 2);
+  const baseCurrency = currencies.find((c) => c.isBase) || {
+    code: 'PYG',
+    symbol: '₲',
+    decimalPlaces: 0,
+  };
+  const currencySymbol = baseCurrency.symbol || '$';
+  const amountPlaceholder = (0).toFixed(
+    baseCurrency.decimalPlaces !== undefined ? baseCurrency.decimalPlaces : 2,
+  );
 
   // Calculation of live sums
   const totalDebits = entries
-    .filter((e) => e.entryType === "DEBIT")
+    .filter((e) => e.entryType === 'DEBIT')
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const totalCredits = entries
-    .filter((e) => e.entryType === "CREDIT")
+    .filter((e) => e.entryType === 'CREDIT')
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const difference = Math.abs(totalDebits - totalCredits);
@@ -90,11 +93,11 @@ export default function AsientoLibrePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setSuccess("");
-    setError("");
+    setSuccess('');
+    setError('');
 
     if (!isBalanced) {
-      setError("El asiento debe estar balanceado (Débitos = Créditos) y contener montos válidos.");
+      setError('El asiento debe estar balanceado (Débitos = Créditos) y contener montos válidos.');
       setLoading(false);
       return;
     }
@@ -108,18 +111,18 @@ export default function AsientoLibrePage() {
     try {
       await api.transactions.create({
         accountingDate: date,
-        description: description || "Asiento Libre",
+        description: description || 'Asiento Libre',
         entries: payloadEntries,
       });
 
-      setSuccess("Asiento guardado con éxito.");
-      setDescription("");
+      setSuccess('Asiento guardado con éxito.');
+      setDescription('');
       setEntries([
-        { accountId: "", entryType: "DEBIT", amount: "" },
-        { accountId: "", entryType: "CREDIT", amount: "" },
+        { accountId: '', entryType: 'DEBIT', amount: '' },
+        { accountId: '', entryType: 'CREDIT', amount: '' },
       ]);
     } catch (err: any) {
-      setError(err.message || "Failed to post transaction");
+      setError(err.message || 'Failed to post transaction');
     } finally {
       setLoading(false);
     }
@@ -133,7 +136,7 @@ export default function AsientoLibrePage() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Editor manual multilínea</p>
         </div>
         <button
-          onClick={() => (window.location.href = "/transactions")}
+          onClick={() => (window.location.href = '/transactions')}
           className="text-xs py-1.5 px-3 bg-slate-200 dark:bg-slate-800 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition font-semibold"
         >
           Volver
@@ -141,14 +144,24 @@ export default function AsientoLibrePage() {
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {success && <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-lg">{success}</div>}
-        {error && <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-lg">{error}</div>}
+        {success && (
+          <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-lg">
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Date and Description */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 border border-slate-100 dark:border-slate-700 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Fecha</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Fecha
+              </label>
               <input
                 type="date"
                 value={date}
@@ -157,7 +170,9 @@ export default function AsientoLibrePage() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Concepto / Glosa</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Concepto / Glosa
+              </label>
               <input
                 type="text"
                 value={description}
@@ -205,7 +220,7 @@ export default function AsientoLibrePage() {
                   </label>
                   <select
                     value={entry.accountId}
-                    onChange={(e) => updateLine(index, "accountId", e.target.value)}
+                    onChange={(e) => updateLine(index, 'accountId', e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-850 dark:text-slate-200 font-semibold"
                   >
                     <option value="">Seleccionar cuenta...</option>
@@ -225,22 +240,22 @@ export default function AsientoLibrePage() {
                   <div className="grid grid-cols-2 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-0.5 rounded-lg">
                     <button
                       type="button"
-                      onClick={() => updateLine(index, "entryType", "DEBIT")}
+                      onClick={() => updateLine(index, 'entryType', 'DEBIT')}
                       className={`py-1 text-4xs font-bold rounded-lg transition duration-150 ${
-                        entry.entryType === "DEBIT"
-                          ? "bg-rose-600 text-white shadow-sm"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                        entry.entryType === 'DEBIT'
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                       }`}
                     >
                       DEBE
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateLine(index, "entryType", "CREDIT")}
+                      onClick={() => updateLine(index, 'entryType', 'CREDIT')}
                       className={`py-1 text-4xs font-bold rounded-lg transition duration-150 ${
-                        entry.entryType === "CREDIT"
-                          ? "bg-emerald-600 text-white shadow-sm"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                        entry.entryType === 'CREDIT'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                       }`}
                     >
                       HABER
@@ -262,7 +277,7 @@ export default function AsientoLibrePage() {
                       step="any"
                       value={entry.amount}
                       placeholder={amountPlaceholder}
-                      onChange={(e) => updateLine(index, "amount", e.target.value)}
+                      onChange={(e) => updateLine(index, 'amount', e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 pl-7 text-xs outline-none text-right font-bold focus:border-indigo-500 text-slate-800 dark:text-slate-200"
                     />
                   </div>
@@ -292,16 +307,25 @@ export default function AsientoLibrePage() {
         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
           <div className="flex justify-between text-xs">
             <span>Total Débito (Debe):</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-450">{formatCurrency(totalDebits, baseCurrency)}</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-450">
+              {formatCurrency(totalDebits, baseCurrency)}
+            </span>
           </div>
           <div className="flex justify-between text-xs">
             <span>Total Crédito (Haber):</span>
-            <span className="font-bold text-rose-600 dark:text-rose-450">{formatCurrency(totalCredits, baseCurrency)}</span>
+            <span className="font-bold text-rose-600 dark:text-rose-450">
+              {formatCurrency(totalCredits, baseCurrency)}
+            </span>
           </div>
           <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between text-xs font-bold">
             <span>Diferencia:</span>
-            <span className={difference === 0 ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"}>
-              {formatCurrency(difference, baseCurrency)} {difference === 0 ? "✓ Cuadrado" : "✗ Descuadrado"}
+            <span
+              className={
+                difference === 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-500'
+              }
+            >
+              {formatCurrency(difference, baseCurrency)}{' '}
+              {difference === 0 ? '✓ Cuadrado' : '✗ Descuadrado'}
             </span>
           </div>
         </div>
@@ -311,7 +335,7 @@ export default function AsientoLibrePage() {
           disabled={loading || !isBalanced}
           className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition disabled:opacity-50"
         >
-          {loading ? "Guardando..." : "Guardar Asiento Libre"}
+          {loading ? 'Guardando...' : 'Guardar Asiento Libre'}
         </button>
       </form>
     </div>

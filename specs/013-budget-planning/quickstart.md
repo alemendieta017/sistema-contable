@@ -31,44 +31,46 @@ npm run test -- tests/integration/period-creation.spec.ts
 
 ---
 
-## 3. Validation Scenario 2: Form Edits and Year-Wide Replication
+## 3. Validation Scenario 2: Form Edits, Syncing, and Copy Previous
 
-Verify that editing budget items persists correctly and replicates across all periods of the fiscal year.
+Verify that editing budget items dynamically synchronizes the list and allows copying the budget from the previous month.
 
 ### Execution
-1. Send a request to save budget limits for a single period:
+1. Send a request to save budget limits for a single period (adding/saving items):
    ```bash
    curl -X PUT http://localhost:4000/api/budgets/by-period/<period-id>/items \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer <token>" \
-     -d '{"items": [{"accountId": "<account-id>", "amount": 3000000}]}'
+     -d '{"items": [{"accountId": "<account-id-1>", "amount": 3000000}, {"accountId": "<account-id-2>", "amount": -500000}]}'
    ```
-2. Trigger replication for that account:
+2. Retrieve the budget detail for the period to verify the list only returns these items and `eligibleAccounts` contains the rest:
    ```bash
-   curl -X POST http://localhost:4000/api/budgets/replicate \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <token>" \
-     -d '{"periodId": "<period-id>", "accountId": "<account-id>", "amount": 3000000}'
+   curl http://localhost:4000/api/budgets/by-period/<period-id> \
+     -H "Authorization: Bearer <token>"
+   ```
+3. Send a copy request for the next period to clone these items:
+   ```bash
+   curl -X POST http://localhost:4000/api/budgets/by-period/<next-period-id>/copy-previous \
+     -H "Authorization: Bearer <token>"
    ```
 
 ### Expected Outcome
-- Saving the budget items returns `{"success": true, "updatedCount": 1}`.
-- Triggering replication returns `{"success": true, "replicatedPeriods": [...]}` containing all 12 periods.
-- Querying other periods in the same fiscal year verifies that the budgeted amount is now `3000000` for that account.
+- Saving budget items returns `{"success": true, "updatedCount": 2}`.
+- Retrieving details returns `items` with size 2, and `eligibleAccounts` listing other active non-equity/non-liquid accounts.
+- Copying returns `{"success": true, "copiedCount": 2}`. Retrieving `<next-period-id>` budget details shows the same cloned accounts and amounts.
 
 ---
 
-## 4. Validation Scenario 3: Real vs. Projected Cash Flow Report
+## 4. Validation Scenario 3: Real vs. Projected Cash Flow Report with Rolling Forecast
 
-Verify that the cash flow projection report blends actual bank balances with future budget plan inputs.
+Verify that the cash flow projection report blends actual bank balances with future budget plan inputs, supporting a rolling 12-month window.
 
 ### Execution
-Query the real vs. projected cash flow endpoint:
+Query the real vs. projected cash flow endpoint with rolling forecast enabled:
 ```bash
-curl "http://localhost:4000/api/reports/cash-flow/real-vs-projected?fiscalYearId=<fiscal-year-id>" \
+curl "http://localhost:4000/api/reports/cash-flow/real-vs-projected?fiscalYearId=<fiscal-year-id>&rolling=true" \
   -H "Authorization: Bearer <token>"
 ```
 
 ### Expected Outcome
-- For closed periods (`isReal: true`), the response returns `initialCash`, `netFlow` (debits - credits of cash/bank accounts), and `finalCash` computed entirely from actual ledger journal entries.
-- For open/future periods (`isReal: false`), the response computes `initialCash` as the `finalCash` of the preceding period and adds the budgeted cash flow (`Sum(INCOME) - Sum(EXPENSE) + Sum(ASSET) + Sum(LIABILITY)`) to project the new `finalCash`.
+- The response returns a rolling window of 12 months: last closed month (`isReal: true`, computed from actual ledger journal entries) plus 11 future months (`isReal: false`, calculated using budgets and cascading cash balances).

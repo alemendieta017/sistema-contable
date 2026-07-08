@@ -27,7 +27,9 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: 'saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: 'saved-id' })),
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),

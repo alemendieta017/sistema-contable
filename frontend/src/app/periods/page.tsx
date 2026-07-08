@@ -17,7 +17,7 @@ type Period = {
   name: string;
   startDate: string;
   endDate: string;
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
 };
 
 type FiscalYear = {
@@ -25,7 +25,7 @@ type FiscalYear = {
   name: string;
   startDate: string;
   endDate: string;
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
   periods?: Period[];
 };
 
@@ -164,14 +164,19 @@ export default function PeriodsPage() {
     }
   };
 
-  const handleTogglePeriod = async (periodId: string, currentStatus: 'OPEN' | 'CLOSED') => {
+  const handleTogglePeriod = async (
+    periodId: string,
+    currentStatus: 'OPEN' | 'CLOSED' | 'PLANNING',
+  ) => {
     try {
       setActionLoading(true);
       setError('');
       setSuccess('');
       const newStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
       await api.periods.update(periodId, { status: newStatus });
-      setSuccess(`Período actualizado a ${newStatus === 'OPEN' ? 'Abierto' : 'Cerrado'} con éxito.`);
+      setSuccess(
+        `Período actualizado a ${newStatus === 'OPEN' ? 'Abierto' : 'Cerrado'} con éxito.`,
+      );
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al actualizar el estado del período.');
@@ -337,14 +342,22 @@ export default function PeriodsPage() {
                             </p>
                           </div>
                           <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-50 dark:border-slate-700/50">
-                            <span className={`text-[10px] font-bold ${period.status === 'OPEN' ? 'text-green-600 dark:text-green-400' : 'text-slate-450 dark:text-slate-500'}`}>
-                              {period.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
+                            <span
+                              className={`text-[10px] font-bold ${period.status === 'OPEN' ? 'text-green-600 dark:text-green-400' : period.status === 'PLANNING' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-450 dark:text-slate-500'}`}
+                            >
+                              {period.status === 'OPEN'
+                                ? 'Abierto'
+                                : period.status === 'PLANNING'
+                                  ? 'Planificación'
+                                  : 'Cerrado'}
                             </span>
                             <button
                               onClick={() => handleTogglePeriod(period.id, period.status)}
                               disabled={actionLoading}
                               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                period.status === 'OPEN' ? 'bg-indigo-650' : 'bg-slate-200 dark:bg-slate-700'
+                                period.status === 'OPEN'
+                                  ? 'bg-indigo-650'
+                                  : 'bg-slate-200 dark:bg-slate-700'
                               }`}
                             >
                               <span

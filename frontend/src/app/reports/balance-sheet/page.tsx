@@ -174,7 +174,7 @@ export default function BalanceSheetPage() {
             {item.balances.map((bal, idx) => (
               <span
                 key={idx}
-                className="font-bold text-slate-800 dark:text-slate-100 min-w-[85px] text-right"
+                className="font-bold text-slate-800 dark:text-slate-100 min-w-[120px] text-right whitespace-nowrap"
               >
                 {formatCurrency(bal, baseCurrency)}
               </span>
@@ -200,7 +200,7 @@ export default function BalanceSheetPage() {
         {isComparative && Array.isArray(totals) ? (
           <div className="flex gap-4">
             {totals.map((tot, idx) => (
-              <span key={idx} className={`${totalColorClass} min-w-[85px] text-right text-sm`}>
+              <span key={idx} className={`${totalColorClass} min-w-[120px] text-right text-sm whitespace-nowrap`}>
                 {formatCurrency(tot, baseCurrency)}
               </span>
             ))}
@@ -439,7 +439,7 @@ export default function BalanceSheetPage() {
                     {report.periods.map((pName, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[85px] text-right"
+                        className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[120px] text-right whitespace-nowrap"
                       >
                         {pName}
                       </span>
@@ -474,7 +474,7 @@ export default function BalanceSheetPage() {
                       {report.periods.map((pName, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[85px] text-right"
+                          className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[120px] text-right whitespace-nowrap"
                         >
                           {pName}
                         </span>
@@ -511,7 +511,7 @@ export default function BalanceSheetPage() {
                       {report.periods.map((pName, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[85px] text-right"
+                          className="text-[10px] font-bold text-slate-400 dark:text-slate-500 min-w-[120px] text-right whitespace-nowrap"
                         >
                           {pName}
                         </span>
@@ -540,13 +540,15 @@ export default function BalanceSheetPage() {
               {/* Total Liabilities + Equity Card */}
               <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-105 dark:border-slate-700 shadow-sm p-6 print:border-none print:shadow-none print:p-0">
                 <div className="flex justify-between items-center font-extrabold text-xs">
-                  <span className="text-slate-800 dark:text-slate-200">TOTAL PASIVO + PATRIMONIO NETO</span>
+                  <span className="text-slate-800 dark:text-slate-200">
+                    TOTAL PASIVO + PATRIMONIO NETO
+                  </span>
                   {isComparative && Array.isArray(totalLiabEquity) ? (
                     <div className="flex gap-4">
                       {totalLiabEquity.map((tot, idx) => (
                         <span
                           key={idx}
-                          className="text-indigo-650 dark:text-indigo-400 min-w-[85px] text-right text-sm font-extrabold"
+                          className="text-indigo-650 dark:text-indigo-400 min-w-[120px] text-right text-sm font-extrabold whitespace-nowrap"
                         >
                           {formatCurrency(tot, baseCurrency)}
                         </span>

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Sun, Moon } from "lucide-react";
-import { useTheme } from "../lib/theme-context";
+import React from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../lib/theme-context';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -21,14 +21,14 @@ export default function ThemeToggle() {
         className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-200 dark:bg-indigo-600"
         type="button"
         role="switch"
-        aria-checked={theme === "dark"}
+        aria-checked={theme === 'dark'}
       >
         <span
           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-            theme === "dark" ? "translate-x-5" : "translate-x-0"
+            theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
           }`}
         >
-          {theme === "dark" ? (
+          {theme === 'dark' ? (
             <Moon className="w-3 h-3 text-indigo-600" />
           ) : (
             <Sun className="w-3 h-3 text-amber-500" />

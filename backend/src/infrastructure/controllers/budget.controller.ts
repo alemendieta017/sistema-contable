@@ -10,6 +10,7 @@ import { GetBudgetDetailUseCase } from '../../application/budgets/get-budget-det
 import { UpdateBudgetItemsUseCase } from '../../application/budgets/update-budget-items.use-case';
 import { ReplicateBudgetItemUseCase } from '../../application/budgets/replicate-budget-item.use-case';
 import { GetBudgetExecutionUseCase } from '../../application/budgets/get-budget-execution.use-case';
+import { CopyPreviousBudgetUseCase } from '../../application/budgets/copy-previous-budget.use-case';
 import { SetBudgetDto } from './dto/set-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { ReplicateBudgetItemDto } from './dto/replicate-budget-item.dto';
@@ -23,6 +24,7 @@ export class BudgetController {
     private readonly updateBudgetItemsUseCase: UpdateBudgetItemsUseCase,
     private readonly replicateBudgetItemUseCase: ReplicateBudgetItemUseCase,
     private readonly getBudgetExecutionUseCase: GetBudgetExecutionUseCase,
+    private readonly copyPreviousBudgetUseCase: CopyPreviousBudgetUseCase,
     @InjectRepository(BudgetEntity)
     private readonly budgetRepository: Repository<BudgetEntity>,
   ) {}
@@ -47,19 +49,18 @@ export class BudgetController {
     return this.updateBudgetItemsUseCase.execute(user.id, periodId, body);
   }
 
+  @Post('by-period/:periodId/copy-previous')
+  async copyPreviousBudget(@CurrentUser() user: UserEntity, @Param('periodId') periodId: string) {
+    return this.copyPreviousBudgetUseCase.execute(user.id, periodId);
+  }
+
   @Post('replicate')
-  async replicateBudgetItem(
-    @CurrentUser() user: UserEntity,
-    @Body() body: ReplicateBudgetItemDto,
-  ) {
+  async replicateBudgetItem(@CurrentUser() user: UserEntity, @Body() body: ReplicateBudgetItemDto) {
     return this.replicateBudgetItemUseCase.execute(user.id, body);
   }
 
   @Get('execution-report')
-  async getBudgetExecution(
-    @CurrentUser() user: UserEntity,
-    @Query('periodId') periodId: string,
-  ) {
+  async getBudgetExecution(@CurrentUser() user: UserEntity, @Query('periodId') periodId: string) {
     return this.getBudgetExecutionUseCase.execute(user.id, periodId);
   }
 
@@ -83,4 +84,3 @@ export class BudgetController {
     return this.budgetRepository.save(budget);
   }
 }
-

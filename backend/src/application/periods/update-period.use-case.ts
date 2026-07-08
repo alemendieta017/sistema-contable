@@ -8,8 +8,8 @@ import { IsString, IsIn } from 'class-validator';
 
 export class UpdatePeriodDto implements UpdatePeriodRequest {
   @IsString()
-  @IsIn(['OPEN', 'CLOSED'])
-  status: 'OPEN' | 'CLOSED';
+  @IsIn(['OPEN', 'CLOSED', 'PLANNING'])
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
 }
 
 @Injectable()
@@ -57,7 +57,11 @@ export class UpdatePeriodUseCase {
 
       // If status changes from CLOSED to OPEN, call propagateBalancesFromPeriod
       if (oldStatus === 'CLOSED' && status === 'OPEN') {
-        await this.balanceUpdateService.propagateBalancesFromPeriod(entityManager, userId, periodId);
+        await this.balanceUpdateService.propagateBalancesFromPeriod(
+          entityManager,
+          userId,
+          periodId,
+        );
       }
 
       return {

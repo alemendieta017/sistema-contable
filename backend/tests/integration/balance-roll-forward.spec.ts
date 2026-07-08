@@ -230,7 +230,9 @@ describe('Balance Roll Forward Integration Tests', () => {
     // Expected opening balance: 30 (closing of p-1)
     // debits = 20, credits = 0. Nature is EXPENSE (debit).
     // Expected closing: 30 + 20 - 0 = 50
-    const expenseP2 = savedBalances.find((b) => b.accountId === 'acc-expense' && b.periodId === 'p-2');
+    const expenseP2 = savedBalances.find(
+      (b) => b.accountId === 'acc-expense' && b.periodId === 'p-2',
+    );
     expect(expenseP2).toBeDefined();
     expect(expenseP2.openingBalance).toBe(30);
     expect(expenseP2.closingBalance).toBe(50);
@@ -239,7 +241,9 @@ describe('Balance Roll Forward Integration Tests', () => {
     // Expected opening balance: 0. Since EXPENSE is temporary and p-3 is the first period of a new fiscal year (fy-2027).
     // debits = 0, credits = 0.
     // Expected closing: 0 + 0 - 0 = 0
-    const expenseP3 = savedBalances.find((b) => b.accountId === 'acc-expense' && b.periodId === 'p-3');
+    const expenseP3 = savedBalances.find(
+      (b) => b.accountId === 'acc-expense' && b.periodId === 'p-3',
+    );
     expect(expenseP3).toBeDefined();
     expect(expenseP3.openingBalance).toBe(0);
     expect(expenseP3.closingBalance).toBe(0);

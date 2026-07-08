@@ -5,7 +5,7 @@ export class FiscalYear {
     public readonly name: string,
     public readonly startDate: string,
     public readonly endDate: string,
-    public readonly status: 'OPEN' | 'CLOSED' = 'OPEN',
+    public readonly status: 'OPEN' | 'CLOSED' | 'PLANNING' = 'OPEN',
     public readonly periods?: Period[],
   ) {}
 }
@@ -17,7 +17,7 @@ export class Period {
     public readonly name: string,
     public readonly startDate: string,
     public readonly endDate: string,
-    public readonly status: 'OPEN' | 'CLOSED' = 'OPEN',
+    public readonly status: 'OPEN' | 'CLOSED' | 'PLANNING' = 'OPEN',
   ) {}
 }
 

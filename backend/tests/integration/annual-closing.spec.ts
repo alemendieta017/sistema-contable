@@ -22,7 +22,11 @@ describe('Annual Closing Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' }),
+        ),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       createQueryBuilder: jest.fn(),
     };
@@ -104,8 +108,20 @@ describe('Annual Closing Integration Tests', () => {
     const periodEndDate = '2026-12-31';
 
     const mockPeriods = [
-      { id: 'p-1', name: '2026-11', status: 'CLOSED', startDate: '2026-11-01', endDate: '2026-11-30' },
-      { id: 'p-2', name: '2026-12', status: 'OPEN', startDate: periodStartDate, endDate: periodEndDate },
+      {
+        id: 'p-1',
+        name: '2026-11',
+        status: 'CLOSED',
+        startDate: '2026-11-01',
+        endDate: '2026-11-30',
+      },
+      {
+        id: 'p-2',
+        name: '2026-12',
+        status: 'OPEN',
+        startDate: periodStartDate,
+        endDate: periodEndDate,
+      },
     ];
 
     mockEntityManager.findOne.mockImplementation((cls, options) => {
@@ -153,7 +169,9 @@ describe('Annual Closing Integration Tests', () => {
 
     await expect(
       closeUseCase.execute('user-1', 'fy-1', { retainedEarningsAccountId: 'acc-re' }),
-    ).rejects.toThrow(new BadRequestException('Retained earnings account not found or is not an EQUITY account'));
+    ).rejects.toThrow(
+      new BadRequestException('Retained earnings account not found or is not an EQUITY account'),
+    );
   });
 
   it('should successfully execute closing entry and close the fiscal year', async () => {
@@ -169,7 +187,13 @@ describe('Annual Closing Integration Tests', () => {
           status: 'OPEN',
           endDate: periodEndDate,
           periods: [
-            { id: 'p-1', name: '2026-12', startDate: periodStartDate, endDate: periodEndDate, status: 'CLOSED' },
+            {
+              id: 'p-1',
+              name: '2026-12',
+              startDate: periodStartDate,
+              endDate: periodEndDate,
+              status: 'CLOSED',
+            },
           ],
         };
       }
@@ -192,8 +216,8 @@ describe('Annual Closing Integration Tests', () => {
       if (cls === AccountPeriodBalanceEntity) {
         // Return positive balances
         return [
-          { accountId: 'acc-sales', closingBalance: 2000 },  // Sales (INCOME - Credit nature) has credit closing balance of 2000
-          { accountId: 'acc-rent', closingBalance: 1200 },   // Rent (EXPENSE - Debit nature) has debit closing balance of 1200
+          { accountId: 'acc-sales', closingBalance: 2000 }, // Sales (INCOME - Credit nature) has credit closing balance of 2000
+          { accountId: 'acc-rent', closingBalance: 1200 }, // Rent (EXPENSE - Debit nature) has debit closing balance of 1200
         ];
       }
       return [];
@@ -217,7 +241,9 @@ describe('Annual Closing Integration Tests', () => {
     expect(txSave).toBeDefined();
     expect(txSave.entity.description).toContain('cierre anual');
 
-    const journalEntriesSaves = savedEntities.filter((e) => e.cls === JournalEntryEntity).map((e) => e.entity);
+    const journalEntriesSaves = savedEntities
+      .filter((e) => e.cls === JournalEntryEntity)
+      .map((e) => e.entity);
     expect(journalEntriesSaves).toHaveLength(3); // Sales, Rent, Retained Earnings
 
     // Sales (INCOME): positive closing balance (credit) should be DEBITED

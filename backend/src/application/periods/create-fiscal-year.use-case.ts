@@ -65,8 +65,18 @@ export class CreateFiscalYearUseCase {
     }
 
     const friendlyMonthNames = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
 
     // 4. Save Fiscal Year and 12 monthly periods in a transaction
@@ -131,4 +141,3 @@ export class CreateFiscalYearUseCase {
     });
   }
 }
-

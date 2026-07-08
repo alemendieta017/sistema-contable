@@ -89,13 +89,13 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     expect(result.periods).toHaveLength(12);
     expect(result.periods[0].name).toBe('2026-01');
     expect(result.periods[11].name).toBe('2026-12');
-    
+
     // 1 fiscal year + 12 periods + 12 budgets = 25 saves
     expect(mockEntityManager.save).toHaveBeenCalledTimes(25);
 
     // Verify budget creation calls
     const budgetCreateCalls = mockEntityManager.create.mock.calls.filter(
-      (args: any[]) => args[0] === BudgetEntity
+      (args: any[]) => args[0] === BudgetEntity,
     );
     expect(budgetCreateCalls).toHaveLength(12);
     expect(budgetCreateCalls[0][1]).toEqual({
@@ -160,4 +160,3 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
     );
   });
 });
-

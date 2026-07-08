@@ -41,8 +41,9 @@ export class AccountController {
     let currencyId = body.currencyId;
     if (!currencyId || currencyId === '00000000-0000-0000-0000-000000000000') {
       const currencyRepo = this.accountRepository.manager.getRepository(CurrencyEntity);
-      const currency = await currencyRepo.findOne({ where: { isBase: true } })
-        || await currencyRepo.findOne({ where: {} });
+      const currency =
+        (await currencyRepo.findOne({ where: { isBase: true } })) ||
+        (await currencyRepo.findOne({ where: {} }));
       if (currency) {
         currencyId = currency.id;
       }
@@ -74,4 +75,3 @@ export class AccountController {
     return this.deleteAccountUseCase.execute(user.id, id);
   }
 }
-

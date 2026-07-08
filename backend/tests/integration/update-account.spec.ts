@@ -103,10 +103,10 @@ describe('Update Account Details Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(account);
     mockEntityManager.count.mockResolvedValue(5); // Has transactions
 
-    await expect(
-      useCase.execute(userId, accountId, { isCashOrBank: true })
-    ).rejects.toThrow(
-      new BadRequestException('Cannot change the Cash/Bank flag of an account that already has transactions associated')
+    await expect(useCase.execute(userId, accountId, { isCashOrBank: true })).rejects.toThrow(
+      new BadRequestException(
+        'Cannot change the Cash/Bank flag of an account that already has transactions associated',
+      ),
     );
 
     expect(mockEntityManager.save).not.toHaveBeenCalled();
@@ -126,7 +126,10 @@ describe('Update Account Details Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(account);
     mockEntityManager.count.mockResolvedValue(10); // Has transactions
 
-    const result = await useCase.execute(userId, accountId, { name: 'Updated Main Cash Account', isCashOrBank: true });
+    const result = await useCase.execute(userId, accountId, {
+      name: 'Updated Main Cash Account',
+      isCashOrBank: true,
+    });
 
     expect(result).toBeDefined();
     expect(result.success).toBe(true);
@@ -141,10 +144,8 @@ describe('Update Account Details Integration Tests', () => {
 
     mockEntityManager.findOne.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute(userId, accountId, { isCashOrBank: true })
-    ).rejects.toThrow(
-      new NotFoundException(`Account with ID ${accountId} not found`)
+    await expect(useCase.execute(userId, accountId, { isCashOrBank: true })).rejects.toThrow(
+      new NotFoundException(`Account with ID ${accountId} not found`),
     );
 
     expect(mockEntityManager.count).not.toHaveBeenCalled();

@@ -23,7 +23,11 @@ describe('Budget Replication Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' }),
+        ),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
     };
 
@@ -136,8 +140,18 @@ describe('Budget Replication Integration Tests', () => {
     expect(result.success).toBe(true);
     expect(result.replicatedPeriods).toHaveLength(12);
     expect(result.replicatedPeriods).toEqual([
-      '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
-      '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12'
+      '2026-01',
+      '2026-02',
+      '2026-03',
+      '2026-04',
+      '2026-05',
+      '2026-06',
+      '2026-07',
+      '2026-08',
+      '2026-09',
+      '2026-10',
+      '2026-11',
+      '2026-12',
     ]);
 
     // Check that save was called to persist budgets and budget items
@@ -149,7 +163,11 @@ describe('Budget Replication Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValueOnce(null); // period not found
 
     await expect(
-      replicateUseCase.execute(userId, { periodId: 'invalid-period', accountId: 'acc-1', amount: 100 })
+      replicateUseCase.execute(userId, {
+        periodId: 'invalid-period',
+        accountId: 'acc-1',
+        amount: 100,
+      }),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -175,7 +193,7 @@ describe('Budget Replication Integration Tests', () => {
     });
 
     await expect(
-      replicateUseCase.execute(userId, { periodId, accountId: 'acc-1', amount: 100 })
+      replicateUseCase.execute(userId, { periodId, accountId: 'acc-1', amount: 100 }),
     ).rejects.toThrow(BadRequestException);
   });
 });

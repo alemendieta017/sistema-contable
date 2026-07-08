@@ -12,16 +12,25 @@ describe('Currency Endpoints Contract Tests', () => {
   const mockCurrencyRepo = {
     find: jest.fn().mockResolvedValue([
       { id: 'cur-pyg', code: 'PYG', name: 'Guaraní', symbol: '₲', rateToBase: 1.0, isBase: true },
-      { id: 'cur-usd', code: 'USD', name: 'Dólar', symbol: 'u$s', rateToBase: 7500.0, isBase: false },
+      {
+        id: 'cur-usd',
+        code: 'USD',
+        name: 'Dólar',
+        symbol: 'u$s',
+        rateToBase: 7500.0,
+        isBase: false,
+      },
     ]),
-    findOneBy: jest.fn().mockImplementation(({ id }) => Promise.resolve({
-      id,
-      code: 'USD',
-      name: 'Dólar',
-      symbol: 'u$s',
-      rateToBase: 7500.0,
-      isBase: false,
-    })),
+    findOneBy: jest.fn().mockImplementation(({ id }) =>
+      Promise.resolve({
+        id,
+        code: 'USD',
+        name: 'Dólar',
+        symbol: 'u$s',
+        rateToBase: 7500.0,
+        isBase: false,
+      }),
+    ),
     save: jest.fn().mockImplementation((obj) => Promise.resolve({ ...obj })),
   };
 
@@ -50,9 +59,7 @@ describe('Currency Endpoints Contract Tests', () => {
 
   describe('GET /api/currencies', () => {
     it('should return list of currencies', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/currencies')
-        .expect(200);
+      const res = await request(app.getHttpServer()).get('/api/currencies').expect(200);
       expect(res.body).toHaveLength(2);
       expect(res.body[0].code).toBe('PYG');
     });

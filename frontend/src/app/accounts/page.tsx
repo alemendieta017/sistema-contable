@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../services/api";
-import AccountsList from "../../components/AccountsList";
-import AccountModal from "../../components/AccountModal";
-import { Plus, Wallet, ShieldAlert, BadgeAlert } from "lucide-react";
-import { formatCurrency } from "../../lib/utils";
-import { useSearch } from "../../lib/search-context";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import AccountsList from '../../components/AccountsList';
+import AccountModal from '../../components/AccountModal';
+import { Plus, Wallet, ShieldAlert, BadgeAlert } from 'lucide-react';
+import { formatCurrency } from '../../lib/utils';
+import { useSearch } from '../../lib/search-context';
 
 type AccountSummary = {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   balance: number;
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
   parentId?: string | null;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
 };
 
 type SummaryData = {
@@ -32,10 +32,10 @@ export default function AccountsPage() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [deletingId, setDeletingId] = useState("");
+  const [deletingId, setDeletingId] = useState('');
 
   useEffect(() => {
     loadSummary();
@@ -44,63 +44,61 @@ export default function AccountsPage() {
   const loadSummary = async () => {
     try {
       setLoading(true);
-      setError("");
-      const [data, curs] = await Promise.all([
-        api.accounts.summary(),
-        api.currencies.list(),
-      ]);
+      setError('');
+      const [data, curs] = await Promise.all([api.accounts.summary(), api.currencies.list()]);
       setSummary(data);
       setCurrencies(curs || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar resumen de cuentas.");
+      setError(err.message || 'Error al cargar resumen de cuentas.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAccount = async (id: string) => {
-    if (!confirm("¿Está seguro de que desea eliminar o desactivar esta cuenta/categoría?")) {
+    if (!confirm('¿Está seguro de que desea eliminar o desactivar esta cuenta/categoría?')) {
       return;
     }
     setSaving(true);
     setDeletingId(id);
-    setError("");
+    setError('');
     try {
       const res = await api.accounts.delete(id);
-      if (res && res.action === "DEACTIVATED") {
-        alert("La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.");
+      if (res && res.action === 'DEACTIVATED') {
+        alert('La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.');
       } else {
-        alert("La cuenta ha sido eliminada con éxito.");
+        alert('La cuenta ha sido eliminada con éxito.');
       }
       loadSummary();
     } catch (err: any) {
-      setError(err.message || "Error al eliminar la cuenta.");
+      setError(err.message || 'Error al eliminar la cuenta.');
     } finally {
       setSaving(false);
-      setDeletingId("");
+      setDeletingId('');
     }
   };
 
   const handleCreateDefaultAccounts = async () => {
     setSaving(true);
-    setError("");
+    setError('');
     try {
       const currencies = await api.currencies.list();
-      const defaultCurrencyId = (currencies?.find((c: any) => c.isBase)?.id) || "00000000-0000-0000-0000-000000000000";
-      
+      const defaultCurrencyId =
+        currencies?.find((c: any) => c.isBase)?.id || '00000000-0000-0000-0000-000000000000';
+
       const defaults = [
-        { name: "Efectivo", type: "ASSET" },
-        { name: "Cuenta Bancaria", type: "ASSET" },
-        { name: "Tarjeta de Crédito", type: "LIABILITY" },
-        { name: "Capital Inicial", type: "EQUITY" },
-        { name: "Sueldo", type: "INCOME" },
-        { name: "Otros Ingresos", type: "INCOME" },
-        { name: "Comida", type: "EXPENSE" },
-        { name: "Transporte", type: "EXPENSE" },
-        { name: "Servicios", type: "EXPENSE" },
-        { name: "Ropa", type: "EXPENSE" },
+        { name: 'Efectivo', type: 'ASSET' },
+        { name: 'Cuenta Bancaria', type: 'ASSET' },
+        { name: 'Tarjeta de Crédito', type: 'LIABILITY' },
+        { name: 'Capital Inicial', type: 'EQUITY' },
+        { name: 'Sueldo', type: 'INCOME' },
+        { name: 'Otros Ingresos', type: 'INCOME' },
+        { name: 'Comida', type: 'EXPENSE' },
+        { name: 'Transporte', type: 'EXPENSE' },
+        { name: 'Servicios', type: 'EXPENSE' },
+        { name: 'Ropa', type: 'EXPENSE' },
       ];
-      
+
       for (const item of defaults) {
         await api.accounts.create({
           name: item.name,
@@ -110,7 +108,7 @@ export default function AccountsPage() {
       }
       loadSummary();
     } catch (err: any) {
-      setError(err.message || "Error al generar cuentas por defecto.");
+      setError(err.message || 'Error al generar cuentas por defecto.');
     } finally {
       setSaving(false);
     }
@@ -118,12 +116,12 @@ export default function AccountsPage() {
 
   const handleToggleCashOrBank = async (id: string, isCashOrBank: boolean) => {
     setSaving(true);
-    setError("");
+    setError('');
     try {
       await api.accounts.update(id, { isCashOrBank });
       loadSummary();
     } catch (err: any) {
-      setError(err.message || "Error al actualizar tipo de cuenta líquida.");
+      setError(err.message || 'Error al actualizar tipo de cuenta líquida.');
     } finally {
       setSaving(false);
     }
@@ -138,10 +136,11 @@ export default function AccountsPage() {
     );
   }
 
-  const filteredAccounts = summary?.accounts.filter((a) => {
-    if (!searchQuery.trim()) return true;
-    return a.name.toLowerCase().includes(searchQuery.toLowerCase());
-  }) || [];
+  const filteredAccounts =
+    summary?.accounts.filter((a) => {
+      if (!searchQuery.trim()) return true;
+      return a.name.toLowerCase().includes(searchQuery.toLowerCase());
+    }) || [];
 
   return (
     <div className="space-y-6">
@@ -174,7 +173,11 @@ export default function AccountsPage() {
 
       {/* Net Worth Dashboard Card */}
       {(() => {
-        const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+        const baseCurrency = currencies.find((c) => c.isBase) || {
+          code: 'PYG',
+          symbol: '₲',
+          decimalPlaces: 0,
+        };
         return (
           <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
             <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
@@ -218,7 +221,8 @@ export default function AccountsPage() {
               No hay cuentas configuradas
             </h3>
             <p className="text-xs text-slate-450 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
-              Comienza generando un plan predeterminado de cuentas (Efectivo, Tarjetas, Sueldo, Comida, Transporte, etc.) con un solo clic.
+              Comienza generando un plan predeterminado de cuentas (Efectivo, Tarjetas, Sueldo,
+              Comida, Transporte, etc.) con un solo clic.
             </p>
           </div>
           <button
@@ -227,14 +231,15 @@ export default function AccountsPage() {
             disabled={saving}
             className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
           >
-            {saving ? "Generando cuentas..." : "Generar Cuentas Predeterminadas"}
+            {saving ? 'Generando cuentas...' : 'Generar Cuentas Predeterminadas'}
           </button>
         </div>
       )}
 
       {/* Grouped Account Tables */}
-      {summary && summary.accounts.length > 0 && (
-        filteredAccounts.length > 0 ? (
+      {summary &&
+        summary.accounts.length > 0 &&
+        (filteredAccounts.length > 0 ? (
           <AccountsList
             accounts={filteredAccounts}
             onDelete={handleDeleteAccount}
@@ -250,8 +255,7 @@ export default function AccountsPage() {
               Prueba buscando con otros términos
             </p>
           </div>
-        )
-      )}
+        ))}
 
       {/* Account Add Modal */}
       {showAddModal && (
@@ -264,4 +268,3 @@ export default function AccountsPage() {
     </div>
   );
 }
-

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../services/api";
-import { DollarSign, Save } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { DollarSign, Save } from 'lucide-react';
 
 interface Currency {
   id: string;
@@ -17,8 +17,8 @@ export default function CurrencySettings() {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [rates, setRates] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadCurrencies();
@@ -34,24 +34,24 @@ export default function CurrencySettings() {
       }
       setRates(initialRates);
     } catch (err: any) {
-      setError("Error al cargar divisas.");
+      setError('Error al cargar divisas.');
     }
   };
 
   const handleUpdateRate = async (id: string, rate: number) => {
     if (rate <= 0) {
-      setError("La tasa de cambio debe ser un número positivo.");
+      setError('La tasa de cambio debe ser un número positivo.');
       return;
     }
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
     try {
       await api.currencies.updateRate(id, rate);
-      setSuccess("Tasa de cambio actualizada con éxito.");
+      setSuccess('Tasa de cambio actualizada con éxito.');
       loadCurrencies();
     } catch (err: any) {
-      setError(err.message || "Error al actualizar tasa.");
+      setError(err.message || 'Error al actualizar tasa.');
     } finally {
       setLoading(false);
     }
@@ -62,11 +62,9 @@ export default function CurrencySettings() {
   return (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
       <div>
-        <h3 className="text-xs font-bold text-slate-850 dark:text-slate-100">
-          Tipos de Cambio
-        </h3>
+        <h3 className="text-xs font-bold text-slate-850 dark:text-slate-100">Tipos de Cambio</h3>
         <p className="text-4xs text-slate-455 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-          Cotización de monedas extranjeras (Moneda base: {baseCurrency?.code || "Guaraní PYG"})
+          Cotización de monedas extranjeras (Moneda base: {baseCurrency?.code || 'Guaraní PYG'})
         </p>
       </div>
 
@@ -98,7 +96,7 @@ export default function CurrencySettings() {
                 <input
                   type="number"
                   step="0.0001"
-                  value={rates[c.id] || ""}
+                  value={rates[c.id] || ''}
                   onChange={(e) => setRates({ ...rates, [c.id]: e.target.value })}
                   className="w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs outline-none text-right font-extrabold"
                 />

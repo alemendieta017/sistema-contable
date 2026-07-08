@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp, Trash2, Copy, Edit } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Copy,
+  Edit,
+} from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
@@ -35,7 +44,12 @@ interface DailyViewProps {
   baseCurrency?: CurrencyInfo;
 }
 
-export default function DailyView({ transactions, onReverse, onDelete, baseCurrency }: DailyViewProps) {
+export default function DailyView({
+  transactions,
+  onReverse,
+  onDelete,
+  baseCurrency,
+}: DailyViewProps) {
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
