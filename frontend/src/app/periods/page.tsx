@@ -58,7 +58,7 @@ export default function PeriodsPage() {
   const [expandedFyId, setExpandedFyId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
   useEffect(() => {
@@ -77,9 +77,9 @@ export default function PeriodsPage() {
     setExpandedFyId((prev) => (prev === fyId ? null : fyId));
   };
 
-  const loadData = async () => {
+  const loadData = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       setError('');
 
       const [fyData, periodData, accountData] = await Promise.all([
@@ -94,7 +94,7 @@ export default function PeriodsPage() {
     } catch (err: any) {
       setError(err.message || 'Error al cargar la información de períodos.');
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
@@ -125,7 +125,7 @@ export default function PeriodsPage() {
       // Reset form
       setNewFyYear(new Date().getFullYear());
 
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
       setError(err.message || 'Error al crear el ejercicio fiscal.');
     } finally {
@@ -154,7 +154,7 @@ export default function PeriodsPage() {
       );
       setClosingFy(null);
       setSelectedEarningsAccountId('');
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
       setError(err.message || 'Error al cerrar el ejercicio fiscal.');
     } finally {
@@ -177,7 +177,7 @@ export default function PeriodsPage() {
       setSuccess('');
       await api.reports.reconstructBalances();
       setSuccess('Saldos contables reconstruidos con éxito.');
-      await loadData();
+      await loadData(false);
     } catch (err: any) {
       setError(err.message || 'Error al reconstruir saldos.');
     } finally {
@@ -189,20 +189,28 @@ export default function PeriodsPage() {
     periodId: string,
     currentStatus: 'OPEN' | 'CLOSED' | 'PLANNING',
   ) => {
+    const newStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
+
+    // Optimistic UI update so switch toggles instantly and scroll position stays fixed
+    setPeriods((prevPeriods) =>
+      prevPeriods.map((p) => (p.id === periodId ? { ...p, status: newStatus } : p)),
+    );
+
     try {
-      setActionLoading(true);
       setError('');
       setSuccess('');
-      const newStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
       await api.periods.update(periodId, { status: newStatus });
       setSuccess(
         `Período actualizado a ${newStatus === 'OPEN' ? 'Abierto' : 'Cerrado'} con éxito.`,
       );
-      await loadData();
+      // Background refetch without unmounting DOM or triggering loading screens
+      await loadData(false);
     } catch (err: any) {
+      // Revert optimistic update on failure
+      setPeriods((prevPeriods) =>
+        prevPeriods.map((p) => (p.id === periodId ? { ...p, status: currentStatus } : p)),
+      );
       setError(err.message || 'Error al actualizar el estado del período.');
-    } finally {
-      setActionLoading(false);
     }
   };
 
