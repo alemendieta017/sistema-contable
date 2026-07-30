@@ -10,6 +10,8 @@ import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 type Period = {
@@ -52,9 +54,28 @@ export default function PeriodsPage() {
   const [closingFy, setClosingFy] = useState<FiscalYear | null>(null);
   const [selectedEarningsAccountId, setSelectedEarningsAccountId] = useState('');
 
+  // Accordion State: only one fiscal year expanded at a time
+  const [expandedFyId, setExpandedFyId] = useState<string | null>(null);
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (fiscalYears.length > 0) {
+      setExpandedFyId((current) => {
+        if (current && fiscalYears.some((fy) => fy.id === current)) {
+          return current;
+        }
+        const openFy = fiscalYears.find((fy) => fy.status === 'OPEN');
+        return openFy ? openFy.id : fiscalYears[0].id;
+      });
+    }
+  }, [fiscalYears]);
+
+  const toggleExpandFy = (fyId: string) => {
+    setExpandedFyId((prev) => (prev === fyId ? null : fyId));
+  };
 
   const loadData = async () => {
     try {
@@ -268,110 +289,164 @@ export default function PeriodsPage() {
       ) : (
         <div className="space-y-6">
           {fiscalYears.map((fy) => {
-            const filteredPeriodsForFy = periods.filter((p: any) => p.fiscalYearId === fy.id);
+            const filteredPeriodsForFy = periods
+              .filter((p: any) => p.fiscalYearId === fy.id)
+              .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+            const isExpanded = expandedFyId === fy.id;
 
             return (
               <div
                 key={fy.id}
                 className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden"
               >
-                {/* Fiscal Year Info Header */}
-                <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/30">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-slate-800 dark:text-slate-150 text-base">
-                        {fy.name}
-                      </h3>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          fy.status === 'OPEN'
-                            ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400'
-                            : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {fy.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
-                      </span>
+                {/* Fiscal Year Collapsible Header */}
+                <div
+                  onClick={() => toggleExpandFy(fy.id)}
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/70 transition duration-150 cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-slate-400 dark:text-slate-500 shrink-0">
+                      {isExpanded ? (
+                        <ChevronDown className="w-5 h-5 text-indigo-600 dark:text-indigo-400 transition-transform duration-200" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 transition-transform duration-200" />
+                      )}
                     </div>
-                    <p className="text-4xs font-semibold text-slate-400 dark:text-slate-550">
-                      Rango:{' '}
-                      {new Date(fy.startDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })} al{' '}
-                      {new Date(fy.endDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })}
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-150 text-base">
+                          {fy.name}
+                        </h3>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            fy.status === 'OPEN'
+                              ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/40'
+                              : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40'
+                          }`}
+                        >
+                          {fy.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
+                        </span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                          ({filteredPeriodsForFy.length} meses)
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">
+                        Rango:{' '}
+                        {new Date(fy.startDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })} al{' '}
+                        {new Date(fy.endDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })}
+                      </p>
+                    </div>
                   </div>
 
-                  {fy.status === 'OPEN' && (
-                    <button
-                      onClick={() => setClosingFy(fy)}
-                      disabled={actionLoading}
-                      className="flex items-center gap-1.5 py-2 px-3.5 text-xs font-bold rounded-xl transition duration-150 bg-red-600 hover:bg-red-700 text-white cursor-pointer disabled:opacity-50"
-                      title="Cerrar definitivamente el ejercicio y generar asiento de cierre"
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Cerrar Ejercicio</span>
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3 self-end sm:self-auto" onClick={(e) => e.stopPropagation()}>
+                    {fy.status === 'OPEN' && (
+                      <button
+                        onClick={() => setClosingFy(fy)}
+                        disabled={actionLoading}
+                        className="flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold rounded-xl transition duration-150 bg-red-600 hover:bg-red-700 text-white cursor-pointer disabled:opacity-50 shadow-sm"
+                        title="Cerrar definitivamente el ejercicio y generar asiento de cierre"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Cerrar Ejercicio</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Monthly Periods Grid */}
-                <div className="p-5 sm:p-6">
-                  <h4 className="text-3xs font-extrabold text-slate-450 dark:text-slate-550 uppercase tracking-widest mb-4">
-                    Períodos Mensuales
-                  </h4>
-
-                  {filteredPeriodsForFy.length === 0 ? (
-                    <p className="text-xs text-slate-450 italic">
-                      No se encontraron meses en este ejercicio.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {filteredPeriodsForFy.map((period) => (
-                        <div
-                          key={period.id}
-                          className="p-4 rounded-2xl border border-slate-100 dark:border-slate-750 bg-white dark:bg-slate-800 flex flex-col justify-between h-28"
-                        >
-                          <div>
-                            <p className="font-extrabold text-xs text-slate-700 dark:text-slate-300">
-                              {period.name}
-                            </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-550 mt-0.5">
-                              {new Date(period.startDate).toLocaleDateString('es-ES', {
-                                month: 'short',
-                                year: 'numeric',
-                                timeZone: 'UTC',
-                              })}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-50 dark:border-slate-700/50">
-                            <span
-                              className={`text-[10px] font-bold ${period.status === 'OPEN' ? 'text-green-600 dark:text-green-400' : period.status === 'PLANNING' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-450 dark:text-slate-500'}`}
-                            >
-                              {period.status === 'OPEN'
-                                ? 'Abierto'
-                                : period.status === 'PLANNING'
-                                  ? 'Planificación'
-                                  : 'Cerrado'}
-                            </span>
-                            <button
-                              onClick={() => handleTogglePeriod(period.id, period.status)}
-                              disabled={actionLoading}
-                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                period.status === 'OPEN'
-                                  ? 'bg-indigo-650'
-                                  : 'bg-slate-200 dark:bg-slate-700'
-                              }`}
-                            >
-                              <span
-                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                  period.status === 'OPEN' ? 'translate-x-4' : 'translate-x-0'
+                {/* Collapsible Monthly Periods List (Vertical Rows) */}
+                {isExpanded && (
+                  <div className="border-t border-slate-100 dark:border-slate-700/80">
+                    {filteredPeriodsForFy.length === 0 ? (
+                      <p className="p-5 text-xs text-slate-450 italic">
+                        No se encontraron meses en este ejercicio.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {filteredPeriodsForFy.map((period) => (
+                          <div
+                            key={period.id}
+                            className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-750/40 transition-colors"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                                  period.status === 'OPEN'
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400'
+                                    : period.status === 'PLANNING'
+                                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400'
                                 }`}
-                              />
-                            </button>
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-extrabold text-xs text-slate-800 dark:text-slate-200">
+                                    {period.name}
+                                  </p>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      period.status === 'OPEN'
+                                        ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/40'
+                                        : period.status === 'PLANNING'
+                                          ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40'
+                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                                    }`}
+                                  >
+                                    {period.status === 'OPEN'
+                                      ? 'Abierto'
+                                      : period.status === 'PLANNING'
+                                        ? 'Planificación'
+                                        : 'Cerrado'}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
+                                  {new Date(period.startDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    timeZone: 'UTC',
+                                  })}{' '}
+                                  al{' '}
+                                  {new Date(period.endDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    timeZone: 'UTC',
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Switch on far right */}
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 hidden sm:inline">
+                                {period.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
+                              </span>
+                              <button
+                                onClick={() => handleTogglePeriod(period.id, period.status)}
+                                disabled={actionLoading}
+                                title={period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'}
+                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                  period.status === 'OPEN'
+                                    ? 'bg-indigo-600 dark:bg-indigo-500'
+                                    : 'bg-slate-200 dark:bg-slate-700'
+                                }`}
+                              >
+                                <span
+                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                    period.status === 'OPEN' ? 'translate-x-4' : 'translate-x-0'
+                                  }`}
+                                />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
