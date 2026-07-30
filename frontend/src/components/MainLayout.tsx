@@ -63,7 +63,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           }`}
         >
           <div
-            className={isTransactionEntryPage ? 'h-full w-full flex flex-col' : 'max-w-6xl mx-auto'}
+            className={isTransactionEntryPage ? 'h-full w-full flex flex-col' : 'max-w-[1800px] w-full mx-auto'}
           >
             {children}
           </div>

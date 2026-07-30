@@ -510,5 +510,51 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
       expect(result.months[0].finalCash).toBe(11000);
       expect(result.months[1].initialCash).toBe(11000);
     });
+
+    it('should handle custom non-YYYY-MM period names (e.g., "Periodo 01/2026") without NaN parsing errors', async () => {
+      const userId = 'user-123';
+      const fiscalYearId = 'fy-uuid';
+
+      const customNamedClosedPeriod = {
+        id: 'p-custom',
+        name: 'Periodo 01/2026',
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+        status: 'CLOSED',
+      };
+
+      const queryBuilder = mockEntityManager.getRepository().createQueryBuilder();
+      queryBuilder.getOne.mockResolvedValueOnce(customNamedClosedPeriod);
+
+      let queryCallCount = 0;
+      queryBuilder.getOne.mockImplementation(() => {
+        queryCallCount++;
+        const months = [
+          '2026-01', '2026-02', '2026-03', '2026-04',
+          '2026-05', '2026-06', '2026-07', '2026-08',
+          '2026-09', '2026-10', '2026-11', '2026-12',
+        ];
+        const currentMonthName = months[queryCallCount - 1];
+        if (!currentMonthName) return Promise.resolve(null);
+
+        return Promise.resolve({
+          id: `p-${currentMonthName}`,
+          name: currentMonthName === '2026-01' ? 'Periodo 01/2026' : currentMonthName,
+          startDate: `${currentMonthName}-01`,
+          endDate: `${currentMonthName}-28`,
+          status: 'OPEN',
+        });
+      });
+
+      mockBalanceRepo.find.mockResolvedValue([]);
+      mockBudgetRepo.findOne.mockResolvedValue(null);
+
+      const currentDate = new Date('2026-01-15');
+      const result = await cashFlowUseCase.execute(userId, fiscalYearId, true, currentDate);
+
+      expect(result.months).toHaveLength(12);
+      expect(result.months[0].periodName).toBe('Periodo 01/2026');
+      expect(result.months[11].periodName).toBe('2026-12');
+    });
   });
 });

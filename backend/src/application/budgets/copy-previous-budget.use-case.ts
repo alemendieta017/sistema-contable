@@ -74,7 +74,7 @@ export class CopyPreviousBudgetUseCase {
       });
 
       if (!currentBudget) {
-        const [yearStr, monthStr] = currentPeriod.name.split('-');
+        const [yearStr, monthStr] = currentPeriod.startDate.split('-');
         const monthIndex = parseInt(monthStr, 10) - 1;
         const friendlyMonthNames = [
           'Enero',

@@ -123,26 +123,27 @@ export class CashFlowStatementForecastUseCase {
           throw new NotFoundException('No start period found for rolling forecast');
         }
 
-        // Generate the 12 monthly names starting from startPeriod.name (YYYY-MM)
-        const [startYear, startMonthVal] = startPeriod.name.split('-').map(Number);
+        // Generate the 12 monthly names starting from startPeriod.startDate (YYYY-MM-DD)
+        const [startYear, startMonthVal] = startPeriod.startDate.split('-').map(Number);
         const rollingPeriods: PeriodEntity[] = [];
 
         for (let i = 0; i < 12; i++) {
           const y = startYear + Math.floor((startMonthVal - 1 + i) / 12);
           const m = (startMonthVal - 1 + i) % 12;
           const pName = `${y}-${String(m + 1).padStart(2, '0')}`;
+          const pStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
 
           let period = await entityManager
             .getRepository(PeriodEntity)
             .createQueryBuilder('period')
             .innerJoin('period.fiscalYear', 'fiscalYear')
             .where('fiscalYear.userId = :userId', { userId })
-            .andWhere('period.name = :name', { name: pName })
+            .andWhere('(period.startDate = :pStart OR period.name = :pName)', { pStart, pName })
             .getOne();
 
           if (!period) {
             const nextYearPeriods = await this.preOpenFiscalYear(entityManager, userId, y);
-            period = nextYearPeriods.find((p) => p.name === pName) || null;
+            period = nextYearPeriods.find((p) => p.startDate === pStart || p.name === pName) || null;
           }
 
           if (period) {
