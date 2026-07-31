@@ -6,6 +6,7 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { IBudgetUpdateDto, IBudgetUpdateResponse } from '../../domain/budgets/budget.model';
+import { getFriendlyPeriodName } from '../../domain/common/date.utils';
 
 @Injectable()
 export class UpdateBudgetItemsUseCase {
@@ -46,28 +47,10 @@ export class UpdateBudgetItemsUseCase {
       });
 
       if (!budget) {
-        const [yearStr, monthStr] = period.name.split('-');
-        const monthIndex = parseInt(monthStr, 10) - 1;
-        const friendlyMonthNames = [
-          'Enero',
-          'Febrero',
-          'Marzo',
-          'Abril',
-          'Mayo',
-          'Junio',
-          'Julio',
-          'Agosto',
-          'Septiembre',
-          'Octubre',
-          'Noviembre',
-          'Diciembre',
-        ];
-        const budgetFriendlyName = `${friendlyMonthNames[monthIndex]} ${yearStr}`;
-
         budget = entityManager.create(BudgetEntity, {
           userId,
           periodId,
-          name: budgetFriendlyName,
+          name: getFriendlyPeriodName(period.name),
         });
         budget = await entityManager.save(BudgetEntity, budget);
       }

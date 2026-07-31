@@ -73,6 +73,9 @@ export default function AccountsManagePage() {
     return a.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  const accountMap = new Map<string, string>();
+  accounts.forEach((acc) => accountMap.set(acc.id, acc.name));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -125,6 +128,7 @@ export default function AccountsManagePage() {
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
             {filteredAccounts.map((a) => {
               const isInactive = a.status === 'INACTIVE';
+              const parentName = a.parentId ? accountMap.get(a.parentId) || a.parentId.substring(0, 8) : null;
               return (
                 <tr
                   key={a.id}
@@ -134,9 +138,9 @@ export default function AccountsManagePage() {
                 >
                   <td className="p-4">
                     <span className="font-bold text-slate-800 dark:text-slate-200">{a.name}</span>
-                    {a.parentId && (
+                    {parentName && (
                       <span className="block text-4xs text-slate-400 dark:text-slate-500 font-normal mt-0.5">
-                        Subcategoría de cuenta ID: {a.parentId.substring(0, 8)}
+                        Subcategoría de: {parentName}
                       </span>
                     )}
                   </td>

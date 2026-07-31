@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
+import { getFriendlyPeriodName } from '../../domain/common/date.utils';
 
 @Injectable()
 export class CopyPreviousBudgetUseCase {
@@ -74,28 +75,10 @@ export class CopyPreviousBudgetUseCase {
       });
 
       if (!currentBudget) {
-        const [yearStr, monthStr] = currentPeriod.startDate.split('-');
-        const monthIndex = parseInt(monthStr, 10) - 1;
-        const friendlyMonthNames = [
-          'Enero',
-          'Febrero',
-          'Marzo',
-          'Abril',
-          'Mayo',
-          'Junio',
-          'Julio',
-          'Agosto',
-          'Septiembre',
-          'Octubre',
-          'Noviembre',
-          'Diciembre',
-        ];
-        const budgetFriendlyName = `${friendlyMonthNames[monthIndex]} ${yearStr}`;
-
         currentBudget = entityManager.create(BudgetEntity, {
           userId,
           periodId,
-          name: budgetFriendlyName,
+          name: getFriendlyPeriodName(currentPeriod.name),
         });
         currentBudget = await entityManager.save(BudgetEntity, currentBudget);
       }

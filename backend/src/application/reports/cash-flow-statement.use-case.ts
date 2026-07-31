@@ -6,6 +6,7 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
+import { getFriendlyPeriodName } from '../../domain/common/date.utils';
 
 @Injectable()
 export class CashFlowStatementForecastUseCase {
@@ -45,21 +46,6 @@ export class CashFlowStatementForecastUseCase {
     });
     const savedFy = await entityManager.save(FiscalYearEntity, fyEntity);
 
-    const friendlyMonthNames = [
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
-
     const periods = [];
     for (let m = 0; m < 12; m++) {
       const pStart = `${year}-${String(m + 1).padStart(2, '0')}-01`;
@@ -76,11 +62,10 @@ export class CashFlowStatementForecastUseCase {
       const savedPeriod = await entityManager.save(PeriodEntity, periodEntity);
       periods.push(savedPeriod);
 
-      const budgetFriendlyName = `${friendlyMonthNames[m]} ${year}`;
       const budgetEntity = entityManager.create(BudgetEntity, {
         userId,
         periodId: savedPeriod.id,
-        name: budgetFriendlyName,
+        name: getFriendlyPeriodName(periodName),
       });
       await entityManager.save(BudgetEntity, budgetEntity);
     }

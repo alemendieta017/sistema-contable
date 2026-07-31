@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { IBudgetReplicateDto, IBudgetReplicateResponse } from '../../domain/budgets/budget.model';
+import { getFriendlyPeriodName } from '../../domain/common/date.utils';
 
 @Injectable()
 export class ReplicateBudgetItemUseCase {
@@ -55,46 +56,57 @@ export class ReplicateBudgetItemUseCase {
         order: { name: 'ASC' },
       });
 
-      const replicatedPeriods: string[] = [];
+      const periodIds = allPeriods.map((p) => p.id);
 
-      // 4. Save/update the budget item in each period
+      // Fetch all existing budgets for these periods in batch
+      const existingBudgets = await entityManager.find(BudgetEntity, {
+        where: { userId, periodId: In(periodIds) },
+      });
+
+      const budgetMap = new Map<string, BudgetEntity>();
+      for (const b of existingBudgets) {
+        budgetMap.set(b.periodId, b);
+      }
+
+      // Create missing budgets in batch
+      const budgetsToSave: BudgetEntity[] = [];
       for (const p of allPeriods) {
-        // Find or create budget for the period
-        let budget = await entityManager.findOne(BudgetEntity, {
-          where: { userId, periodId: p.id },
-        });
-
-        if (!budget) {
-          const [yearStr, monthStr] = p.name.split('-');
-          const monthIndex = parseInt(monthStr, 10) - 1;
-          const friendlyMonthNames = [
-            'Enero',
-            'Febrero',
-            'Marzo',
-            'Abril',
-            'Mayo',
-            'Junio',
-            'Julio',
-            'Agosto',
-            'Septiembre',
-            'Octubre',
-            'Noviembre',
-            'Diciembre',
-          ];
-          const budgetFriendlyName = `${friendlyMonthNames[monthIndex]} ${yearStr}`;
-
-          budget = entityManager.create(BudgetEntity, {
+        if (!budgetMap.has(p.id)) {
+          const budget = entityManager.create(BudgetEntity, {
             userId,
             periodId: p.id,
-            name: budgetFriendlyName,
+            name: getFriendlyPeriodName(p.name),
           });
-          budget = await entityManager.save(BudgetEntity, budget);
+          budgetsToSave.push(budget);
         }
+      }
 
-        // Find or create budget item for the budget and account
-        let budgetItem = await entityManager.findOne(BudgetItemEntity, {
-          where: { budgetId: budget.id, accountId: dto.accountId },
-        });
+      if (budgetsToSave.length > 0) {
+        const savedBudgets = await entityManager.save(BudgetEntity, budgetsToSave);
+        const savedArray = Array.isArray(savedBudgets) ? savedBudgets : [savedBudgets];
+        for (const b of savedArray) {
+          budgetMap.set(b.periodId, b);
+        }
+      }
+
+      const budgetIds = Array.from(budgetMap.values()).map((b) => b.id);
+
+      // Fetch existing budget items for target account in batch
+      const existingItems = await entityManager.find(BudgetItemEntity, {
+        where: { budgetId: In(budgetIds), accountId: dto.accountId },
+      });
+
+      const itemMap = new Map<string, BudgetItemEntity>();
+      for (const item of existingItems) {
+        itemMap.set(item.budgetId, item);
+      }
+
+      const itemsToSave: BudgetItemEntity[] = [];
+      const replicatedPeriods: string[] = [];
+
+      for (const p of allPeriods) {
+        const budget = budgetMap.get(p.id)!;
+        let budgetItem = itemMap.get(budget.id);
 
         if (budgetItem) {
           budgetItem.amount = dto.amount;
@@ -105,10 +117,11 @@ export class ReplicateBudgetItemUseCase {
             amount: dto.amount,
           });
         }
-
-        await entityManager.save(BudgetItemEntity, budgetItem);
+        itemsToSave.push(budgetItem);
         replicatedPeriods.push(p.name);
       }
+
+      await entityManager.save(BudgetItemEntity, itemsToSave);
 
       return {
         success: true,

@@ -25,9 +25,13 @@ describe('Budget Replication Integration Tests', () => {
       find: jest.fn(),
       save: jest
         .fn()
-        .mockImplementation((cls, entity) =>
-          Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' }),
-        ),
+        .mockImplementation((cls, entity) => {
+          const target = entity || cls;
+          if (Array.isArray(target)) {
+            return Promise.resolve(target.map((item) => ({ id: item.id || 'mock-saved-id', ...item })));
+          }
+          return Promise.resolve({ ...target, id: target.id || 'mock-saved-id' });
+        }),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
     };
 
@@ -90,49 +94,10 @@ describe('Budget Replication Integration Tests', () => {
       name: `2026-${String(i + 1).padStart(2, '0')}`,
       fiscalYearId: 'fy-2026',
     }));
-    mockEntityManager.find.mockResolvedValueOnce(periods);
-
-    // 4. Mock findOne for BudgetEntity and BudgetItemEntity inside the loop.
-    // For each of the 12 iterations:
-    // - first findOne: BudgetEntity (return an existing budget for period-1, null for others to test creation)
-    // - second findOne: BudgetItemEntity (return an existing item for period-1, null for others to test creation)
-    mockEntityManager.findOne
-      // Period 1
-      .mockResolvedValueOnce({ id: 'budget-1', userId, periodId: 'period-1' })
-      .mockResolvedValueOnce({ id: 'item-1', budgetId: 'budget-1', accountId, amount: 2000000.0 })
-      // Period 2
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 3
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 4
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 5
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 6
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 7
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 8
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 9
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 10
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 11
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      // Period 12
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+    mockEntityManager.find
+      .mockResolvedValueOnce(periods) // 1. find all periods
+      .mockResolvedValueOnce([{ id: 'budget-1', userId, periodId: 'period-1' }]) // 2. batch find existing budgets
+      .mockResolvedValueOnce([{ id: 'item-1', budgetId: 'budget-1', accountId, amount: 2000000.0 }]); // 3. batch find existing items
 
     const result = await replicateUseCase.execute(userId, { periodId, accountId, amount });
 

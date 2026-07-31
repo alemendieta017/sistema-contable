@@ -18,7 +18,7 @@ export class GetBudgetExecutionUseCase {
   ) {}
 
   async execute(userId: string, periodId: string) {
-    return this.dataSource.transaction('READ UNCOMMITTED', async (entityManager) => {
+    return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period details
       const period = await entityManager.findOne(PeriodEntity, {
         where: { id: periodId },
