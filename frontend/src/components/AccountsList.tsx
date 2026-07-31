@@ -72,17 +72,6 @@ export default function AccountsList({
                 )}
               </span>
               <div className="flex items-center gap-4">
-                {a.type === 'ASSET' && !isInactive && (
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-5xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold bg-slate-50 dark:bg-slate-900/30 hover:bg-slate-100 py-1 px-2 border border-slate-150 dark:border-slate-700 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                    <input
-                      type="checkbox"
-                      checked={!!a.isCashOrBank}
-                      onChange={(e) => onToggleCashOrBank(a.id, e.target.checked)}
-                      className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3"
-                    />
-                    <span>Líquido</span>
-                  </label>
-                )}
                 <span
                   className={`font-extrabold ${
                     a.type === 'ASSET'

@@ -23,12 +23,27 @@ interface AccountModalProps {
   onClose: () => void;
   onSuccess: () => void;
   parentCandidates: ParentAccount[];
+  accountToEdit?: {
+    id: string;
+    name: string;
+    type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+    isCashOrBank?: boolean;
+    hasTransactions?: boolean;
+  };
 }
 
-export default function AccountModal({ onClose, onSuccess, parentCandidates }: AccountModalProps) {
-  const [name, setName] = useState('');
+export default function AccountModal({
+  onClose,
+  onSuccess,
+  parentCandidates,
+  accountToEdit,
+}: AccountModalProps) {
+  const [name, setName] = useState(accountToEdit?.name || '');
   const [type, setType] = useState<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>(
-    'ASSET',
+    accountToEdit?.type || 'ASSET',
+  );
+  const [isCashOrBank, setIsCashOrBank] = useState<boolean>(
+    accountToEdit?.isCashOrBank ?? false,
   );
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [selectedCurrencyId, setSelectedCurrencyId] = useState('');
@@ -36,9 +51,33 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isEditing = !!accountToEdit;
+  const isLocked = isEditing && accountToEdit?.hasTransactions;
+
   useEffect(() => {
     fetchCurrencies();
   }, []);
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    if (type === 'ASSET' && !isEditing) {
+      const lower = val.toLowerCase();
+      const isKeywordMatch =
+        lower.includes('efectivo') ||
+        lower.includes('caja') ||
+        lower.includes('banco') ||
+        /\bmp\b/.test(lower);
+      setIsCashOrBank(isKeywordMatch);
+    }
+  };
+
+  const handleTypeChange = (newType: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE') => {
+    setType(newType);
+    setSelectedParentId('');
+    if (newType !== 'ASSET') {
+      setIsCashOrBank(false);
+    }
+  };
 
   const fetchCurrencies = async () => {
     try {
@@ -61,16 +100,24 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
     setError('');
 
     try {
-      await api.accounts.create({
-        name: name.trim(),
-        type,
-        currencyId: selectedCurrencyId,
-        parentId: selectedParentId || null,
-      });
+      if (isEditing) {
+        await api.accounts.update(accountToEdit.id, {
+          name: name.trim(),
+          isCashOrBank,
+        });
+      } else {
+        await api.accounts.create({
+          name: name.trim(),
+          type,
+          currencyId: selectedCurrencyId,
+          parentId: selectedParentId || null,
+          isCashOrBank,
+        });
+      }
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Error al crear la cuenta.');
+      setError(err.message || 'Error al guardar la cuenta.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +133,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-150 dark:border-slate-700">
           <div>
             <h2 className="text-base font-bold text-slate-850 dark:text-slate-100">
-              Crear Cuenta o Categoría
+              {isEditing ? 'Editar Cuenta o Categoría' : 'Crear Cuenta o Categoría'}
             </h2>
             <p className="text-4xs text-slate-450 uppercase font-bold tracking-wider mt-0.5">
               Administración de Rubros
@@ -118,7 +165,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               value={name}
               required
               placeholder="Ej. Efectivo, Comida, Sueldo"
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-semibold"
             />
           </div>
@@ -129,11 +176,9 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
             </label>
             <select
               value={type}
-              onChange={(e) => {
-                setType(e.target.value as any);
-                setSelectedParentId('');
-              }}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
+              disabled={isEditing}
+              onChange={(e) => handleTypeChange(e.target.value as any)}
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 disabled:opacity-60"
             >
               <option value="ASSET">ACTIVO (Efectivo, Cuentas Bancarias)</option>
               <option value="LIABILITY">PASIVO (Deudas, Tarjetas de Crédito)</option>
@@ -143,25 +188,53 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
             </select>
           </div>
 
-          <div>
-            <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
-              Moneda
-            </label>
-            <select
-              value={selectedCurrencyId}
-              required
-              onChange={(e) => setSelectedCurrencyId(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
-            >
-              {currencies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} - {c.name} ({c.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
+          {type === 'ASSET' && (
+            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div>
+                <label
+                  htmlFor="isCashOrBankToggle"
+                  className="block text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer"
+                >
+                  Es cuenta de Efectivo/Banco
+                </label>
+                <p className="text-5xs text-slate-450 dark:text-slate-500">
+                  {isLocked
+                    ? 'Inmutable: La cuenta posee transacciones registradas'
+                    : 'Incluye los movimientos de esta cuenta en el reporte de Flujo de Caja'}
+                </p>
+              </div>
+              <input
+                id="isCashOrBankToggle"
+                type="checkbox"
+                checked={isCashOrBank}
+                disabled={!!isLocked}
+                onChange={(e) => setIsCashOrBank(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer"
+              />
+            </div>
+          )}
 
-          {(type === 'INCOME' || type === 'EXPENSE') && filteredParents.length > 0 && (
+          {!isEditing && (
+            <div>
+              <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                Moneda
+              </label>
+              <select
+                value={selectedCurrencyId}
+                required
+                onChange={(e) => setSelectedCurrencyId(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
+              >
+                {currencies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code} - {c.name} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {!isEditing && (type === 'INCOME' || type === 'EXPENSE') && filteredParents.length > 0 && (
             <div>
               <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
                 Categoría Padre (Opcional)
@@ -195,7 +268,7 @@ export default function AccountModal({ onClose, onSuccess, parentCandidates }: A
               disabled={loading || !name.trim()}
               className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50"
             >
-              {loading ? 'Creando...' : 'Crear Cuenta'}
+              {loading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Cuenta'}
             </button>
           </div>
         </form>

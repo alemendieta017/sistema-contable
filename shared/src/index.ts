@@ -26,6 +26,7 @@ export const CreateAccountRequestSchema = z.object({
   type: AccountTypeSchema,
   currencyId: z.string().uuid(),
   parentId: z.string().uuid().optional().nullable(),
+  isCashOrBank: z.boolean().optional(),
   metadata: z.record(z.any()).optional(),
 });
 

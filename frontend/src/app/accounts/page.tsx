@@ -87,16 +87,16 @@ export default function AccountsPage() {
         currencies?.find((c: any) => c.isBase)?.id || '00000000-0000-0000-0000-000000000000';
 
       const defaults = [
-        { name: 'Efectivo', type: 'ASSET' },
-        { name: 'Cuenta Bancaria', type: 'ASSET' },
-        { name: 'Tarjeta de Crédito', type: 'LIABILITY' },
-        { name: 'Capital Inicial', type: 'EQUITY' },
-        { name: 'Sueldo', type: 'INCOME' },
-        { name: 'Otros Ingresos', type: 'INCOME' },
-        { name: 'Comida', type: 'EXPENSE' },
-        { name: 'Transporte', type: 'EXPENSE' },
-        { name: 'Servicios', type: 'EXPENSE' },
-        { name: 'Ropa', type: 'EXPENSE' },
+        { name: 'Efectivo', type: 'ASSET', isCashOrBank: true },
+        { name: 'Cuenta Bancaria', type: 'ASSET', isCashOrBank: true },
+        { name: 'Tarjeta de Crédito', type: 'LIABILITY', isCashOrBank: false },
+        { name: 'Capital Inicial', type: 'EQUITY', isCashOrBank: false },
+        { name: 'Sueldo', type: 'INCOME', isCashOrBank: false },
+        { name: 'Otros Ingresos', type: 'INCOME', isCashOrBank: false },
+        { name: 'Comida', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Transporte', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Servicios', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Ropa', type: 'EXPENSE', isCashOrBank: false },
       ];
 
       for (const item of defaults) {
@@ -104,6 +104,7 @@ export default function AccountsPage() {
           name: item.name,
           type: item.type as any,
           currencyId: defaultCurrencyId,
+          isCashOrBank: item.isCashOrBank,
         });
       }
       loadSummary();
