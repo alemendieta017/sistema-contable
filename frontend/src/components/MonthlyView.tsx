@@ -26,11 +26,7 @@ interface MonthlyViewProps {
   currentYear: number;
 }
 
-export default function MonthlyView({
-  transactions,
-  baseCurrency,
-  currentYear,
-}: MonthlyViewProps) {
+export default function MonthlyView({ transactions, baseCurrency, currentYear }: MonthlyViewProps) {
   const months = [
     'Enero',
     'Febrero',
@@ -87,7 +83,7 @@ export default function MonthlyView({
       <div className="w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
         <table className="w-full min-w-[600px] border-collapse text-xs">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider select-none">
+            <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider select-none">
               <th className="py-2.5 px-4 text-left font-bold">Mes</th>
               <th className="py-2.5 px-4 text-right font-bold">Transacciones</th>
               <th className="py-2.5 px-4 text-right font-bold">Ingresos</th>

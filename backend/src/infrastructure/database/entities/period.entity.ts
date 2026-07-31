@@ -1,6 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
+  Index,
+} from 'typeorm';
 import { FiscalYearEntity } from './fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from './account-period-balance.entity';
+import { BudgetEntity } from './budget.entity';
 
 @Entity('periods')
 @Index(['fiscalYearId', 'name'], { unique: true })
@@ -25,8 +35,14 @@ export class PeriodEntity {
   endDate: string;
 
   @Column({ type: 'varchar', length: 10, default: 'OPEN' })
-  status: 'OPEN' | 'CLOSED';
+  status: 'OPEN' | 'CLOSED' | 'PLANNING';
 
-  @OneToMany(() => AccountPeriodBalanceEntity, (balance) => balance.period, { cascade: true, onDelete: 'CASCADE' })
+  @OneToMany(() => AccountPeriodBalanceEntity, (balance) => balance.period, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   balances: AccountPeriodBalanceEntity[];
+
+  @OneToOne(() => BudgetEntity, (budget) => budget.periodEntity)
+  budget?: BudgetEntity;
 }

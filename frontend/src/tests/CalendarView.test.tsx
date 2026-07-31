@@ -67,7 +67,7 @@ describe('CalendarView Timezone and Boundary Rendering', () => {
         transactions={transactions}
         baseCurrency={baseCurrency}
         currentDate={new Date('2026-06-15T12:00:00.000Z')}
-      />
+      />,
     );
 
     const localDay1 = new Date(transactions[0].accountingDate + 'T00:00:00').getDate();

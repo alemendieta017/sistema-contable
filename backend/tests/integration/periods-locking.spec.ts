@@ -28,7 +28,11 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
-      save: jest.fn().mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...entity, id: entity.id || 'mock-saved-id' }),
+        ),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
       remove: jest.fn().mockImplementation((cls, obj) => Promise.resolve(obj)),
@@ -238,6 +242,152 @@ describe('Periods Locking Integration Tests', () => {
 
     await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
       new BadRequestException('The accounting period for the reversal date is closed'),
+    );
+  });
+
+  it('should block creating a transaction in a planning period', async () => {
+    const userId = 'user-1';
+    const dto = {
+      accountingDate: '2026-03-15',
+      description: 'Buying supplies',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50 },
+        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 50 },
+      ],
+    };
+
+    const mockQueryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
+    };
+    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+    await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
+      new BadRequestException('The accounting period for the transaction date is in planning status'),
+    );
+  });
+
+  it('should block deleting a transaction in a planning period', async () => {
+    const userId = 'user-1';
+    const txId = 'tx-1';
+
+    mockEntityManager.findOne.mockResolvedValue({
+      id: txId,
+      userId,
+      accountingDate: '2026-03-15',
+      entries: [],
+    });
+
+    const mockQueryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
+    };
+    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+    await expect(deleteUseCase.execute(userId, txId)).rejects.toThrow(
+      new BadRequestException('The accounting period for the transaction date is in planning status'),
+    );
+  });
+
+  it('should block updating a transaction if the original period is in planning status', async () => {
+    const userId = 'user-1';
+    const txId = 'tx-1';
+    const dto = {
+      accountingDate: '2026-03-16',
+      description: 'Buying supplies updated',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
+        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockResolvedValue({
+      id: txId,
+      userId,
+      accountingDate: '2026-03-15',
+      entries: [],
+    });
+
+    const mockQueryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
+    };
+    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
+      new BadRequestException('The accounting period for the original transaction date is in planning status'),
+    );
+  });
+
+  it('should block updating a transaction if the new period is in planning status', async () => {
+    const userId = 'user-1';
+    const txId = 'tx-1';
+    const dto = {
+      accountingDate: '2026-03-16',
+      description: 'Buying supplies updated',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
+        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockResolvedValue({
+      id: txId,
+      userId,
+      accountingDate: '2026-03-15',
+      entries: [],
+    });
+
+    const mockQueryBuilderOpen = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
+    };
+    const mockQueryBuilderPlanning = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-2', status: 'PLANNING' }),
+    };
+
+    mockEntityManager.createQueryBuilder
+      .mockReturnValueOnce(mockQueryBuilderOpen)
+      .mockReturnValueOnce(mockQueryBuilderPlanning);
+
+    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
+      new BadRequestException('The accounting period for the new transaction date is in planning status'),
+    );
+  });
+
+  it('should block reversing a transaction if reversal date is in planning status', async () => {
+    const userId = 'user-1';
+    const txId = 'tx-1';
+
+    mockEntityManager.findOne.mockResolvedValue({
+      id: txId,
+      userId,
+      accountingDate: '2026-03-15',
+      status: 'POSTED',
+      entries: [],
+    });
+
+    const mockQueryBuilder = {
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
+    };
+    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+    await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
+      new BadRequestException('The accounting period for the reversal date is in planning status'),
     );
   });
 });

@@ -4,7 +4,9 @@ import { CurrencyEntity } from '../../entities/currency.entity';
 import { AccountEntity } from '../../entities/account.entity';
 import * as bcrypt from 'bcrypt';
 
-export async function baseScenario(em: EntityManager): Promise<{ user: UserEntity; baseCurrency: CurrencyEntity }> {
+export async function baseScenario(
+  em: EntityManager,
+): Promise<{ user: UserEntity; baseCurrency: CurrencyEntity }> {
   // 1. Sembrar monedas por defecto (PYG y USD)
   let pyg = await em.findOne(CurrencyEntity, { where: { code: 'PYG' } });
   if (!pyg) {

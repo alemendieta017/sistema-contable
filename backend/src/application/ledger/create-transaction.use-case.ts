@@ -41,7 +41,8 @@ export class CreateTransactionUseCase {
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Check period lock on transaction date
       const txDate = dto.accountingDate;
-      const period = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+      const period = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
         .innerJoin('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: txDate })
@@ -53,6 +54,9 @@ export class CreateTransactionUseCase {
       }
       if (period.status === 'CLOSED') {
         throw new BadRequestException('The accounting period for the transaction date is closed');
+      }
+      if (period.status === 'PLANNING') {
+        throw new BadRequestException('The accounting period for the transaction date is in planning status');
       }
 
       const journalEntries: JournalEntry[] = [];
@@ -157,4 +161,3 @@ export class CreateTransactionUseCase {
     });
   }
 }
-

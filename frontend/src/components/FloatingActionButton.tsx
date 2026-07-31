@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Plus } from "lucide-react";
-import { usePathname } from "next/navigation";
+import React from 'react';
+import { Plus } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function FloatingActionButton() {
   const pathname = usePathname();
 
   // Only show on transactions page
-  if (pathname !== "/transactions") return null;
+  if (pathname !== '/transactions') return null;
 
   return (
     <Link

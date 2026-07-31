@@ -59,10 +59,15 @@ export class BackupService {
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Delete all current data for this user
       // Delete entries cascades from transactions, but we can do it explicitly
-      const currentTransactions = await entityManager.find(TransactionEntity, { where: { userId } });
+      const currentTransactions = await entityManager.find(TransactionEntity, {
+        where: { userId },
+      });
       const currentTxIds = currentTransactions.map((t) => t.id);
       if (currentTxIds.length > 0) {
-        await entityManager.delete(JournalEntryEntity, currentTxIds.map((id) => ({ transactionId: id })));
+        await entityManager.delete(
+          JournalEntryEntity,
+          currentTxIds.map((id) => ({ transactionId: id })),
+        );
         await entityManager.delete(TransactionEntity, currentTxIds);
       }
 
@@ -73,10 +78,14 @@ export class BackupService {
       // 2. Restore Accounts
       for (const acc of data.accounts) {
         // Ensure dummy currency exists
-        const currencyExists = await entityManager.findOne(CurrencyEntity, { where: { id: acc.currencyId } });
+        const currencyExists = await entityManager.findOne(CurrencyEntity, {
+          where: { id: acc.currencyId },
+        });
         if (!currencyExists) {
           // Fallback to default base currency if not found
-          const baseCurrency = await entityManager.findOne(CurrencyEntity, { where: { isBase: true } });
+          const baseCurrency = await entityManager.findOne(CurrencyEntity, {
+            where: { isBase: true },
+          });
           acc.currencyId = baseCurrency ? baseCurrency.id : acc.currencyId;
         }
 
@@ -110,7 +119,9 @@ export class BackupService {
         const txEntity = entityManager.create(TransactionEntity, {
           id: tx.id,
           userId,
-          date: new Date(tx.date),
+          accountingDate:
+            tx.accountingDate ||
+            (tx.date ? new Date(tx.date).toISOString().split('T')[0] : undefined),
           description: tx.description,
           status: tx.status || 'POSTED',
           reversalOfId: tx.reversalOfId,

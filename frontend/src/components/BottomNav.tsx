@@ -1,11 +1,23 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ReceiptText, BarChart3, Menu, Wallet, Settings, LogOut, Moon, Sun, X, Calendar, FileText } from "lucide-react";
-import { useTheme } from "../lib/theme-context";
-import { api } from "../services/api";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  ReceiptText,
+  BarChart3,
+  Menu,
+  Wallet,
+  Settings,
+  LogOut,
+  Moon,
+  Sun,
+  X,
+  Calendar,
+  FileText,
+} from 'lucide-react';
+import { useTheme } from '../lib/theme-context';
+import { api } from '../services/api';
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -14,14 +26,14 @@ export default function BottomNav() {
 
   const handleLogout = () => {
     api.auth.logout();
-    window.location.href = "/";
+    window.location.href = '/';
   };
 
   const menuItems = [
-    { name: "Períodos", href: "/periods", icon: Calendar },
-    { name: "Balance General", href: "/reports/balance-sheet", icon: FileText },
-    { name: "Estado de Resultados", href: "/reports/income-statement", icon: FileText },
-    { name: "Ajustes", href: "/settings", icon: Settings },
+    { name: 'Períodos', href: '/periods', icon: Calendar },
+    { name: 'Balance General', href: '/reports/balance-sheet', icon: FileText },
+    { name: 'Estado de Resultados', href: '/reports/income-statement', icon: FileText },
+    { name: 'Ajustes', href: '/settings', icon: Settings },
   ];
 
   return (
@@ -31,9 +43,9 @@ export default function BottomNav() {
         <Link
           href="/transactions"
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            pathname.startsWith("/transactions")
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-slate-400 dark:text-slate-500"
+            pathname.startsWith('/transactions')
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <ReceiptText className="w-5 h-5" />
@@ -43,9 +55,9 @@ export default function BottomNav() {
         <Link
           href="/accounts"
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            pathname.startsWith("/accounts")
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-slate-400 dark:text-slate-500"
+            pathname.startsWith('/accounts')
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <Wallet className="w-5 h-5" />
@@ -55,9 +67,9 @@ export default function BottomNav() {
         <Link
           href="/stats"
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            pathname.startsWith("/stats")
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-slate-400 dark:text-slate-500"
+            pathname.startsWith('/stats')
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <BarChart3 className="w-5 h-5" />
@@ -67,9 +79,9 @@ export default function BottomNav() {
         <button
           onClick={() => setIsMenuOpen(true)}
           className={`flex flex-col items-center justify-center flex-1 py-1 ${
-            isMenuOpen || pathname.startsWith("/settings")
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-slate-400 dark:text-slate-500"
+            isMenuOpen || pathname.startsWith('/settings')
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
         >
           <Menu className="w-5 h-5" />
@@ -106,8 +118,8 @@ export default function BottomNav() {
                     onClick={() => setIsMenuOpen(false)}
                     className={`flex flex-col items-center p-4 rounded-2xl border text-center transition-all duration-200 ${
                       isActive
-                        ? "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400"
-                        : "bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                        ? 'bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     <Icon className="w-6 h-6 mb-2" />
@@ -127,11 +139,15 @@ export default function BottomNav() {
                 className="flex items-center justify-between w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100"
               >
                 <span className="flex items-center gap-2.5">
-                  {theme === "light" ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
+                  {theme === 'light' ? (
+                    <Moon className="w-4.5 h-4.5" />
+                  ) : (
+                    <Sun className="w-4.5 h-4.5" />
+                  )}
                   <span>Cambiar Tema</span>
                 </span>
                 <span className="text-[10px] uppercase tracking-wider text-slate-400">
-                  {theme === "light" ? "Oscuro" : "Claro"}
+                  {theme === 'light' ? 'Oscuro' : 'Claro'}
                 </span>
               </button>
 

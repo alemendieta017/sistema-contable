@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../../services/api";
-import AccountsList from "../../components/AccountsList";
-import AccountModal from "../../components/AccountModal";
-import { Plus, Wallet, ShieldAlert, BadgeAlert } from "lucide-react";
-import { formatCurrency } from "../../lib/utils";
-import { useSearch } from "../../lib/search-context";
+import React, { useState, useEffect } from 'react';
+import { api } from '../../services/api';
+import AccountsList from '../../components/AccountsList';
+import AccountModal from '../../components/AccountModal';
+import { Plus, Wallet, ShieldAlert, BadgeAlert } from 'lucide-react';
+import { formatCurrency } from '../../lib/utils';
+import { useSearch } from '../../lib/search-context';
 
 type AccountSummary = {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   balance: number;
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
   parentId?: string | null;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
 };
 
 type SummaryData = {
@@ -32,10 +32,10 @@ export default function AccountsPage() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [deletingId, setDeletingId] = useState("");
+  const [deletingId, setDeletingId] = useState('');
 
   useEffect(() => {
     loadSummary();
@@ -44,73 +44,85 @@ export default function AccountsPage() {
   const loadSummary = async () => {
     try {
       setLoading(true);
-      setError("");
-      const [data, curs] = await Promise.all([
-        api.accounts.summary(),
-        api.currencies.list(),
-      ]);
+      setError('');
+      const [data, curs] = await Promise.all([api.accounts.summary(), api.currencies.list()]);
       setSummary(data);
       setCurrencies(curs || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar resumen de cuentas.");
+      setError(err.message || 'Error al cargar resumen de cuentas.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteAccount = async (id: string) => {
-    if (!confirm("¿Está seguro de que desea eliminar o desactivar esta cuenta/categoría?")) {
+    if (!confirm('¿Está seguro de que desea eliminar o desactivar esta cuenta/categoría?')) {
       return;
     }
     setSaving(true);
     setDeletingId(id);
-    setError("");
+    setError('');
     try {
       const res = await api.accounts.delete(id);
-      if (res && res.action === "DEACTIVATED") {
-        alert("La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.");
+      if (res && res.action === 'DEACTIVATED') {
+        alert('La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.');
       } else {
-        alert("La cuenta ha sido eliminada con éxito.");
+        alert('La cuenta ha sido eliminada con éxito.');
       }
       loadSummary();
     } catch (err: any) {
-      setError(err.message || "Error al eliminar la cuenta.");
+      setError(err.message || 'Error al eliminar la cuenta.');
     } finally {
       setSaving(false);
-      setDeletingId("");
+      setDeletingId('');
     }
   };
 
   const handleCreateDefaultAccounts = async () => {
     setSaving(true);
-    setError("");
+    setError('');
     try {
       const currencies = await api.currencies.list();
-      const defaultCurrencyId = (currencies?.find((c: any) => c.isBase)?.id) || "00000000-0000-0000-0000-000000000000";
-      
+      const defaultCurrencyId =
+        currencies?.find((c: any) => c.isBase)?.id || '00000000-0000-0000-0000-000000000000';
+
       const defaults = [
-        { name: "Efectivo", type: "ASSET" },
-        { name: "Cuenta Bancaria", type: "ASSET" },
-        { name: "Tarjeta de Crédito", type: "LIABILITY" },
-        { name: "Capital Inicial", type: "EQUITY" },
-        { name: "Sueldo", type: "INCOME" },
-        { name: "Otros Ingresos", type: "INCOME" },
-        { name: "Comida", type: "EXPENSE" },
-        { name: "Transporte", type: "EXPENSE" },
-        { name: "Servicios", type: "EXPENSE" },
-        { name: "Ropa", type: "EXPENSE" },
+        { name: 'Efectivo', type: 'ASSET', isCashOrBank: true },
+        { name: 'Cuenta Bancaria', type: 'ASSET', isCashOrBank: true },
+        { name: 'Tarjeta de Crédito', type: 'LIABILITY', isCashOrBank: false },
+        { name: 'Capital Inicial', type: 'EQUITY', isCashOrBank: false },
+        { name: 'Sueldo', type: 'INCOME', isCashOrBank: false },
+        { name: 'Otros Ingresos', type: 'INCOME', isCashOrBank: false },
+        { name: 'Comida', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Transporte', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Servicios', type: 'EXPENSE', isCashOrBank: false },
+        { name: 'Ropa', type: 'EXPENSE', isCashOrBank: false },
       ];
-      
+
       for (const item of defaults) {
         await api.accounts.create({
           name: item.name,
           type: item.type as any,
           currencyId: defaultCurrencyId,
+          isCashOrBank: item.isCashOrBank,
         });
       }
       loadSummary();
     } catch (err: any) {
-      setError(err.message || "Error al generar cuentas por defecto.");
+      setError(err.message || 'Error al generar cuentas por defecto.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleCashOrBank = async (id: string, isCashOrBank: boolean) => {
+    setSaving(true);
+    setError('');
+    try {
+      await api.accounts.update(id, { isCashOrBank });
+      loadSummary();
+    } catch (err: any) {
+      setError(err.message || 'Error al actualizar tipo de cuenta líquida.');
     } finally {
       setSaving(false);
     }
@@ -125,10 +137,11 @@ export default function AccountsPage() {
     );
   }
 
-  const filteredAccounts = summary?.accounts.filter((a) => {
-    if (!searchQuery.trim()) return true;
-    return a.name.toLowerCase().includes(searchQuery.toLowerCase());
-  }) || [];
+  const filteredAccounts =
+    summary?.accounts.filter((a) => {
+      if (!searchQuery.trim()) return true;
+      return a.name.toLowerCase().includes(searchQuery.toLowerCase());
+    }) || [];
 
   return (
     <div className="space-y-6">
@@ -138,14 +151,14 @@ export default function AccountsPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Cuentas y Rubros
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-450 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Saldos agregados de activos, pasivos y patrimonio
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
           <span>Agregar Cuenta</span>
@@ -153,7 +166,7 @@ export default function AccountsPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -161,7 +174,11 @@ export default function AccountsPage() {
 
       {/* Net Worth Dashboard Card */}
       {(() => {
-        const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+        const baseCurrency = currencies.find((c) => c.isBase) || {
+          code: 'PYG',
+          symbol: '₲',
+          decimalPlaces: 0,
+        };
         return (
           <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
             <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
@@ -204,8 +221,9 @@ export default function AccountsPage() {
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
               No hay cuentas configuradas
             </h3>
-            <p className="text-xs text-slate-450 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
-              Comienza generando un plan predeterminado de cuentas (Efectivo, Tarjetas, Sueldo, Comida, Transporte, etc.) con un solo clic.
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+              Comienza generando un plan predeterminado de cuentas (Efectivo, Tarjetas, Sueldo,
+              Comida, Transporte, etc.) con un solo clic.
             </p>
           </div>
           <button
@@ -214,30 +232,31 @@ export default function AccountsPage() {
             disabled={saving}
             className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
           >
-            {saving ? "Generando cuentas..." : "Generar Cuentas Predeterminadas"}
+            {saving ? 'Generando cuentas...' : 'Generar Cuentas Predeterminadas'}
           </button>
         </div>
       )}
 
       {/* Grouped Account Tables */}
-      {summary && summary.accounts.length > 0 && (
-        filteredAccounts.length > 0 ? (
+      {summary &&
+        summary.accounts.length > 0 &&
+        (filteredAccounts.length > 0 ? (
           <AccountsList
             accounts={filteredAccounts}
             onDelete={handleDeleteAccount}
             deletingId={deletingId}
+            onToggleCashOrBank={handleToggleCashOrBank}
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
-            <p className="text-sm font-bold text-slate-655 dark:text-slate-350">
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
               No se encontraron cuentas que coincidan con &quot;{searchQuery}&quot;
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
               Prueba buscando con otros términos
             </p>
           </div>
-        )
-      )}
+        ))}
 
       {/* Account Add Modal */}
       {showAddModal && (

@@ -2,7 +2,10 @@ import { EntityManager } from 'typeorm';
 import { readyForClosingScenario } from './ready-for-closing.scenario';
 import { FiscalYearEntity } from '../../entities/fiscal-year.entity';
 import { PeriodEntity } from '../../entities/period.entity';
-import { CloseFiscalYearUseCase, CloseFiscalYearDto } from '../../../../application/periods/close-fiscal-year.use-case';
+import {
+  CloseFiscalYearUseCase,
+  CloseFiscalYearDto,
+} from '../../../../application/periods/close-fiscal-year.use-case';
 import { BalanceUpdateService } from '../../../../application/periods/balance-update.service';
 
 export async function closedYearScenario(
@@ -11,7 +14,10 @@ export async function closedYearScenario(
   closeFiscalYearUseCase: CloseFiscalYearUseCase,
 ): Promise<void> {
   // 1. Ejecutar escenario intermedio (crea ejercicio 2025 y sus transacciones)
-  const { userId, fiscalYearId, retainedEarningsAccountId } = await readyForClosingScenario(em, balanceUpdateService);
+  const { userId, fiscalYearId, retainedEarningsAccountId } = await readyForClosingScenario(
+    em,
+    balanceUpdateService,
+  );
 
   // 2. Crear Ejercicio Fiscal 2026 (y sus 12 períodos) ANTES del cierre
   // Esto permite que al cerrar el 2025, los saldos del balance (Activos/Pasivos/Patrimonio) se arrastren como "opening balances" de 2026.

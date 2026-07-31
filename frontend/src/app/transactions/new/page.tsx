@@ -1,50 +1,50 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, AlertCircle, CheckCircle2, Plus } from "lucide-react";
-import { api } from "../../../services/api";
-import JournalEntryRow from "../../../components/JournalEntryRow";
-import { formatCurrency } from "../../../lib/utils";
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Save, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
+import { api } from '../../../services/api';
+import JournalEntryRow from '../../../components/JournalEntryRow';
+import { formatCurrency } from '../../../lib/utils';
 
 interface Account {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   currencyId: string;
   parentId?: string | null;
 }
 
 interface Entry {
   accountId: string;
-  entryType: "DEBIT" | "CREDIT";
-  amount: number | "";
+  entryType: 'DEBIT' | 'CREDIT';
+  amount: number | '';
 }
 
 function toPureDateString(dateInput: Date | string): string {
-  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
     return dateInput;
   }
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  if (isNaN(date.getTime())) return "";
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(date.getTime())) return '';
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
 function TransactionForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const editId = searchParams.get("edit");
-  const cloneId = searchParams.get("cloneFrom");
+
+  const editId = searchParams.get('edit');
+  const cloneId = searchParams.get('cloneFrom');
   const isEditMode = !!editId;
   const isCloneMode = !!cloneId;
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
-  
+
   // Set default datetime to local current date-time
   // Set default date to local current date
   const getInitialDateString = () => {
@@ -52,16 +52,16 @@ function TransactionForm() {
   };
 
   const [accountingDate, setAccountingDate] = useState(getInitialDateString());
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [entries, setEntries] = useState<Entry[]>([
-    { accountId: "", entryType: "DEBIT", amount: "" },
-    { accountId: "", entryType: "CREDIT", amount: "" },
+    { accountId: '', entryType: 'DEBIT', amount: '' },
+    { accountId: '', entryType: 'CREDIT', amount: '' },
   ]);
   const [isDirty, setIsDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ function TransactionForm() {
 
   useEffect(() => {
     if (isEditMode || isCloneMode) {
-      loadTransactionDetails(editId || cloneId || "");
+      loadTransactionDetails(editId || cloneId || '');
     }
   }, [editId, cloneId]);
 
@@ -79,39 +79,36 @@ function TransactionForm() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        e.returnValue = "";
+        e.returnValue = '';
       }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
   const fetchInitialData = async () => {
     try {
-      const [accData, curData] = await Promise.all([
-        api.accounts.list(),
-        api.currencies.list(),
-      ]);
+      const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
     } catch (err: any) {
-      setError("Error al cargar cuentas y monedas de respaldo.");
+      setError('Error al cargar cuentas y monedas de respaldo.');
     }
   };
 
   const loadTransactionDetails = async (id: string) => {
     setFetchLoading(true);
-    setError("");
+    setError('');
     try {
       const tx = await api.transactions.get(id);
       if (tx) {
         if (isEditMode) {
-          if (tx.status === "REVERSED") {
-            setError("Los asientos revertidos no pueden ser editados.");
+          if (tx.status === 'REVERSED') {
+            setError('Los asientos revertidos no pueden ser editados.');
             return;
           }
           if (tx.reversalOfId) {
-            setError("Los asientos de reversión no pueden ser editados.");
+            setError('Los asientos de reversión no pueden ser editados.');
             return;
           }
           setAccountingDate(toPureDateString(tx.accountingDate || tx.date));
@@ -125,12 +122,12 @@ function TransactionForm() {
             accountId: e.accountId,
             entryType: e.entryType,
             amount: Number(e.amount),
-          }))
+          })),
         );
         setIsDirty(false);
       }
     } catch (err: any) {
-      setError("Error al recuperar los datos del asiento contable.");
+      setError('Error al recuperar los datos del asiento contable.');
     } finally {
       setFetchLoading(false);
     }
@@ -146,13 +143,13 @@ function TransactionForm() {
   // Balancing logic
   const totalDebits = useMemo(() => {
     return entries
-      .filter((e) => e.entryType === "DEBIT")
+      .filter((e) => e.entryType === 'DEBIT')
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   }, [entries]);
 
   const totalCredits = useMemo(() => {
     return entries
-      .filter((e) => e.entryType === "CREDIT")
+      .filter((e) => e.entryType === 'CREDIT')
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   }, [entries]);
 
@@ -160,11 +157,11 @@ function TransactionForm() {
   const isBalanced = difference < 0.001 && totalDebits > 0;
 
   const handleAddEntry = () => {
-    const lastType = entries[entries.length - 1]?.entryType || "DEBIT";
-    const nextType = lastType === "DEBIT" ? "CREDIT" : "DEBIT";
-    const prefillAmount = difference > 0 ? Number(difference.toFixed(2)) : "";
-    
-    setEntries([...entries, { accountId: "", entryType: nextType, amount: prefillAmount }]);
+    const lastType = entries[entries.length - 1]?.entryType || 'DEBIT';
+    const nextType = lastType === 'DEBIT' ? 'CREDIT' : 'DEBIT';
+    const prefillAmount = difference > 0 ? Number(difference.toFixed(2)) : '';
+
+    setEntries([...entries, { accountId: '', entryType: nextType, amount: prefillAmount }]);
     setIsDirty(true);
   };
 
@@ -178,17 +175,17 @@ function TransactionForm() {
     if (isDirty) {
       setShowCancelConfirm(true);
     } else {
-      router.push("/transactions");
+      router.push('/transactions');
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     if (!description.trim()) {
-      setError("Por favor, ingrese una descripción / glosa para el asiento.");
+      setError('Por favor, ingrese una descripción / glosa para el asiento.');
       return;
     }
 
@@ -199,17 +196,21 @@ function TransactionForm() {
         setError(`El apunte #${i + 1} no tiene una cuenta seleccionada.`);
         return;
       }
-      if (entry.amount === "" || Number(entry.amount) <= 0) {
+      if (entry.amount === '' || Number(entry.amount) <= 0) {
         setError(`El apunte #${i + 1} debe poseer un monto positivo.`);
         return;
       }
     }
 
-    const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+    const baseCurrency = currencies.find((c) => c.isBase) || {
+      code: 'PYG',
+      symbol: '₲',
+      decimalPlaces: 0,
+    };
 
     if (!isBalanced) {
       setError(
-        `El asiento está descuadrado por ${formatCurrency(difference, baseCurrency)}. Las columnas del Debe y Haber deben coincidir.`
+        `El asiento está descuadrado por ${formatCurrency(difference, baseCurrency)}. Las columnas del Debe y Haber deben coincidir.`,
       );
       return;
     }
@@ -229,25 +230,29 @@ function TransactionForm() {
 
       if (isEditMode) {
         await api.transactions.update(editId!, payload);
-        setSuccess("Asiento contable actualizado exitosamente.");
+        setSuccess('Asiento contable actualizado exitosamente.');
       } else {
         await api.transactions.create(payload);
-        setSuccess("Asiento contable registrado exitosamente.");
+        setSuccess('Asiento contable registrado exitosamente.');
       }
-      
+
       setIsDirty(false);
 
       setTimeout(() => {
-        router.push("/transactions");
+        router.push('/transactions');
       }, 1000);
     } catch (err: any) {
-      setError(err.message || "Error al procesar la solicitud.");
+      setError(err.message || 'Error al procesar la solicitud.');
     } finally {
       setLoading(false);
     }
   };
 
-  const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+  const baseCurrency = currencies.find((c) => c.isBase) || {
+    code: 'PYG',
+    symbol: '₲',
+    decimalPlaces: 0,
+  };
 
   if (fetchLoading) {
     return (
@@ -271,13 +276,21 @@ function TransactionForm() {
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"
             title="Volver"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-350" />
+            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
           <div>
-            <h1 className="text-sm sm:text-base font-bold text-slate-850 dark:text-slate-100 uppercase tracking-wide">
-              {isEditMode ? "Editar Asiento" : isCloneMode ? "Clonar Asiento" : "Nuevo Asiento Contable"}
+            <h1 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+              {isEditMode
+                ? 'Editar Asiento'
+                : isCloneMode
+                  ? 'Clonar Asiento'
+                  : 'Nuevo Asiento Contable'}
             </h1>
-            {isEditMode && <span className="text-[10px] text-indigo-500 font-mono font-medium">ID: {editId}</span>}
+            {isEditMode && (
+              <span className="text-[10px] text-indigo-500 font-mono font-medium">
+                ID: {editId}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -294,12 +307,12 @@ function TransactionForm() {
             disabled={loading || !isBalanced}
             className={`px-4 py-2 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center gap-1.5 shadow-sm ${
               isBalanced
-                ? "bg-indigo-600 hover:bg-indigo-700"
-                : "bg-slate-350 dark:bg-slate-800 text-slate-450 cursor-not-allowed shadow-none"
+                ? 'bg-indigo-600 hover:bg-indigo-700'
+                : 'bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
             }`}
           >
             <Save className="w-3.5 h-3.5" />
-            <span>{loading ? "Guardando..." : "Guardar"}</span>
+            <span>{loading ? 'Guardando...' : 'Guardar'}</span>
           </button>
         </div>
       </header>
@@ -358,7 +371,7 @@ function TransactionForm() {
           {/* Journal Entries List Block */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-sm border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase text-slate-450 dark:text-slate-400 tracking-wider">
+              <h3 className="text-xs font-bold uppercase text-slate-400 dark:text-slate-400 tracking-wider">
                 Detalle de Asientos (Debe / Haber)
               </h3>
               <button
@@ -405,7 +418,7 @@ function TransactionForm() {
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Total Haber
               </p>
-              <p className="font-extrabold text-sm sm:text-base text-emerald-600 dark:text-emerald-450 mt-0.5">
+              <p className="font-extrabold text-sm sm:text-base text-emerald-600 dark:text-emerald-500 mt-0.5">
                 {formatCurrency(totalCredits, baseCurrency)}
               </p>
             </div>
@@ -415,10 +428,12 @@ function TransactionForm() {
               </p>
               <div
                 className={`flex items-center gap-1 font-extrabold text-sm sm:text-base mt-0.5 transition-colors duration-500 ${
-                  isBalanced ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"
+                  isBalanced ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-500'
                 }`}
               >
-                {isBalanced && <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-in fade-in zoom-in-50 duration-300" />}
+                {isBalanced && (
+                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-in fade-in zoom-in-50 duration-300" />
+                )}
                 <span>{formatCurrency(difference, baseCurrency)}</span>
               </div>
             </div>
@@ -438,12 +453,12 @@ function TransactionForm() {
               disabled={loading || !isBalanced}
               className={`flex-1 sm:flex-none px-6 py-2.5 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center justify-center gap-1.5 shadow-sm ${
                 isBalanced
-                  ? "bg-indigo-600 hover:bg-indigo-700"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-450 cursor-not-allowed shadow-none"
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
               }`}
             >
               <Save className="w-4 h-4" />
-              <span>{loading ? "Guardando..." : "Guardar Asiento"}</span>
+              <span>{loading ? 'Guardando...' : 'Guardar Asiento'}</span>
             </button>
           </div>
         </div>
@@ -452,12 +467,13 @@ function TransactionForm() {
       {/* Accidental Navigation Cancel Confirmation Overlay Dialog */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-850 rounded-sm w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
               ¿Descartar Cambios?
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Tienes cambios sin guardar en este asiento contable. Si sales ahora, perderás todo el borrador actual.
+              Tienes cambios sin guardar en este asiento contable. Si sales ahora, perderás todo el
+              borrador actual.
             </p>
             <div className="flex gap-2 pt-2">
               <button
@@ -472,9 +488,9 @@ function TransactionForm() {
                 onClick={() => {
                   setShowCancelConfirm(false);
                   setIsDirty(false);
-                  router.push("/transactions");
+                  router.push('/transactions');
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-750 text-white font-bold rounded-sm text-xs transition shadow-sm"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-sm text-xs transition shadow-sm"
               >
                 Salir de Todos Modos
               </button>
@@ -488,14 +504,16 @@ function TransactionForm() {
 
 export default function NewTransactionPage() {
   return (
-    <Suspense fallback={
-      <div className="flex flex-1 min-h-0 items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs text-slate-400 font-semibold">Cargando...</span>
+    <Suspense
+      fallback={
+        <div className="flex flex-1 min-h-0 items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-xs text-slate-400 font-semibold">Cargando...</span>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <TransactionForm />
     </Suspense>
   );

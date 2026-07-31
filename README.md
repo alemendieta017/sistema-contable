@@ -61,3 +61,15 @@ Al sembrar cualquiera de los escenarios anteriores se creará el siguiente usuar
 * [backend/](file:///Users/ale/dev/sistema-contable/backend): API REST con NestJS y TypeORM.
   * [src/infrastructure/database/seeds/](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/database/seeds): Scripts de sembrado contable y escenarios.
 * [frontend/](file:///Users/ale/dev/sistema-contable/frontend): Aplicación web con Next.js y TailwindCSS.
+
+---
+
+## Presupuestos y Proyecciones de Caja
+
+Se han incorporado capacidades avanzadas de presupuestación y proyección financiera:
+1. **Inicialización Automática**: Al crear un Ejercicio Fiscal se inicializan 12 presupuestos mensuales en cero.
+2. **Matriz Anual**: Panel consolidado para visualizar y navegar los presupuestos de todo el año.
+3. **Editor Tabular Inteligente**: Interfaz dinámica ("add-on-demand") para agregar partidas, definir importes (ahorros e inversiones se expresan como valores negativos) y replicar montos de forma anual.
+4. **Control de Desviaciones (Real vs. Presupuestado)**: Tablas comparativas y KPIs de liquidez neta del mes.
+5. **Proyecciones Financieras**: Estado de Resultados y Flujo de Caja Proyectado a 12 meses móviles (Rolling Forecast) con pre-apertura automática del siguiente año fiscal en modo planificación (`PLANNING`).
+

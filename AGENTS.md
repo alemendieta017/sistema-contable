@@ -1,5 +1,6 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/012-pure-date-periods-refactor/plan.md
+at specs/014-treasury-cash-flow-refactor/plan.md
 <!-- SPECKIT END -->
+

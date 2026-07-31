@@ -12,7 +12,8 @@ export class ReconstructBalancesUseCase {
   async execute(userId: string): Promise<{ success: boolean; message: string }> {
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Wipe all account period balances for the user
-      await entityManager.createQueryBuilder()
+      await entityManager
+        .createQueryBuilder()
         .delete()
         .from(AccountPeriodBalanceEntity)
         .where(
@@ -22,7 +23,8 @@ export class ReconstructBalancesUseCase {
         .execute();
 
       // 2. Fetch all periods for the user ordered chronologically
-      const periods = await entityManager.createQueryBuilder(PeriodEntity, 'period')
+      const periods = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
         .innerJoinAndSelect('period.fiscalYear', 'fiscalYear')
         .where('fiscalYear.userId = :userId', { userId })
         .orderBy('period.startDate', 'ASC')
@@ -78,9 +80,15 @@ export class ReconstructBalancesUseCase {
 
         for (const entry of periodEntries) {
           if (entry.entryType === 'DEBIT') {
-            debitsMap.set(entry.accountId, (debitsMap.get(entry.accountId) || 0) + Number(entry.amountBase));
+            debitsMap.set(
+              entry.accountId,
+              (debitsMap.get(entry.accountId) || 0) + Number(entry.amountBase),
+            );
           } else {
-            creditsMap.set(entry.accountId, (creditsMap.get(entry.accountId) || 0) + Number(entry.amountBase));
+            creditsMap.set(
+              entry.accountId,
+              (creditsMap.get(entry.accountId) || 0) + Number(entry.amountBase),
+            );
           }
         }
 
@@ -93,9 +101,8 @@ export class ReconstructBalancesUseCase {
           const isFirstPeriod = firstPeriodOfFiscalYear.get(period.fiscalYearId) === period.id;
           const isTemporary = account.type === 'INCOME' || account.type === 'EXPENSE';
 
-          const openingBalance = isFirstPeriod && isTemporary
-            ? 0
-            : (lastClosingBalances.get(accountId) || 0);
+          const openingBalance =
+            isFirstPeriod && isTemporary ? 0 : lastClosingBalances.get(accountId) || 0;
 
           const isDebitNature = account.type === 'ASSET' || account.type === 'EXPENSE';
           let closingBalance = 0;

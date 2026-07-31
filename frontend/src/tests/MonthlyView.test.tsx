@@ -62,11 +62,7 @@ describe('MonthlyView Local Timezone Grouping', () => {
     ];
 
     render(
-      <MonthlyView
-        transactions={transactions}
-        baseCurrency={baseCurrency}
-        currentYear={2026}
-      />
+      <MonthlyView transactions={transactions} baseCurrency={baseCurrency} currentYear={2026} />,
     );
 
     // Get the expected month for each transaction based on the local Date parsing in the test environment

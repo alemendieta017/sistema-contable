@@ -98,16 +98,52 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       } as PeriodEntity;
 
       const mockAccounts = [
-        { id: 'acc-asset-1', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-asset-2', name: 'Accounts Receivable', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-liability-1', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-equity-1', name: 'Common Stock', type: 'EQUITY', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-asset-1',
+          name: 'Cash',
+          type: 'ASSET',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-asset-2',
+          name: 'Accounts Receivable',
+          type: 'ASSET',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-liability-1',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-equity-1',
+          name: 'Common Stock',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       const mockBalances = [
-        { accountId: 'acc-asset-1', periodId, closingBalance: 15000.5 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-liability-1', periodId, closingBalance: 5000.2 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-equity-1', periodId, closingBalance: 10000.3 } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-asset-1',
+          periodId,
+          closingBalance: 15000.5,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-liability-1',
+          periodId,
+          closingBalance: 5000.2,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-equity-1',
+          periodId,
+          closingBalance: 10000.3,
+        } as AccountPeriodBalanceEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
@@ -146,13 +182,29 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       } as PeriodEntity;
 
       const mockAccounts = [
-        { id: 'acc-asset-1', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-liability-1', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-asset-1',
+          name: 'Cash',
+          type: 'ASSET',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-liability-1',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       const mockBalances = [
         { accountId: 'acc-asset-1', periodId, closingBalance: 100.0 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-liability-1', periodId, closingBalance: 80.0 } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-liability-1',
+          periodId,
+          closingBalance: 80.0,
+        } as AccountPeriodBalanceEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
@@ -179,15 +231,40 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
 
       // Parent/child hierarchy: Cash (1) -> Petty Cash (2) -> Local Petty Cash (3)
       const mockAccounts = [
-        { id: 'acc-cash', name: 'Cash', type: 'ASSET', parentId: null, status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-petty', name: 'Petty Cash', type: 'ASSET', parentId: 'acc-cash', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-local-petty', name: 'Local Petty Cash', type: 'ASSET', parentId: 'acc-petty', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-cash',
+          name: 'Cash',
+          type: 'ASSET',
+          parentId: null,
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-petty',
+          name: 'Petty Cash',
+          type: 'ASSET',
+          parentId: 'acc-cash',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-local-petty',
+          name: 'Local Petty Cash',
+          type: 'ASSET',
+          parentId: 'acc-petty',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       const mockBalances = [
         { accountId: 'acc-cash', periodId, closingBalance: 1000.0 } as AccountPeriodBalanceEntity,
         { accountId: 'acc-petty', periodId, closingBalance: 500.0 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-local-petty', periodId, closingBalance: 100.0 } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-local-petty',
+          periodId,
+          closingBalance: 100.0,
+        } as AccountPeriodBalanceEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
@@ -220,8 +297,20 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
 
     it('should calculate date mode balance sheet correctly', async () => {
       const mockAccounts = [
-        { id: 'acc-asset-1', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-liability-1', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-asset-1',
+          name: 'Cash',
+          type: 'ASSET',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-liability-1',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
@@ -268,28 +357,61 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       // Verify the query builder was called with accountingDate and pure string date parameter
       expect(mockJournalEntryRepo.createQueryBuilder).toHaveBeenCalledWith('entry');
       expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith('entry.transaction', 'transaction');
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('transaction.userId = :userId', { userId });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('transaction.status = :status', { status: 'POSTED' });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('transaction.accountingDate <= :date', { date: '2026-07-02' });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('transaction.userId = :userId', {
+        userId,
+      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('transaction.status = :status', {
+        status: 'POSTED',
+      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'transaction.accountingDate <= :date',
+        { date: '2026-07-02' },
+      );
 
       // Verify fiscal year query checks are date string based
       expect(mockFiscalYearRepo.createQueryBuilder).toHaveBeenCalledWith('fy');
       expect(mockFyBuilder.where).toHaveBeenCalledWith('fy.userId = :userId', { userId });
-      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.startDate <= :date', { date: '2026-07-02' });
-      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.endDate >= :date', { date: '2026-07-02' });
+      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.startDate <= :date', {
+        date: '2026-07-02',
+      });
+      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.endDate >= :date', {
+        date: '2026-07-02',
+      });
     });
 
     it('should calculate comparative mode balance sheet correctly', async () => {
       const mockPeriods = [
-        { id: 'period-1', name: '2026-01', startDate: '2026-01-01', fiscalYearId: 'fy-uuid' } as unknown as PeriodEntity,
-        { id: 'period-2', name: '2026-02', startDate: '2026-02-01', fiscalYearId: 'fy-uuid' } as unknown as PeriodEntity,
+        {
+          id: 'period-1',
+          name: '2026-01',
+          startDate: '2026-01-01',
+          fiscalYearId: 'fy-uuid',
+        } as unknown as PeriodEntity,
+        {
+          id: 'period-2',
+          name: '2026-02',
+          startDate: '2026-02-01',
+          fiscalYearId: 'fy-uuid',
+        } as unknown as PeriodEntity,
       ];
 
       mockPeriodRepo.find!.mockResolvedValue(mockPeriods);
 
       const mockAccounts = [
-        { id: 'acc-asset-1', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-liability-1', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-asset-1',
+          name: 'Cash',
+          type: 'ASSET',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-liability-1',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
 
@@ -298,13 +420,29 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         const pId = options.where.periodId;
         if (pId === 'period-1') {
           return [
-            { accountId: 'acc-asset-1', periodId: 'period-1', closingBalance: 1200 } as AccountPeriodBalanceEntity,
-            { accountId: 'acc-liability-1', periodId: 'period-1', closingBalance: 400 } as AccountPeriodBalanceEntity,
+            {
+              accountId: 'acc-asset-1',
+              periodId: 'period-1',
+              closingBalance: 1200,
+            } as AccountPeriodBalanceEntity,
+            {
+              accountId: 'acc-liability-1',
+              periodId: 'period-1',
+              closingBalance: 400,
+            } as AccountPeriodBalanceEntity,
           ];
         } else if (pId === 'period-2') {
           return [
-            { accountId: 'acc-asset-1', periodId: 'period-2', closingBalance: 1500 } as AccountPeriodBalanceEntity,
-            { accountId: 'acc-liability-1', periodId: 'period-2', closingBalance: 500 } as AccountPeriodBalanceEntity,
+            {
+              accountId: 'acc-asset-1',
+              periodId: 'period-2',
+              closingBalance: 1500,
+            } as AccountPeriodBalanceEntity,
+            {
+              accountId: 'acc-liability-1',
+              periodId: 'period-2',
+              closingBalance: 500,
+            } as AccountPeriodBalanceEntity,
           ];
         }
         return [];
@@ -330,7 +468,13 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
     it('should calculate Resultados Acumulados and Resultado del Ejercicio correctly in date mode when previous years are unclosed', async () => {
       const mockAccounts = [
         { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-ap', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-ap',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
@@ -347,7 +491,8 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         andWhere: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         addGroupBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn()
+        getRawMany: jest
+          .fn()
           .mockResolvedValueOnce([
             { accountId: 'acc-cash', entryType: 'DEBIT', total: '20000' },
             { accountId: 'acc-ap', entryType: 'CREDIT', total: '9000' },
@@ -378,15 +523,17 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       })) as any;
 
       expect(result.date).toBe('2026-06-15');
-      expect(result.assets).toEqual([
-        { accountId: 'acc-cash', name: 'Cash', balance: 20000.0 },
-      ]);
+      expect(result.assets).toEqual([{ accountId: 'acc-cash', name: 'Cash', balance: 20000.0 }]);
       expect(result.liabilities).toEqual([
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
       expect(result.equity).toEqual([
         { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
-        { accountId: 'virtual-accumulated-results', name: 'Resultados Acumulados', balance: 11000.0 },
+        {
+          accountId: 'virtual-accumulated-results',
+          name: 'Resultados Acumulados',
+          balance: 11000.0,
+        },
       ]);
       expect(result.balanced).toBe(true);
     });
@@ -405,17 +552,35 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
 
       const mockAccounts = [
         { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-ap', name: 'Accounts Payable', type: 'LIABILITY', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-rev', name: 'Revenue', type: 'INCOME', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-exp', name: 'Expense', type: 'EXPENSE', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-ap',
+          name: 'Accounts Payable',
+          type: 'LIABILITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-rev',
+          name: 'Revenue',
+          type: 'INCOME',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-exp',
+          name: 'Expense',
+          type: 'EXPENSE',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
 
       // Mock balance sheet balances
-      mockBalanceRepo.find!
-        .mockResolvedValueOnce([
+      mockBalanceRepo
+        .find!.mockResolvedValueOnce([
           { accountId: 'acc-cash', periodId, closingBalance: 20000 } as AccountPeriodBalanceEntity,
           { accountId: 'acc-ap', periodId, closingBalance: 9000 } as AccountPeriodBalanceEntity,
         ])
@@ -432,9 +597,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue([
-          { entryType: 'CREDIT', total: '11000' },
-        ]),
+        getRawMany: jest.fn().mockResolvedValue([{ entryType: 'CREDIT', total: '11000' }]),
       };
       mockJournalEntryRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
@@ -443,15 +606,17 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         periodId,
       })) as any;
 
-      expect(result.assets).toEqual([
-        { accountId: 'acc-cash', name: 'Cash', balance: 20000.0 },
-      ]);
+      expect(result.assets).toEqual([{ accountId: 'acc-cash', name: 'Cash', balance: 20000.0 }]);
       expect(result.liabilities).toEqual([
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
       expect(result.equity).toEqual([
         { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
-        { accountId: 'virtual-accumulated-results', name: 'Resultados Acumulados', balance: 11000.0 },
+        {
+          accountId: 'virtual-accumulated-results',
+          name: 'Resultados Acumulados',
+          balance: 11000.0,
+        },
       ]);
       expect(result.balanced).toBe(true);
     });
@@ -477,16 +642,55 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       } as PeriodEntity;
 
       const mockAccounts = [
-        { id: 'acc-income-1', name: 'Sales Revenue', type: 'INCOME', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-income-2', name: 'Service Revenue', type: 'INCOME', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-expense-1', name: 'Rent Expense', type: 'EXPENSE', status: 'ACTIVE', userId } as AccountEntity,
-        { id: 'acc-expense-2', name: 'Utilities Expense', type: 'EXPENSE', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-income-1',
+          name: 'Sales Revenue',
+          type: 'INCOME',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-income-2',
+          name: 'Service Revenue',
+          type: 'INCOME',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-expense-1',
+          name: 'Rent Expense',
+          type: 'EXPENSE',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-expense-2',
+          name: 'Utilities Expense',
+          type: 'EXPENSE',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
       ];
 
       const mockBalances = [
-        { accountId: 'acc-income-1', periodId, totalDebits: 200, totalCredits: 2000 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-expense-1', periodId, totalDebits: 800, totalCredits: 0 } as AccountPeriodBalanceEntity,
-        { accountId: 'acc-expense-2', periodId, totalDebits: 150, totalCredits: 50 } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-income-1',
+          periodId,
+          totalDebits: 200,
+          totalCredits: 2000,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-expense-1',
+          periodId,
+          totalDebits: 800,
+          totalCredits: 0,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-expense-2',
+          periodId,
+          totalDebits: 150,
+          totalCredits: 50,
+        } as AccountPeriodBalanceEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);

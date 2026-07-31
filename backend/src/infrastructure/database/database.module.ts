@@ -19,11 +19,7 @@ import { AccountPeriodBalanceEntity } from './entities/account-period-balance.en
       synchronize: process.env.NODE_ENV !== 'production', // Habilitado solo en desarrollo local rápido, deshabilitado en producción
       logging: ['query', 'error'],
     }),
-    TypeOrmModule.forFeature([
-      FiscalYearEntity,
-      PeriodEntity,
-      AccountPeriodBalanceEntity,
-    ]),
+    TypeOrmModule.forFeature([FiscalYearEntity, PeriodEntity, AccountPeriodBalanceEntity]),
   ],
 })
 export class DatabaseModule implements OnApplicationBootstrap {

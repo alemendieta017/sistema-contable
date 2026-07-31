@@ -10,6 +10,7 @@ import { DeleteTransactionUseCase } from '../../src/application/ledger/delete-tr
 import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-transaction.use-case';
 import { GetAccountsSummaryUseCase } from '../../src/application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../src/application/accounts/delete-account.use-case';
+import { UpdateAccountUseCase } from '../../src/application/accounts/update-account.use-case';
 import { LedgerController } from '../../src/infrastructure/controllers/ledger.controller';
 import { AccountController } from '../../src/infrastructure/controllers/account.controller';
 import { JwtAuthGuard } from '../../src/infrastructure/auth/jwt-auth.guard';
@@ -24,7 +25,9 @@ describe('Ledger Endpoints Contract Tests', () => {
       orderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
     }),
-    findOne: jest.fn().mockResolvedValue({ id: 'tx-123', description: 'Test transaction', entries: [] }),
+    findOne: jest
+      .fn()
+      .mockResolvedValue({ id: 'tx-123', description: 'Test transaction', entries: [] }),
   };
   const mockAccountRepo = {
     find: jest.fn().mockResolvedValue([]),
@@ -45,15 +48,23 @@ describe('Ledger Endpoints Contract Tests', () => {
   };
 
   const mockReverseTransactionUseCase = {
-    execute: jest.fn().mockResolvedValue({ id: 'tx-reversal-123', reversalOfId: 'tx-123', entries: [] }),
+    execute: jest
+      .fn()
+      .mockResolvedValue({ id: 'tx-reversal-123', reversalOfId: 'tx-123', entries: [] }),
   };
 
   const mockGetAccountsSummaryUseCase = {
-    execute: jest.fn().mockResolvedValue({ netWorth: 0, totalAssets: 0, totalLiabilities: 0, accounts: [] }),
+    execute: jest
+      .fn()
+      .mockResolvedValue({ netWorth: 0, totalAssets: 0, totalLiabilities: 0, accounts: [] }),
   };
 
   const mockDeleteAccountUseCase = {
     execute: jest.fn().mockResolvedValue({ success: true, action: 'DEACTIVATED' }),
+  };
+
+  const mockUpdateAccountUseCase = {
+    execute: jest.fn().mockResolvedValue({ success: true }),
   };
 
   beforeAll(async () => {
@@ -85,6 +96,10 @@ describe('Ledger Endpoints Contract Tests', () => {
           useValue: mockDeleteAccountUseCase,
         },
         {
+          provide: UpdateAccountUseCase,
+          useValue: mockUpdateAccountUseCase,
+        },
+        {
           provide: getRepositoryToken(TransactionEntity),
           useValue: mockTransactionRepo,
         },
@@ -100,7 +115,7 @@ describe('Ledger Endpoints Contract Tests', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    
+
     // Inject mock user to req.user for @CurrentUser() decorator
     app.use((req: any, res: any, next: any) => {
       req.user = { id: 'user-uuid', email: 'user@example.com' };
@@ -155,26 +170,20 @@ describe('Ledger Endpoints Contract Tests', () => {
 
   describe('GET /api/accounts/summary', () => {
     it('should return the accounts summary for the user', async () => {
-      await request(app.getHttpServer())
-        .get('/api/accounts/summary')
-        .expect(200);
+      await request(app.getHttpServer()).get('/api/accounts/summary').expect(200);
     });
   });
 
   describe('POST /api/transactions/:id/reverse', () => {
     it('should successfully call reverse usecase and return 201', async () => {
-      await request(app.getHttpServer())
-        .post('/api/transactions/tx-123/reverse')
-        .expect(201);
+      await request(app.getHttpServer()).post('/api/transactions/tx-123/reverse').expect(201);
       expect(mockReverseTransactionUseCase.execute).toHaveBeenCalledWith('user-uuid', 'tx-123');
     });
   });
 
   describe('DELETE /api/accounts/:id', () => {
     it('should call delete account usecase and return 200', async () => {
-      await request(app.getHttpServer())
-        .delete('/api/accounts/acc-123')
-        .expect(200);
+      await request(app.getHttpServer()).delete('/api/accounts/acc-123').expect(200);
       expect(mockDeleteAccountUseCase.execute).toHaveBeenCalledWith('user-uuid', 'acc-123');
     });
   });

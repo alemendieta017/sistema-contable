@@ -1,28 +1,35 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Trash2 } from "lucide-react";
-import { formatCurrency } from "../lib/utils";
+import React from 'react';
+import { Trash2 } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 
 interface AccountSummary {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   balance: number;
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
   parentId?: string | null;
-  status?: "ACTIVE" | "INACTIVE";
+  status?: 'ACTIVE' | 'INACTIVE';
+  isCashOrBank?: boolean;
 }
 
 interface AccountsListProps {
   accounts: AccountSummary[];
   onDelete: (id: string) => void;
   deletingId?: string;
+  onToggleCashOrBank: (id: string, isCashOrBank: boolean) => void;
 }
 
-export default function AccountsList({ accounts, onDelete, deletingId }: AccountsListProps) {
+export default function AccountsList({
+  accounts,
+  onDelete,
+  deletingId,
+  onToggleCashOrBank,
+}: AccountsListProps) {
   const renderAccountList = (list: AccountSummary[]) => {
     const roots = list.filter((a) => !a.parentId);
     const children = list.filter((a) => a.parentId);
@@ -38,17 +45,19 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 shadow-sm overflow-hidden">
         {ordered.map((a) => {
           const isChild = !!a.parentId;
-          const isInactive = a.status === "INACTIVE";
+          const isInactive = a.status === 'INACTIVE';
           return (
             <div
               key={a.id}
               className={`flex justify-between items-center p-3.5 text-xs transition duration-150 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 ${
                 isChild
-                  ? "pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20"
-                  : ""
-              } ${isInactive ? "opacity-50" : ""}`}
+                  ? 'pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20'
+                  : ''
+              } ${isInactive ? 'opacity-50' : ''}`}
             >
-              <span className={`${isChild ? "text-slate-500 dark:text-slate-450 font-medium" : "font-bold text-slate-700 dark:text-slate-200"}`}>
+              <span
+                className={`${isChild ? 'text-slate-500 dark:text-slate-400 font-medium' : 'font-bold text-slate-700 dark:text-slate-200'}`}
+              >
                 {isChild && <span className="mr-1 text-slate-400">└─</span>}
                 {a.name}
                 {isInactive && (
@@ -56,17 +65,22 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
                     Inactiva
                   </span>
                 )}
+                {a.isCashOrBank && (
+                  <span className="ml-1.5 text-5xs bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-1 rounded uppercase tracking-wider font-bold">
+                    Caja/Banco
+                  </span>
+                )}
               </span>
               <div className="flex items-center gap-4">
                 <span
                   className={`font-extrabold ${
-                    a.type === "ASSET"
-                      ? "text-green-600 dark:text-green-400"
-                      : a.type === "LIABILITY"
-                        ? "text-red-500"
-                        : a.type === "INCOME"
-                          ? "text-indigo-500"
-                          : "text-slate-500"
+                    a.type === 'ASSET'
+                      ? 'text-green-600 dark:text-green-400'
+                      : a.type === 'LIABILITY'
+                        ? 'text-red-500'
+                        : a.type === 'INCOME'
+                          ? 'text-indigo-500'
+                          : 'text-slate-500'
                   }`}
                 >
                   {formatCurrency(a.balance, {
@@ -94,11 +108,11 @@ export default function AccountsList({ accounts, onDelete, deletingId }: Account
     );
   };
 
-  const assets = accounts.filter((a) => a.type === "ASSET") || [];
-  const liabilities = accounts.filter((a) => a.type === "LIABILITY") || [];
-  const equity = accounts.filter((a) => a.type === "EQUITY") || [];
-  const incomes = accounts.filter((a) => a.type === "INCOME") || [];
-  const expenses = accounts.filter((a) => a.type === "EXPENSE") || [];
+  const assets = accounts.filter((a) => a.type === 'ASSET') || [];
+  const liabilities = accounts.filter((a) => a.type === 'LIABILITY') || [];
+  const equity = accounts.filter((a) => a.type === 'EQUITY') || [];
+  const incomes = accounts.filter((a) => a.type === 'INCOME') || [];
+  const expenses = accounts.filter((a) => a.type === 'EXPENSE') || [];
 
   return (
     <div className="space-y-6">

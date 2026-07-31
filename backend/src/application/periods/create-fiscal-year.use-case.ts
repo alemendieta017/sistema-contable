@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
+import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { CreateFiscalYearRequest } from '@sistema-contable/shared';
 import { IsString, IsNotEmpty, IsInt, Min, Max } from 'class-validator';
 
@@ -63,6 +64,21 @@ export class CreateFiscalYearUseCase {
       );
     }
 
+    const friendlyMonthNames = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
+    ];
+
     // 4. Save Fiscal Year and 12 monthly periods in a transaction
     return this.dataSource.transaction(async (entityManager) => {
       const fyEntity = entityManager.create(FiscalYearEntity, {
@@ -97,6 +113,15 @@ export class CreateFiscalYearUseCase {
 
         const savedPeriod = await entityManager.save(PeriodEntity, periodEntity);
         periods.push(savedPeriod);
+
+        // Auto-create empty Budget for this period
+        const budgetFriendlyName = `${friendlyMonthNames[m]} ${y}`;
+        const budgetEntity = entityManager.create(BudgetEntity, {
+          userId,
+          periodId: savedPeriod.id,
+          name: budgetFriendlyName,
+        });
+        await entityManager.save(BudgetEntity, budgetEntity);
       }
 
       return {

@@ -71,7 +71,8 @@ export class BalanceSheetUseCase {
       });
 
       // 2. Sum posted journal entries <= date
-      const entrySums = await this.dataSource.getRepository(JournalEntryEntity)
+      const entrySums = await this.dataSource
+        .getRepository(JournalEntryEntity)
         .createQueryBuilder('entry')
         .select('entry.accountId', 'accountId')
         .addSelect('entry.entryType', 'entryType')
@@ -109,7 +110,8 @@ export class BalanceSheetUseCase {
       const collapsed = this.applyDepthCollapse(accounts, balanceMap, depth);
 
       // 4. Calculate virtual Net Income for the current fiscal year up to date
-      const fiscalYear = await this.dataSource.getRepository(FiscalYearEntity)
+      const fiscalYear = await this.dataSource
+        .getRepository(FiscalYearEntity)
         .createQueryBuilder('fy')
         .where('fy.userId = :userId', { userId })
         .andWhere('fy.startDate <= :date', { date })
@@ -118,7 +120,8 @@ export class BalanceSheetUseCase {
 
       let cumulativeNetIncome = 0;
       if (fiscalYear) {
-        const tempEntrySums = await this.dataSource.getRepository(JournalEntryEntity)
+        const tempEntrySums = await this.dataSource
+          .getRepository(JournalEntryEntity)
           .createQueryBuilder('entry')
           .select('entry.entryType', 'entryType')
           .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
@@ -149,7 +152,8 @@ export class BalanceSheetUseCase {
       // Calculate priorNetIncome (Resultados Acumulados)
       const priorBoundaryDate = fiscalYear ? fiscalYear.startDate : null;
 
-      const priorQuery = this.dataSource.getRepository(JournalEntryEntity)
+      const priorQuery = this.dataSource
+        .getRepository(JournalEntryEntity)
         .createQueryBuilder('entry')
         .select('entry.entryType', 'entryType')
         .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
@@ -161,14 +165,14 @@ export class BalanceSheetUseCase {
         .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' });
 
       if (priorBoundaryDate) {
-        priorQuery.andWhere('transaction.accountingDate < :boundaryDate', { boundaryDate: priorBoundaryDate });
+        priorQuery.andWhere('transaction.accountingDate < :boundaryDate', {
+          boundaryDate: priorBoundaryDate,
+        });
       } else {
         priorQuery.andWhere('transaction.accountingDate <= :boundaryDate', { boundaryDate: date });
       }
 
-      const priorEntrySums = await priorQuery
-        .groupBy('entry.entryType')
-        .getRawMany();
+      const priorEntrySums = await priorQuery.groupBy('entry.entryType').getRawMany();
 
       let priorDebits = 0;
       let priorCredits = 0;
@@ -346,7 +350,8 @@ export class BalanceSheetUseCase {
     let priorNetIncome = 0;
 
     if (priorBoundaryDate) {
-      const priorEntrySums = await this.dataSource.getRepository(JournalEntryEntity)
+      const priorEntrySums = await this.dataSource
+        .getRepository(JournalEntryEntity)
         .createQueryBuilder('entry')
         .select('entry.entryType', 'entryType')
         .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
@@ -504,4 +509,3 @@ export class BalanceSheetUseCase {
     return { assets, liabilities, equity };
   }
 }
-

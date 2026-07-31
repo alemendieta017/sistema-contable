@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronDown, ChevronUp, Trash2, Copy, Edit } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Copy,
+  Edit,
+} from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, CurrencyInfo } from '../lib/utils';
 
@@ -35,7 +44,12 @@ interface DailyViewProps {
   baseCurrency?: CurrencyInfo;
 }
 
-export default function DailyView({ transactions, onReverse, onDelete, baseCurrency }: DailyViewProps) {
+export default function DailyView({
+  transactions,
+  onReverse,
+  onDelete,
+  baseCurrency,
+}: DailyViewProps) {
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
@@ -58,7 +72,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
   if (transactions.length === 0) {
     return (
       <div className="text-center py-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-        <p className="text-xs text-slate-450 dark:text-slate-500">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           No hay transacciones cargadas para este período.
         </p>
       </div>
@@ -87,7 +101,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
           <div key={dateStr} className="space-y-1">
             {/* Day Header */}
             <div className="flex justify-between items-center px-1">
-              <span className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest">
                 {dateObj.toLocaleDateString('es-ES', {
                   weekday: 'short',
                   day: 'numeric',
@@ -137,7 +151,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                             isReversed
                               ? 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-200/50'
                               : isReversion
-                                ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-550 border-amber-200'
+                                ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-500 border-amber-200'
                                 : isExpense
                                   ? 'bg-red-50 dark:bg-red-950/20 text-red-500 border-red-100 dark:border-red-900/60'
                                   : isIncome
@@ -160,7 +174,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                           <p
                             className={`text-xs font-bold ${
                               isReversed
-                                ? 'line-through text-slate-400 dark:text-slate-550'
+                                ? 'line-through text-slate-400 dark:text-slate-500'
                                 : 'text-slate-800 dark:text-slate-200'
                             }`}
                           >
@@ -213,16 +227,16 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                     </div>
                     {/* Expandable Split Details Table */}
                     {isExpanded && (
-                      <div className="px-4 pb-3 pt-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-150 dark:border-slate-700/80 rounded-b-2xl animate-in fade-in duration-200">
+                      <div className="px-4 pb-3 pt-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-700/80 rounded-b-2xl animate-in fade-in duration-200">
                         <div className="space-y-3">
-                          <p className="font-bold text-[10px] text-slate-400 dark:text-slate-550 uppercase tracking-widest px-1">
+                          <p className="font-bold text-[10px] text-slate-400 dark:text-slate-400 uppercase tracking-widest px-1">
                             Detalles del Asiento
                           </p>
 
                           <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
-                                <tr className="border-b border-slate-200/60 dark:border-slate-800/80 text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <tr className="border-b border-slate-200/60 dark:border-slate-800/80 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                                   <th className="py-2 px-2 text-left font-semibold">
                                     Cuenta / Categoría
                                   </th>
@@ -234,20 +248,20 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                                   </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-medium text-slate-600 dark:text-slate-350">
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-medium text-slate-600 dark:text-slate-300">
                                 {tx.entries.map((entry) => {
                                   const entryCurrency = entry.account?.currency || baseCurrency;
                                   return (
                                     <tr
                                       key={entry.id}
-                                      className="hover:bg-slate-50/40 dark:hover:bg-slate-850/10 transition duration-150"
+                                      className="hover:bg-slate-50/40 dark:hover:bg-slate-800/40 transition duration-150"
                                     >
                                       <td className="py-2.5 px-2">
                                         <div className="flex items-center gap-2">
                                           <span className="font-semibold text-slate-700 dark:text-slate-200">
                                             {entry.account.name}
                                           </span>
-                                          <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-400 px-1.5 py-0.5 rounded-md tracking-wider">
+                                          <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400 px-1.5 py-0.5 rounded-md tracking-wider">
                                             {entry.account.type}
                                           </span>
                                         </div>
@@ -282,14 +296,14 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                           </div>
 
                           {/* Transaction action toolbar */}
-                          <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-150 dark:border-slate-800">
+                          <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                             {/* Delete Button */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(tx.id);
                               }}
-                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-500 hover:text-red-655 dark:text-slate-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 text-slate-500 hover:text-red-600 dark:text-slate-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                             >
                               <Trash2 className="w-3 h-3" />
                               <span>Eliminar</span>
@@ -298,7 +312,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                             {/* Clone Button */}
                             <Link
                               href={`/transactions/new?cloneFrom=${tx.id}`}
-                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                              className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                             >
                               <Copy className="w-3 h-3" />
                               <span>Duplicar</span>
@@ -308,7 +322,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                             {!isReversed && !isReversion && (
                               <Link
                                 href={`/transactions/new?edit=${tx.id}`}
-                                className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                                className="flex items-center gap-1.5 py-1.5 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                               >
                                 <Edit className="w-3 h-3" />
                                 <span>Editar</span>
@@ -322,7 +336,7 @@ export default function DailyView({ transactions, onReverse, onDelete, baseCurre
                                   e.stopPropagation();
                                   onReverse(tx.id);
                                 }}
-                                className="flex items-center gap-1.5 py-1.5 px-3 border border-red-200 dark:border-red-900 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-655 dark:text-red-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
+                                className="flex items-center gap-1.5 py-1.5 px-3 border border-red-200 dark:border-red-900 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl font-bold text-[10px] transition duration-200 shadow-sm"
                               >
                                 <RefreshCw className="w-3 h-3" />
                                 <span>Anular / Reversar</span>

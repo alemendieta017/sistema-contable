@@ -1,38 +1,38 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { api } from "../services/api";
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 export default function HomePage() {
-  const [view, setView] = useState<"home" | "login" | "register">("home");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [view, setView] = useState<'home' | 'login' | 'register'>('home');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     // If user already has a token, redirect directly to transactions
-    const token = localStorage.getItem("auth_token");
+    const token = localStorage.getItem('auth_token');
     if (token) {
-      window.location.href = "/transactions";
+      window.location.href = '/transactions';
     }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError('');
     try {
       const res = await api.auth.login({ email, password });
       if (res.access_token) {
-        localStorage.setItem("auth_token", res.access_token);
-        window.location.href = "/transactions";
+        localStorage.setItem('auth_token', res.access_token);
+        window.location.href = '/transactions';
       } else {
-        throw new Error("No token returned");
+        throw new Error('No token returned');
       }
     } catch (err: any) {
-      setError(err.message || "Failed to log in");
+      setError(err.message || 'Failed to log in');
     } finally {
       setLoading(false);
     }
@@ -41,13 +41,13 @@ export default function HomePage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError('');
     try {
       await api.auth.register({ email, password });
-      setView("login");
-      setError("Registration successful! Please log in.");
+      setView('login');
+      setError('Registration successful! Please log in.');
     } catch (err: any) {
-      setError(err.message || "Failed to register");
+      setError(err.message || 'Failed to register');
     } finally {
       setLoading(false);
     }
@@ -80,23 +80,21 @@ export default function HomePage() {
           </div>
         )}
 
-        {view === "home" && (
+        {view === 'home' && (
           <>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2">
-              Sistema Contable
-            </h1>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Sistema Contable</h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
               Contabilidad personal y familiar con partida doble y presupuestos.
             </p>
             <div className="space-y-3">
               <button
-                onClick={() => setView("login")}
+                onClick={() => setView('login')}
                 className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
               >
                 Ingresar
               </button>
               <button
-                onClick={() => setView("register")}
+                onClick={() => setView('register')}
                 className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white font-semibold rounded-xl transition duration-200"
               >
                 Crear cuenta
@@ -105,29 +103,33 @@ export default function HomePage() {
           </>
         )}
 
-        {view === "login" && (
+        {view === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4 text-left">
             <h2 className="text-xl font-bold text-center">Iniciar Sesión</h2>
             <div>
-              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">Correo Electrónico</label>
+              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">
+                Correo Electrónico
+              </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="correo@ejemplo.com"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">Contraseña</label>
+              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">
+                Contraseña
+              </label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
               />
             </div>
             <button
@@ -135,11 +137,11 @@ export default function HomePage() {
               disabled={loading}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 disabled:opacity-50"
             >
-              {loading ? "Iniciando..." : "Ingresar"}
+              {loading ? 'Iniciando...' : 'Ingresar'}
             </button>
             <button
               type="button"
-              onClick={() => setView("home")}
+              onClick={() => setView('home')}
               className="w-full py-2.5 text-xs text-slate-500 dark:text-slate-400 hover:underline text-center"
             >
               Atrás
@@ -147,40 +149,46 @@ export default function HomePage() {
           </form>
         )}
 
-        {view === "register" && (
+        {view === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4 text-left">
             <h2 className="text-xl font-bold text-center">Crear Cuenta</h2>
             <div>
-              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">Nombre</label>
+              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">
+                Nombre
+              </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Juan Pérez"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">Correo Electrónico</label>
+              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">
+                Correo Electrónico
+              </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="correo@ejemplo.com"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">Contraseña</label>
+              <label className="block text-3xs font-bold uppercase text-slate-400 mb-1">
+                Contraseña
+              </label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
               />
             </div>
             <button
@@ -188,11 +196,11 @@ export default function HomePage() {
               disabled={loading}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 disabled:opacity-50"
             >
-              {loading ? "Creando..." : "Registrar Cuenta"}
+              {loading ? 'Creando...' : 'Registrar Cuenta'}
             </button>
             <button
               type="button"
-              onClick={() => setView("home")}
+              onClick={() => setView('home')}
               className="w-full py-2.5 text-xs text-slate-500 dark:text-slate-400 hover:underline text-center"
             >
               Atrás

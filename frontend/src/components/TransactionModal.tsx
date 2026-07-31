@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { X, Plus, AlertCircle, CheckCircle2 } from "lucide-react";
-import { api } from "../services/api";
-import JournalEntryRow from "./JournalEntryRow";
-import { formatCurrency } from "../lib/utils";
+import React, { useState, useEffect } from 'react';
+import { X, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { api } from '../services/api';
+import JournalEntryRow from './JournalEntryRow';
+import { formatCurrency } from '../lib/utils';
 
 interface Account {
   id: string;
   name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   currencyId: string;
   parentId?: string | null;
 }
 
 interface Entry {
   accountId: string;
-  entryType: "DEBIT" | "CREDIT";
-  amount: number | "";
+  entryType: 'DEBIT' | 'CREDIT';
+  amount: number | '';
 }
 
 interface TransactionModalProps {
@@ -31,20 +31,20 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
   const getLocalDateString = () => {
     const d = new Date();
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
 
   const [date, setDate] = useState(getLocalDateString());
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [entries, setEntries] = useState<Entry[]>([
-    { accountId: "", entryType: "DEBIT", amount: "" },
-    { accountId: "", entryType: "CREDIT", amount: "" },
+    { accountId: '', entryType: 'DEBIT', amount: '' },
+    { accountId: '', entryType: 'CREDIT', amount: '' },
   ]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchInitialData();
@@ -52,14 +52,11 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
   const fetchInitialData = async () => {
     try {
-      const [accData, curData] = await Promise.all([
-        api.accounts.list(),
-        api.currencies.list(),
-      ]);
+      const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
     } catch (err: any) {
-      setError("Error al cargar cuentas y monedas.");
+      setError('Error al cargar cuentas y monedas.');
     }
   };
 
@@ -71,11 +68,11 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
   // Math calculations for balancing
   const totalDebits = entries
-    .filter((e) => e.entryType === "DEBIT")
+    .filter((e) => e.entryType === 'DEBIT')
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const totalCredits = entries
-    .filter((e) => e.entryType === "CREDIT")
+    .filter((e) => e.entryType === 'CREDIT')
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const difference = Math.abs(totalDebits - totalCredits);
@@ -83,13 +80,13 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
   const handleAddEntry = () => {
     // Alternate default type based on last entry
-    const lastType = entries[entries.length - 1]?.entryType || "DEBIT";
-    const nextType = lastType === "DEBIT" ? "CREDIT" : "DEBIT";
-    
+    const lastType = entries[entries.length - 1]?.entryType || 'DEBIT';
+    const nextType = lastType === 'DEBIT' ? 'CREDIT' : 'DEBIT';
+
     // Auto-fill/suggest the balancing amount if there is an active difference
-    const prefillAmount = difference > 0 ? Number(difference.toFixed(2)) : "";
-    
-    setEntries([...entries, { accountId: "", entryType: nextType, amount: prefillAmount }]);
+    const prefillAmount = difference > 0 ? Number(difference.toFixed(2)) : '';
+
+    setEntries([...entries, { accountId: '', entryType: nextType, amount: prefillAmount }]);
   };
 
   const handleRemoveEntry = (index: number) => {
@@ -99,16 +96,16 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     if (!description.trim()) {
-      setError("Ingrese una descripción para el asiento contable.");
+      setError('Ingrese una descripción para el asiento contable.');
       return;
     }
 
     if (entries.length < 2) {
-      setError("Un asiento contable requiere al menos dos apuntes.");
+      setError('Un asiento contable requiere al menos dos apuntes.');
       return;
     }
 
@@ -119,17 +116,21 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
         setError(`El apunte #${i + 1} no tiene una cuenta seleccionada.`);
         return;
       }
-      if (entry.amount === "" || Number(entry.amount) <= 0) {
+      if (entry.amount === '' || Number(entry.amount) <= 0) {
         setError(`El apunte #${i + 1} debe tener un monto mayor a cero.`);
         return;
       }
     }
 
-    const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+    const baseCurrency = currencies.find((c) => c.isBase) || {
+      code: 'PYG',
+      symbol: '₲',
+      decimalPlaces: 0,
+    };
 
     if (!isBalanced) {
       setError(
-        `El asiento está descuadrado por ${formatCurrency(difference, baseCurrency)}. Las columnas del Debe y Haber deben coincidir.`
+        `El asiento está descuadrado por ${formatCurrency(difference, baseCurrency)}. Las columnas del Debe y Haber deben coincidir.`,
       );
       return;
     }
@@ -148,19 +149,22 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
       };
 
       await api.transactions.create(payload);
-      setSuccess("Asiento contable registrado con éxito.");
-      
+      setSuccess('Asiento contable registrado con éxito.');
+
       setTimeout(() => {
         if (onSaveSuccess) onSaveSuccess();
-        if (typeof window !== "undefined") {
-          if (window.location.pathname.startsWith("/transactions") || window.location.pathname.startsWith("/accounts")) {
+        if (typeof window !== 'undefined') {
+          if (
+            window.location.pathname.startsWith('/transactions') ||
+            window.location.pathname.startsWith('/accounts')
+          ) {
             window.location.reload();
           }
         }
         onClose();
       }, 1000);
     } catch (err: any) {
-      setError(err.message || "Error al guardar el asiento contable.");
+      setError(err.message || 'Error al guardar el asiento contable.');
     } finally {
       setLoading(false);
     }
@@ -169,9 +173,8 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-sm w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-        
         {/* Modal Header */}
-        <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-150 dark:border-slate-700">
+        <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
           <div>
             <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">
               Registrar Asiento Contable
@@ -181,7 +184,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
           >
-            <X className="w-4 h-4 text-slate-500 dark:text-slate-350" />
+            <X className="w-4 h-4 text-slate-500 dark:text-slate-300" />
           </button>
         </div>
 
@@ -247,7 +250,11 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
 
             <div className="space-y-2 max-h-[35vh] overflow-y-auto pr-1">
               {entries.map((entry, index) => {
-                const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+                const baseCurrency = currencies.find((c) => c.isBase) || {
+                  code: 'PYG',
+                  symbol: '₲',
+                  decimalPlaces: 0,
+                };
                 return (
                   <JournalEntryRow
                     key={index}
@@ -265,17 +272,21 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
           </div>
         </form>
 
-        <div className="bg-slate-50 dark:bg-slate-900/60 border-t border-slate-150 dark:border-slate-700 p-5 flex flex-col sm:flex-row gap-4 items-center justify-between rounded-b-sm">
+        <div className="bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-700 p-5 flex flex-col sm:flex-row gap-4 items-center justify-between rounded-b-sm">
           <div className="flex items-center gap-6 w-full sm:w-auto text-xs">
             {(() => {
-              const baseCurrency = currencies.find((c) => c.isBase) || { code: "PYG", symbol: "₲", decimalPlaces: 0 };
+              const baseCurrency = currencies.find((c) => c.isBase) || {
+                code: 'PYG',
+                symbol: '₲',
+                decimalPlaces: 0,
+              };
               return (
                 <>
                   <div className="text-center sm:text-left">
                     <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase">
                       Total Debe
                     </p>
-                    <p className="font-extrabold text-xs sm:text-sm text-rose-600 dark:text-rose-450 mt-0.5">
+                    <p className="font-extrabold text-xs sm:text-sm text-rose-600 dark:text-rose-400 mt-0.5">
                       {formatCurrency(totalDebits, baseCurrency)}
                     </p>
                   </div>
@@ -283,7 +294,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
                     <p className="text-4xs font-bold text-slate-400 dark:text-slate-500 uppercase">
                       Total Haber
                     </p>
-                    <p className="font-extrabold text-xs sm:text-sm text-emerald-600 dark:text-emerald-450 mt-0.5">
+                    <p className="font-extrabold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 mt-0.5">
                       {formatCurrency(totalCredits, baseCurrency)}
                     </p>
                   </div>
@@ -293,7 +304,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
                     </p>
                     <p
                       className={`font-extrabold text-xs sm:text-sm mt-0.5 ${
-                        isBalanced ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"
+                        isBalanced ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-500'
                       }`}
                     >
                       {formatCurrency(difference, baseCurrency)}
@@ -318,15 +329,14 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
               disabled={loading || !isBalanced}
               className={`flex-1 sm:flex-none px-5 py-2 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center justify-center gap-1 shadow-sm ${
                 isBalanced
-                  ? "bg-indigo-600 hover:bg-indigo-700"
-                  : "bg-slate-300 dark:bg-slate-700 text-slate-450 cursor-not-allowed shadow-none"
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
+                  : 'bg-slate-300 dark:bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'
               }`}
             >
-              {loading ? "Registrando..." : "Guardar Asiento"}
+              {loading ? 'Registrando...' : 'Guardar Asiento'}
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

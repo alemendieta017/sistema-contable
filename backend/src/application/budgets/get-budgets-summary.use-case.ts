@@ -38,8 +38,8 @@ export class GetBudgetsSummaryUseCase {
 
       // 2. Parse period boundaries
       const [year, month] = period.split('-').map(Number);
-      const startDate = new Date(Date.UTC(year, month - 1, 1));
-      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+      const startDate = `${period}-01`;
+      const endDate = new Date(Date.UTC(year, month, 0)).toISOString().split('T')[0];
 
       // 3. Query aggregated DEBIT spending for these accounts in the month period
       const spentSums = await entityManager
@@ -48,9 +48,10 @@ export class GetBudgetsSummaryUseCase {
         .addSelect('SUM(entry.amountBase)', 'sum')
         .innerJoin('entry.transaction', 'tx')
         .where('tx.userId = :userId', { userId })
+        .andWhere('tx.status = :status', { status: 'POSTED' })
         .andWhere('entry.entryType = :type', { type: 'DEBIT' })
-        .andWhere('tx.date >= :startDate', { startDate })
-        .andWhere('tx.date <= :endDate', { endDate })
+        .andWhere('tx.accountingDate >= :startDate', { startDate })
+        .andWhere('tx.accountingDate <= :endDate', { endDate })
         .groupBy('entry.accountId')
         .getRawMany();
 

@@ -1,17 +1,17 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Base User Schema
 export const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-  created_at: z.string().datetime()
+  created_at: z.string().datetime(),
 });
 
 export type User = z.infer<typeof UserSchema>;
 
 export const LoginRequestSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6)
+  password: z.string().min(6),
 });
 
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
@@ -26,7 +26,8 @@ export const CreateAccountRequestSchema = z.object({
   type: AccountTypeSchema,
   currencyId: z.string().uuid(),
   parentId: z.string().uuid().optional().nullable(),
-  metadata: z.record(z.any()).optional()
+  isCashOrBank: z.boolean().optional(),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
@@ -35,16 +36,16 @@ export type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
 export const JournalEntryRequestSchema = z.object({
   accountId: z.string().uuid(),
   entryType: z.enum(['DEBIT', 'CREDIT']),
-  amount: z.number().positive()
+  amount: z.number().positive(),
 });
 
 export type JournalEntryRequest = z.infer<typeof JournalEntryRequestSchema>;
 
 // Create Transaction Request Schema
 export const CreateTransactionRequestSchema = z.object({
-  accountingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD"),
+  accountingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
   description: z.string().min(1),
-  entries: z.array(JournalEntryRequestSchema).min(2)
+  entries: z.array(JournalEntryRequestSchema).min(2),
 });
 
 export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestSchema>;
@@ -55,24 +56,50 @@ export type UpdateTransactionRequest = CreateTransactionRequest;
 // Create Fiscal Year Schema
 export const CreateFiscalYearRequestSchema = z.object({
   year: z.number().int().min(1900).max(2100),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD"),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD")
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
 });
 
 export type CreateFiscalYearRequest = z.infer<typeof CreateFiscalYearRequestSchema>;
 
 // Close Fiscal Year Schema
 export const CloseFiscalYearRequestSchema = z.object({
-  retainedEarningsAccountId: z.string().uuid()
+  retainedEarningsAccountId: z.string().uuid(),
 });
 
 export type CloseFiscalYearRequest = z.infer<typeof CloseFiscalYearRequestSchema>;
 
 // Update Period Schema
 export const UpdatePeriodRequestSchema = z.object({
-  status: z.enum(['OPEN', 'CLOSED'])
+  status: z.enum(['OPEN', 'CLOSED', 'PLANNING']),
 });
 
 export type UpdatePeriodRequest = z.infer<typeof UpdatePeriodRequestSchema>;
 
+// Update Account Flags (isCashOrBank)
+export const UpdateAccountFlagsRequestSchema = z.object({
+  isCashOrBank: z.boolean(),
+});
 
+export type UpdateAccountFlagsRequest = z.infer<typeof UpdateAccountFlagsRequestSchema>;
+
+// Update Budget Items
+export const BudgetItemUpdateSchema = z.object({
+  accountId: z.string().uuid(),
+  amount: z.number(),
+});
+
+export const UpdateBudgetItemsRequestSchema = z.object({
+  items: z.array(BudgetItemUpdateSchema),
+});
+
+export type UpdateBudgetItemsRequest = z.infer<typeof UpdateBudgetItemsRequestSchema>;
+
+// Replicate Budget Item to Fiscal Year
+export const ReplicateBudgetItemRequestSchema = z.object({
+  periodId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  amount: z.number(),
+});
+
+export type ReplicateBudgetItemRequest = z.infer<typeof ReplicateBudgetItemRequestSchema>;

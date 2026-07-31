@@ -54,7 +54,7 @@ describe('Balance Calculation and Net Worth Integration Tests', () => {
   it('should correctly aggregate balances and compute net worth (Assets - Liabilities)', async () => {
     // Arrange
     const userId = 'user-uuid';
-    
+
     // Mock user accounts list
     mockEntityManager.find.mockResolvedValue([
       { id: 'acc-cash', name: 'Cash', type: 'ASSET' },
@@ -82,7 +82,7 @@ describe('Balance Calculation and Net Worth Integration Tests', () => {
 
     // Assert
     expect(result).toBeDefined();
-    
+
     // Assets: Cash (70k) + Bank (40k) = 110k
     // Liabilities: Loan = 20k
     // Net Worth = Assets (110k) - Liabilities (20k) = 90k

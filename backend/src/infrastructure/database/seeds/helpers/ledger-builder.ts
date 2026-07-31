@@ -18,7 +18,7 @@ export class LedgerBuilder {
 
     if (Math.abs(totalDebit - totalCredit) > 0.0001) {
       throw new Error(
-        `Transacción desbalanceada: "${data.description}". Total Débito: ${totalDebit}, Total Crédito: ${totalCredit}`
+        `Transacción desbalanceada: "${data.description}". Total Débito: ${totalDebit}, Total Crédito: ${totalCredit}`,
       );
     }
 

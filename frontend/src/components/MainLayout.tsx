@@ -1,27 +1,25 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import BottomNav from "./BottomNav";
-import FloatingActionButton from "./FloatingActionButton";
-
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import BottomNav from './BottomNav';
+import FloatingActionButton from './FloatingActionButton';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const isAuthRoute = pathname === "/";
+    const token = localStorage.getItem('auth_token');
+    const isAuthRoute = pathname === '/';
 
     if (!token && !isAuthRoute) {
-      router.replace("/");
+      router.replace('/');
     } else if (token && isAuthRoute) {
-      router.replace("/transactions");
+      router.replace('/transactions');
     } else {
       setLoading(false);
     }
@@ -38,9 +36,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  const isAuthPage = pathname === "/";
-  const isTransactionEntryPage = pathname === "/transactions/new" || pathname?.startsWith("/transactions/new/");
-  
+  const isAuthPage = pathname === '/';
+  const isTransactionEntryPage =
+    pathname === '/transactions/new' || pathname?.startsWith('/transactions/new/');
+
   if (isAuthPage) {
     return <>{children}</>;
   }
@@ -56,12 +55,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {!isTransactionEntryPage && <Header />}
 
         {/* Dynamic page content scrollarea */}
-        <main className={`flex-1 overflow-y-auto ${
-          isTransactionEntryPage
-            ? "p-0 overflow-hidden"
-            : "px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8"
-        }`}>
-          <div className={isTransactionEntryPage ? "h-full w-full flex flex-col" : "max-w-6xl mx-auto"}>{children}</div>
+        <main
+          className={`flex-1 overflow-y-auto ${
+            isTransactionEntryPage
+              ? 'p-0 overflow-hidden'
+              : 'px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8'
+          }`}
+        >
+          <div
+            className={isTransactionEntryPage ? 'h-full w-full flex flex-col' : 'max-w-[1800px] w-full mx-auto'}
+          >
+            {children}
+          </div>
         </main>
       </div>
 
@@ -70,8 +75,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Mobile Bottom Navigation Bar */}
       {!isTransactionEntryPage && <BottomNav />}
-
-
     </div>
   );
 }

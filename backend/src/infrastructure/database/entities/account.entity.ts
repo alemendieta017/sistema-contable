@@ -38,6 +38,9 @@ export class AccountEntity {
   @Column({ type: 'varchar', length: 10, default: 'ACTIVE' })
   status: 'ACTIVE' | 'INACTIVE';
 
+  @Column({ name: 'is_cash_or_bank', type: 'boolean', default: false })
+  isCashOrBank: boolean;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 }

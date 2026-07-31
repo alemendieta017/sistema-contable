@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Sector } from "recharts";
-import { useTheme } from "../lib/theme-context";
+import React, { useState } from 'react';
+import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Sector } from 'recharts';
+import { useTheme } from '../lib/theme-context';
 
 interface StatItem {
   accountId: string;
@@ -13,18 +13,18 @@ interface StatItem {
 
 interface PieChartProps {
   data: StatItem[];
-  type: "EXPENSE" | "INCOME";
+  type: 'EXPENSE' | 'INCOME';
 }
 
 const colors = [
-  "#6366f1", // Indigo
-  "#10b981", // Emerald
-  "#f59e0b", // Amber
-  "#ec4899", // Pink
-  "#0ea5e9", // Sky
-  "#8b5cf6", // Violet
-  "#ef4444", // Red
-  "#14b8a6", // Teal
+  '#6366f1', // Indigo
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ec4899', // Pink
+  '#0ea5e9', // Sky
+  '#8b5cf6', // Violet
+  '#ef4444', // Red
+  '#14b8a6', // Teal
 ];
 
 export default function PieChart({ data, type }: PieChartProps) {
@@ -83,7 +83,11 @@ export default function PieChart({ data, type }: PieChartProps) {
               } as any)}
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="transparent" />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={colors[index % colors.length]}
+                  stroke="transparent"
+                />
               ))}
             </Pie>
           </RePieChart>
@@ -92,15 +96,20 @@ export default function PieChart({ data, type }: PieChartProps) {
         {/* Center label inside Doughnut */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-3">
           <span className="text-5xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none truncate max-w-full">
-            {activeItem ? activeItem.accountName : `Total ${type === "EXPENSE" ? "Gasto" : "Ingreso"}`}
+            {activeItem
+              ? activeItem.accountName
+              : `Total ${type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}`}
           </span>
-          <span className={`font-extrabold text-xs sm:text-sm mt-1 leading-none truncate max-w-full ${type === "EXPENSE" ? "text-red-500" : "text-green-500"}`}>
-            ${(activeItem ? activeItem.amount : total).toLocaleString(undefined, {
+          <span
+            className={`font-extrabold text-xs sm:text-sm mt-1 leading-none truncate max-w-full ${type === 'EXPENSE' ? 'text-red-500' : 'text-green-500'}`}
+          >
+            $
+            {(activeItem ? activeItem.amount : total).toLocaleString(undefined, {
               minimumFractionDigits: 2,
             })}
           </span>
           {activeItem && (
-            <span className="text-5xs text-slate-450 dark:text-slate-500 font-bold mt-0.5">
+            <span className="text-5xs text-slate-400 dark:text-slate-500 font-bold mt-0.5">
               {activeItem.percentage}%
             </span>
           )}
@@ -118,7 +127,7 @@ export default function PieChart({ data, type }: PieChartProps) {
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(null)}
               className={`flex items-center justify-between p-1.5 rounded-lg transition duration-150 cursor-pointer ${
-                isHovered ? "bg-slate-50 dark:bg-slate-900/60 font-bold" : "hover:bg-slate-50/40"
+                isHovered ? 'bg-slate-50 dark:bg-slate-900/60 font-bold' : 'hover:bg-slate-50/40'
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -126,10 +135,13 @@ export default function PieChart({ data, type }: PieChartProps) {
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-slate-700 dark:text-slate-350 truncate">{item.accountName}</span>
+                <span className="text-slate-700 dark:text-slate-300 truncate">
+                  {item.accountName}
+                </span>
               </div>
-              <span className="font-semibold text-slate-400 dark:text-slate-550 shrink-0 ml-2">
-                ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })} ({item.percentage}%)
+              <span className="font-semibold text-slate-400 dark:text-slate-400 shrink-0 ml-2">
+                ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })} (
+                {item.percentage}%)
               </span>
             </div>
           );
