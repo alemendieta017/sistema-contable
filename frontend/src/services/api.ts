@@ -5,20 +5,8 @@ import {
   UpdateTransactionRequest,
 } from '@sistema-contable/shared';
 
-const getApiBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return `http://${hostname}:3001/api`;
-    }
-  }
-  return 'http://localhost:3001/api';
-};
-
-export const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
