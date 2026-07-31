@@ -32,7 +32,7 @@ export default function Header() {
       {/* Search Input Box */}
       <div className="flex-1 max-w-md">
         <div className="relative flex items-center">
-          <Search className="absolute left-3 w-4 h-4 text-slate-400 dark:text-slate-550 pointer-events-none" />
+          <Search className="absolute left-3 w-4 h-4 text-slate-400 dark:text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}

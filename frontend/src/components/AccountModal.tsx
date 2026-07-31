@@ -130,12 +130,12 @@ export default function AccountModal({
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-150 dark:border-slate-700">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div>
-            <h2 className="text-base font-bold text-slate-850 dark:text-slate-100">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
               {isEditing ? 'Editar Cuenta o Categoría' : 'Crear Cuenta o Categoría'}
             </h2>
-            <p className="text-4xs text-slate-450 uppercase font-bold tracking-wider mt-0.5">
+            <p className="text-4xs text-slate-400 uppercase font-bold tracking-wider mt-0.5">
               Administración de Rubros
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function AccountModal({
         {/* Content */}
         <form onSubmit={handleSave} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 text-xs text-red-750 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2">
+            <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -197,7 +197,7 @@ export default function AccountModal({
                 >
                   Es cuenta de Efectivo/Banco
                 </label>
-                <p className="text-5xs text-slate-450 dark:text-slate-500">
+                <p className="text-5xs text-slate-400 dark:text-slate-500">
                   {isLocked
                     ? 'Inmutable: La cuenta posee transacciones registradas'
                     : 'Incluye los movimientos de esta cuenta en el reporte de Flujo de Caja'}

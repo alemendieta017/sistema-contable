@@ -166,9 +166,9 @@ export default function BalanceSheetPage() {
     return (
       <div
         key={item.accountId}
-        className="flex justify-between items-center text-xs py-2 border-b border-dashed border-slate-100 dark:border-slate-750/50"
+        className="flex justify-between items-center text-xs py-2 border-b border-dashed border-slate-100 dark:border-slate-700/50"
       >
-        <span className="text-slate-655 dark:text-slate-350 font-semibold">{item.name}</span>
+        <span className="text-slate-600 dark:text-slate-300 font-semibold">{item.name}</span>
         {isComparative && item.balances ? (
           <div className="flex gap-4">
             {item.balances.map((bal, idx) => (
@@ -195,7 +195,7 @@ export default function BalanceSheetPage() {
     totalColorClass: string = 'text-indigo-600 dark:text-indigo-400',
   ) => {
     return (
-      <div className="flex justify-between items-center pt-3 mt-4 border-t border-slate-150 dark:border-slate-700 font-extrabold text-xs">
+      <div className="flex justify-between items-center pt-3 mt-4 border-t border-slate-200 dark:border-slate-700 font-extrabold text-xs">
         <span className="text-slate-700 dark:text-slate-300">{label}</span>
         {isComparative && Array.isArray(totals) ? (
           <div className="flex gap-4">
@@ -222,7 +222,7 @@ export default function BalanceSheetPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Balance General
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-455 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Situación patrimonial consolidada: Activos, Pasivos y Patrimonio Neto
           </p>
         </div>
@@ -230,7 +230,7 @@ export default function BalanceSheetPage() {
         {report && (
           <button
             onClick={handlePrint}
-            className="self-end flex items-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-250 font-bold rounded-xl text-xs transition cursor-pointer"
+            className="self-end flex items-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir</span>
@@ -242,7 +242,7 @@ export default function BalanceSheetPage() {
       <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4 print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Mode Tabs */}
-          <div className="flex bg-slate-50 dark:bg-slate-900 p-1 rounded-2xl border border-slate-100 dark:border-slate-750">
+          <div className="flex bg-slate-50 dark:bg-slate-900 p-1 rounded-2xl border border-slate-100 dark:border-slate-700">
             {(['period', 'date', 'comparative'] as const).map((m) => (
               <button
                 key={m}
@@ -250,7 +250,7 @@ export default function BalanceSheetPage() {
                 className={`py-1.5 px-3.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
                   mode === m
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-205'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 {m === 'period' ? (
@@ -277,11 +277,11 @@ export default function BalanceSheetPage() {
         <div className="pt-2 border-t border-slate-50 dark:border-slate-700/50 flex flex-wrap items-center gap-4">
           {mode === 'period' && periods.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-450 dark:text-slate-550 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Seleccionar Período:
               </span>
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-slate-450 dark:text-slate-500" />
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <select
                   value={selectedPeriodId}
                   onChange={(e) => setSelectedPeriodId(e.target.value)}
@@ -299,7 +299,7 @@ export default function BalanceSheetPage() {
 
           {mode === 'date' && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-450 dark:text-slate-550 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Balance a la Fecha:
               </span>
               <input
@@ -313,13 +313,13 @@ export default function BalanceSheetPage() {
 
           {mode === 'comparative' && periods.length > 0 && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-[10px] font-bold text-slate-450 dark:text-slate-550 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Comparar Períodos:
               </span>
               {selectedPeriodIds.map((id, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 pl-2 pr-1 py-1 rounded-xl border border-slate-100 dark:border-slate-750"
+                  className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 pl-2 pr-1 py-1 rounded-xl border border-slate-100 dark:border-slate-700"
                 >
                   <span className="text-[10px] font-bold text-slate-400">#{index + 1}</span>
                   <select
@@ -345,7 +345,7 @@ export default function BalanceSheetPage() {
                         nextIds.splice(index, 1);
                         setSelectedPeriodIds(nextIds);
                       }}
-                      className="text-red-500 hover:text-red-750 p-1 cursor-pointer"
+                      className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -368,7 +368,7 @@ export default function BalanceSheetPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5 print:hidden">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5 print:hidden">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -377,12 +377,12 @@ export default function BalanceSheetPage() {
       {/* Empty State */}
       {periods.length === 0 && (
         <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center space-y-4 max-w-lg mx-auto print:hidden">
-          <Scale className="w-12 h-12 text-slate-350 dark:text-slate-550 mx-auto" />
+          <Scale className="w-12 h-12 text-slate-300 dark:text-slate-500 mx-auto" />
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
               No hay períodos contables registrados
             </h3>
-            <p className="text-xs text-slate-455 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
               Cree un ejercicio fiscal y registre períodos contables para poder consultar el Balance
               General del sistema.
             </p>
@@ -417,7 +417,7 @@ export default function BalanceSheetPage() {
           {/* Integrity alert box */}
           {!isBalanced && (
             <div className="print:hidden">
-              <div className="p-3.5 text-xs text-amber-750 bg-amber-50/50 dark:bg-amber-950/20 dark:text-amber-400 rounded-2xl border border-amber-200 flex items-start gap-2.5 font-semibold">
+              <div className="p-3.5 text-xs text-amber-700 bg-amber-50/50 dark:bg-amber-950/20 dark:text-amber-400 rounded-2xl border border-amber-200 flex items-start gap-2.5 font-semibold">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <span>
                   <strong>Aviso:</strong> El balance no se encuentra equilibrado en alguno de los
@@ -431,7 +431,7 @@ export default function BalanceSheetPage() {
             {/* Left Column: Assets */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-4 print:border-none print:shadow-none print:p-0">
               <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-205 uppercase tracking-wider">
+                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   1. Activos
                 </h3>
                 {isComparative && report.periods && (
@@ -466,7 +466,7 @@ export default function BalanceSheetPage() {
               {/* Liabilities Card */}
               <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-4 print:border-none print:shadow-none print:p-0">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-205 uppercase tracking-wider">
+                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                     2. Pasivos
                   </h3>
                   {isComparative && report.periods && (
@@ -484,7 +484,7 @@ export default function BalanceSheetPage() {
                 </div>
 
                 {report.liabilities.length === 0 ? (
-                  <p className="text-xs text-slate-455 italic py-2">
+                  <p className="text-xs text-slate-400 italic py-2">
                     No hay cuentas de Pasivos con movimientos.
                   </p>
                 ) : (
@@ -496,14 +496,14 @@ export default function BalanceSheetPage() {
                 {renderTotals(
                   'TOTAL PASIVOS',
                   report.totalLiabilities,
-                  'text-indigo-650 dark:text-indigo-400',
+                  'text-indigo-600 dark:text-indigo-400',
                 )}
               </div>
 
               {/* Equity Card */}
               <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-4 print:border-none print:shadow-none print:p-0">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-205 uppercase tracking-wider">
+                  <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                     3. Patrimonio Neto
                   </h3>
                   {isComparative && report.periods && (
@@ -521,7 +521,7 @@ export default function BalanceSheetPage() {
                 </div>
 
                 {report.equity.length === 0 ? (
-                  <p className="text-xs text-slate-450 italic py-2">
+                  <p className="text-xs text-slate-400 italic py-2">
                     No hay cuentas de Patrimonio con movimientos.
                   </p>
                 ) : (
@@ -533,12 +533,12 @@ export default function BalanceSheetPage() {
                 {renderTotals(
                   'TOTAL PATRIMONIO',
                   report.totalEquity,
-                  'text-indigo-650 dark:text-indigo-400',
+                  'text-indigo-600 dark:text-indigo-400',
                 )}
               </div>
 
               {/* Total Liabilities + Equity Card */}
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-105 dark:border-slate-700 shadow-sm p-6 print:border-none print:shadow-none print:p-0">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 print:border-none print:shadow-none print:p-0">
                 <div className="flex justify-between items-center font-extrabold text-xs">
                   <span className="text-slate-800 dark:text-slate-200">
                     TOTAL PASIVO + PATRIMONIO NETO
@@ -548,14 +548,14 @@ export default function BalanceSheetPage() {
                       {totalLiabEquity.map((tot, idx) => (
                         <span
                           key={idx}
-                          className="text-indigo-650 dark:text-indigo-400 min-w-[120px] text-right text-sm font-extrabold whitespace-nowrap"
+                          className="text-indigo-600 dark:text-indigo-400 min-w-[120px] text-right text-sm font-extrabold whitespace-nowrap"
                         >
                           {formatCurrency(tot, baseCurrency)}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <span className="text-indigo-650 dark:text-indigo-400 text-sm font-extrabold">
+                    <span className="text-indigo-600 dark:text-indigo-400 text-sm font-extrabold">
                       {formatCurrency(totalLiabEquity as number, baseCurrency)}
                     </span>
                   )}
@@ -565,7 +565,7 @@ export default function BalanceSheetPage() {
           </div>
 
           {/* Aggregated Closing Summary Footer */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 p-5 rounded-3xl flex flex-col gap-4 text-xs font-extrabold">
+          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-3xl flex flex-col gap-4 text-xs font-extrabold">
             <div>
               <p className="text-slate-400 dark:text-slate-500 text-3xs uppercase tracking-wider">
                 Ecuación Contable Consolidada
@@ -603,7 +603,7 @@ export default function BalanceSheetPage() {
                             className={`ml-2 px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-bold ${
                               isBal
                                 ? 'bg-green-50 text-green-600 dark:bg-green-950/20 dark:text-green-400'
-                                : 'bg-red-50 text-red-655 dark:bg-red-950/20 dark:text-red-400'
+                                : 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
                             }`}
                           >
                             {isBal ? 'Cuadrado' : 'Descuadrado'}
@@ -630,14 +630,14 @@ export default function BalanceSheetPage() {
                     </div>
 
                     <div className="flex items-center gap-2 bg-white dark:bg-slate-800 py-1.5 px-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-3xs text-slate-455 dark:text-slate-500 uppercase tracking-widest">
+                      <span className="text-3xs text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                         Estado del Balance
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${
                           report.balanced
                             ? 'bg-green-50 text-green-600 dark:bg-green-950/20 dark:text-green-400'
-                            : 'bg-red-50 text-red-655 dark:bg-red-950/20 dark:text-red-400'
+                            : 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
                         }`}
                       >
                         {report.balanced ? 'Cuadrado' : 'Descuadrado'}
@@ -655,12 +655,12 @@ export default function BalanceSheetPage() {
       {reportLoading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 flex flex-col items-center max-w-xs shadow-xl border border-slate-100 dark:border-slate-700 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-indigo-550 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <div>
-              <p className="font-extrabold text-slate-800 dark:text-slate-150 text-sm">
+              <p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
                 Actualizando saldos históricos...
               </p>
-              <p className="text-4xs text-slate-400 dark:text-slate-550 mt-1 font-semibold">
+              <p className="text-4xs text-slate-400 dark:text-slate-500 mt-1 font-semibold">
                 Consolidando movimientos contables en tiempo real.
               </p>
             </div>

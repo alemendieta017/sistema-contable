@@ -103,7 +103,7 @@ export default function CalendarView({
             {daysOfWeek.map((day) => (
               <span
                 key={day}
-                className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest"
+                className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest"
               >
                 {day}
               </span>

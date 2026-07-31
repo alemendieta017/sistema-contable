@@ -92,7 +92,7 @@ export default function BudgetExecutionPage() {
   if (error || !data) {
     return (
       <div className="space-y-4 max-w-md mx-auto py-8">
-        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5">
+        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error || 'No se pudieron obtener datos del informe.'}</span>
         </div>
@@ -140,7 +140,7 @@ export default function BudgetExecutionPage() {
 
         <button
           onClick={() => router.push(`/budgets/${periodId}/edit`)}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-5 bg-indigo-650 hover:bg-indigo-750 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-150 dark:border-indigo-900 font-bold rounded-xl text-xs shadow-sm transition"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-indigo-600 dark:text-indigo-400 hover:text-white dark:hover:text-white bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 font-bold rounded-xl text-xs shadow-sm transition"
         >
           <Edit3 className="w-4 h-4" />
           <span>Editar Planificación</span>
@@ -152,7 +152,7 @@ export default function BudgetExecutionPage() {
         {/* CATEGORY 1: CONSUMOS */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm space-y-6">
           <div className="border-b border-slate-100 dark:border-slate-700 pb-3">
-            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
               Consumos (Devengados)
             </h3>
             <p className="text-3xs text-slate-400 mt-0.5">
@@ -184,13 +184,13 @@ export default function BudgetExecutionPage() {
                       : `${((item.deviation / item.budgeted) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
-                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-350">
+                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
                           {item.accountName}
                         </td>
                         <td className="py-2.5 text-right font-semibold whitespace-nowrap">
                           {formatNum(item.budgeted)}
                         </td>
-                        <td className="py-2.5 text-right font-semibold text-indigo-650 dark:text-indigo-400 whitespace-nowrap">
+                        <td className="py-2.5 text-right font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                           {formatNum(item.real)}
                         </td>
                         <td
@@ -220,7 +220,7 @@ export default function BudgetExecutionPage() {
                   <tr className="font-extrabold border-t-2 border-slate-100 dark:border-slate-700">
                     <td className="py-2.5 whitespace-nowrap">Total Ingresos</td>
                     <td className="py-2.5 text-right whitespace-nowrap">{formatNum(consumos.totalBudgetedIncome)}</td>
-                    <td className="py-2.5 text-right text-indigo-650 dark:text-indigo-400 whitespace-nowrap">
+                    <td className="py-2.5 text-right text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                       {formatNum(consumos.totalRealIncome)}
                     </td>
                     <td
@@ -268,7 +268,7 @@ export default function BudgetExecutionPage() {
                       : `${((variation / item.budgeted) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
-                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-350">
+                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
                           {item.accountName}
                         </td>
                         <td className="py-2.5 text-right font-semibold whitespace-nowrap">
@@ -306,7 +306,7 @@ export default function BudgetExecutionPage() {
                     <td className="py-2.5 text-right whitespace-nowrap">
                       {formatNum(consumos.totalBudgetedExpense)}
                     </td>
-                    <td className="py-2.5 text-right text-slate-650 dark:text-slate-350 whitespace-nowrap">
+                    <td className="py-2.5 text-right text-slate-600 dark:text-slate-300 whitespace-nowrap">
                       {formatNum(consumos.totalRealExpense)}
                     </td>
                     <td
@@ -333,7 +333,7 @@ export default function BudgetExecutionPage() {
         {/* CATEGORY 2: AHORROS E INVERSIONES */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
           <div className="border-b border-slate-100 dark:border-slate-700 pb-3">
-            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
               Ahorros e Inversiones (Activos)
             </h3>
             <p className="text-3xs text-slate-400 mt-0.5">
@@ -367,7 +367,7 @@ export default function BudgetExecutionPage() {
                       : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
-                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-350">
+                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
                           {item.accountName}
                         </td>
                         <td className="py-2.5 text-right font-semibold whitespace-nowrap">
@@ -375,7 +375,7 @@ export default function BudgetExecutionPage() {
                         </td>
                         <td className="py-2.5 text-right font-semibold whitespace-nowrap">{formatNum(item.real)}</td>
                         <td
-                          className={`py-2.5 text-right font-bold whitespace-nowrap ${item.isNegativeDeviation ? 'text-red-550 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-lg' : 'text-green-500'}`}
+                          className={`py-2.5 text-right font-bold whitespace-nowrap ${item.isNegativeDeviation ? 'text-red-500 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-lg' : 'text-green-500'}`}
                         >
                           {item.deviation > 0 ? '+' : ''}
                           {formatNum(item.deviation)}
@@ -407,7 +407,7 @@ export default function BudgetExecutionPage() {
         {/* CATEGORY 3: DEUDAS Y TARJETAS */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
           <div className="border-b border-slate-100 dark:border-slate-700 pb-3">
-            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
               Deudas y Tarjetas (Pasivos)
             </h3>
             <p className="text-3xs text-slate-400 mt-0.5">
@@ -441,7 +441,7 @@ export default function BudgetExecutionPage() {
                       : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
-                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-350">
+                        <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
                           {item.accountName}
                         </td>
                         <td className="py-2.5 text-right font-semibold">
@@ -482,7 +482,7 @@ export default function BudgetExecutionPage() {
       {/* BOTTOM CONSOLIDATED LIQUIDITY CARD */}
       <div className="bg-gradient-to-tr from-slate-800 to-slate-900 dark:from-slate-900 dark:to-slate-950 text-white rounded-3xl p-6 shadow-xl border border-slate-700/40 space-y-6">
         <div>
-          <span className="text-4xs font-extrabold uppercase tracking-widest text-indigo-350">
+          <span className="text-4xs font-extrabold uppercase tracking-widest text-indigo-400">
             Consolidado Mensual
           </span>
           <h3 className="text-lg font-extrabold mt-0.5">Resumen de Liquidez Efectiva</h3>
@@ -503,7 +503,7 @@ export default function BudgetExecutionPage() {
             </p>
             <div className="flex gap-4 mt-1 font-bold text-xs">
               <div>
-                <span className="text-3xs text-slate-450 block">Plan:</span>
+                <span className="text-3xs text-slate-400 block">Plan:</span>
                 <span
                   className={`whitespace-nowrap ${
                     resumenLiquidez.flujoNetoConsumos.budgeted >= 0
@@ -515,7 +515,7 @@ export default function BudgetExecutionPage() {
                 </span>
               </div>
               <div>
-                <span className="text-3xs text-slate-450 block">Real:</span>
+                <span className="text-3xs text-slate-400 block">Real:</span>
                 <span
                   className={`whitespace-nowrap ${
                     resumenLiquidez.flujoNetoConsumos.real >= 0 ? 'text-indigo-400' : 'text-red-400'
@@ -532,7 +532,7 @@ export default function BudgetExecutionPage() {
             </p>
             <div className="flex gap-4 mt-1 font-bold text-xs">
               <div>
-                <span className="text-3xs text-slate-455 block">Plan:</span>
+                <span className="text-3xs text-slate-400 block">Plan:</span>
                 <span
                   className={`whitespace-nowrap ${
                     resumenLiquidez.flujoNetoFinanciero.budgeted >= 0
@@ -544,7 +544,7 @@ export default function BudgetExecutionPage() {
                 </span>
               </div>
               <div>
-                <span className="text-3xs text-slate-455 block">Real:</span>
+                <span className="text-3xs text-slate-400 block">Real:</span>
                 <span
                   className={`whitespace-nowrap ${
                     resumenLiquidez.flujoNetoFinanciero.real >= 0
@@ -566,13 +566,13 @@ export default function BudgetExecutionPage() {
             </p>
             <div className="grid grid-cols-2 gap-4 mt-2">
               <div className="bg-slate-800/40 p-2.5 rounded-xl border border-slate-700/30">
-                <span className="text-3xs text-slate-450 block">Planificado</span>
+                <span className="text-3xs text-slate-400 block">Planificado</span>
                 <span className="font-extrabold text-sm whitespace-nowrap">
                   {formatNum(resumenLiquidez.flujoCajaNetoMes.budgeted)}
                 </span>
               </div>
               <div className="bg-slate-800/40 p-2.5 rounded-xl border border-slate-700/30">
-                <span className="text-3xs text-slate-455 block">Real Ejecutado</span>
+                <span className="text-3xs text-slate-400 block">Real Ejecutado</span>
                 <span className="font-extrabold text-sm flex items-center gap-1 whitespace-nowrap">
                   {resumenLiquidez.flujoCajaNetoMes.real >= 0 ? (
                     <TrendingUp className="w-3.5 h-3.5 text-green-400" />
@@ -591,7 +591,7 @@ export default function BudgetExecutionPage() {
             </p>
             <div className="grid grid-cols-2 gap-4 mt-2">
               <div className="bg-slate-800/40 p-2.5 rounded-xl border border-slate-700/30">
-                <span className="text-3xs text-slate-455 block">Proyectado (Budget)</span>
+                <span className="text-3xs text-slate-400 block">Proyectado (Budget)</span>
                 <span className="font-extrabold text-sm whitespace-nowrap">
                   {formatNum(resumenLiquidez.saldoCajaFinal.projected)}
                 </span>

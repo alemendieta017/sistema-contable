@@ -116,7 +116,7 @@ export default function IncomeStatementPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Estado de Resultados
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-450 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Rendimiento del período: Ingresos, Gastos y Resultado Neto
           </p>
         </div>
@@ -124,11 +124,11 @@ export default function IncomeStatementPage() {
         <div className="flex items-center gap-3">
           {periods.length > 0 && (
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-455 dark:text-slate-500" />
+              <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <select
                 value={selectedPeriodId}
                 onChange={(e) => setSelectedPeriodId(e.target.value)}
-                className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-150 text-xs focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
               >
                 {periods.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -142,7 +142,7 @@ export default function IncomeStatementPage() {
           {report && (
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-205 font-bold rounded-xl text-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir</span>
@@ -152,7 +152,7 @@ export default function IncomeStatementPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5 print:hidden">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5 print:hidden">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -161,12 +161,12 @@ export default function IncomeStatementPage() {
       {/* Empty State */}
       {periods.length === 0 && (
         <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center space-y-4 max-w-lg mx-auto print:hidden">
-          <TrendingUp className="w-12 h-12 text-slate-350 dark:text-slate-550 mx-auto" />
+          <TrendingUp className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
               No hay períodos contables registrados
             </h3>
-            <p className="text-xs text-slate-455 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
               Cree un ejercicio fiscal y registre períodos contables para poder consultar el Estado
               de Resultados del sistema.
             </p>
@@ -201,8 +201,8 @@ export default function IncomeStatementPage() {
           <div
             className={`rounded-3xl p-6 shadow-md transition relative overflow-hidden text-white bg-gradient-to-tr ${
               isProfit
-                ? 'from-emerald-650 to-emerald-700 dark:from-emerald-600 dark:to-emerald-700 shadow-emerald-500/5'
-                : 'from-rose-650 to-rose-700 dark:from-rose-600 dark:to-rose-700 shadow-rose-500/5'
+                ? 'from-emerald-600 to-emerald-700 dark:from-emerald-600 dark:to-emerald-700 shadow-emerald-500/5'
+                : 'from-rose-600 to-rose-700 dark:from-rose-600 dark:to-rose-700 shadow-rose-500/5'
             }`}
           >
             <div className="absolute right-4 bottom-4 opacity-10 pointer-events-none">
@@ -246,7 +246,7 @@ export default function IncomeStatementPage() {
             {/* Income Section */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-4 print:border-none print:shadow-none print:p-0">
               <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-205 uppercase tracking-wider">
+                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   Ingresos Operativos
                 </h3>
               </div>
@@ -260,12 +260,12 @@ export default function IncomeStatementPage() {
                   {report.income.map((item) => (
                     <div
                       key={item.accountId}
-                      className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-100 dark:border-slate-750/50"
+                      className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-100 dark:border-slate-700/50"
                     >
-                      <span className="text-slate-655 dark:text-slate-350 font-semibold">
+                      <span className="text-slate-600 dark:text-slate-300 font-semibold">
                         {item.name}
                       </span>
-                      <span className="font-bold text-emerald-650 dark:text-emerald-450 whitespace-nowrap">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         {formatCurrency(item.amount, baseCurrency)}
                       </span>
                     </div>
@@ -284,7 +284,7 @@ export default function IncomeStatementPage() {
             {/* Expenses Section */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-4 print:border-none print:shadow-none print:p-0">
               <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-205 uppercase tracking-wider">
+                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   Gastos / Egresos
                 </h3>
               </div>
@@ -298,9 +298,9 @@ export default function IncomeStatementPage() {
                   {report.expenses.map((item) => (
                     <div
                       key={item.accountId}
-                      className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-100 dark:border-slate-750/50"
+                      className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-100 dark:border-slate-700/50"
                     >
-                      <span className="text-slate-655 dark:text-slate-350 font-semibold">
+                      <span className="text-slate-600 dark:text-slate-300 font-semibold">
                         {item.name}
                       </span>
                       <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">

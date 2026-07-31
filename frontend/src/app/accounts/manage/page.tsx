@@ -80,7 +80,7 @@ export default function AccountsManagePage() {
         <div className="flex items-center space-x-3.5">
           <Link
             href="/accounts"
-            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 text-slate-655 hover:text-slate-800 dark:hover:text-slate-200 transition hover:bg-slate-50 shadow-sm"
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 text-slate-600 hover:text-slate-800 dark:hover:text-slate-200 transition hover:bg-slate-50 shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -88,7 +88,7 @@ export default function AccountsManagePage() {
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
               Administración de Rubros
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-455 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Administrar catálogos de cuentas y categorías
             </p>
           </div>
@@ -96,7 +96,7 @@ export default function AccountsManagePage() {
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
           <span>Nuevo Rubro</span>
@@ -104,7 +104,7 @@ export default function AccountsManagePage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -141,7 +141,7 @@ export default function AccountsManagePage() {
                     )}
                   </td>
                   <td className="p-4">
-                    <span className="text-3xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-350 px-2 py-0.5 rounded-md">
+                    <span className="text-3xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-2 py-0.5 rounded-md">
                       {a.type}
                     </span>
                   </td>

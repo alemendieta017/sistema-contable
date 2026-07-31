@@ -187,7 +187,7 @@ export default function AsientoLibrePage() {
         {/* Entry Lines */}
         <div className="space-y-3">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xs font-bold text-slate-450 dark:text-slate-400 uppercase tracking-wider">
+            <h2 className="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Apuntes / Partidas
             </h2>
             <button
@@ -200,7 +200,7 @@ export default function AsientoLibrePage() {
           </div>
 
           {/* Table headers - visible on desktop */}
-          <div className="hidden sm:grid sm:grid-cols-[1fr_120px_140px_auto] gap-3 px-2 mb-1.5 text-4xs font-bold uppercase text-slate-450 dark:text-slate-500 tracking-wider">
+          <div className="hidden sm:grid sm:grid-cols-[1fr_120px_140px_auto] gap-3 px-2 mb-1.5 text-4xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
             <div>Cuenta / Categoría</div>
             <div>Tipo</div>
             <div className="text-right">Monto</div>
@@ -211,7 +211,7 @@ export default function AsientoLibrePage() {
             {entries.map((entry, index) => (
               <div
                 key={index}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_120px_140px_auto] gap-2 items-center bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-150 dark:border-slate-700 shadow-sm transition hover:border-slate-350 dark:hover:border-slate-600 relative"
+                className="grid grid-cols-1 sm:grid-cols-[1fr_120px_140px_auto] gap-2 items-center bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm transition hover:border-slate-300 dark:hover:border-slate-600 relative"
               >
                 {/* Account Selector */}
                 <div className="w-full">
@@ -221,7 +221,7 @@ export default function AsientoLibrePage() {
                   <select
                     value={entry.accountId}
                     onChange={(e) => updateLine(index, 'accountId', e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-850 dark:text-slate-200 font-semibold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-800 dark:text-slate-200 font-semibold"
                   >
                     <option value="">Seleccionar cuenta...</option>
                     {accounts.map((a) => (
@@ -269,7 +269,7 @@ export default function AsientoLibrePage() {
                     Monto
                   </label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-2.5 text-xs font-semibold text-slate-450 dark:text-slate-500">
+                    <span className="absolute left-2.5 text-xs font-semibold text-slate-400 dark:text-slate-500">
                       {currencySymbol}
                     </span>
                     <input
@@ -289,7 +289,7 @@ export default function AsientoLibrePage() {
                     <button
                       type="button"
                       onClick={() => removeLine(index)}
-                      className="p-1.5 text-slate-450 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg border border-transparent hover:border-red-100 dark:hover:border-red-900 transition-all duration-150"
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg border border-transparent hover:border-red-100 dark:hover:border-red-900 transition-all duration-150"
                       title="Remover línea"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -307,13 +307,13 @@ export default function AsientoLibrePage() {
         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2 shadow-sm">
           <div className="flex justify-between text-xs">
             <span>Total Débito (Debe):</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-450">
+            <span className="font-bold text-emerald-600 dark:text-emerald-500">
               {formatCurrency(totalDebits, baseCurrency)}
             </span>
           </div>
           <div className="flex justify-between text-xs">
             <span>Total Crédito (Haber):</span>
-            <span className="font-bold text-rose-600 dark:text-rose-450">
+            <span className="font-bold text-rose-600 dark:text-rose-500">
               {formatCurrency(totalCredits, baseCurrency)}
             </span>
           </div>

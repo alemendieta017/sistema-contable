@@ -62,19 +62,19 @@ export default function CurrencySettings() {
   return (
     <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
       <div>
-        <h3 className="text-xs font-bold text-slate-850 dark:text-slate-100">Tipos de Cambio</h3>
-        <p className="text-4xs text-slate-455 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">Tipos de Cambio</h3>
+        <p className="text-4xs text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
           Cotización de monedas extranjeras (Moneda base: {baseCurrency?.code || 'Guaraní PYG'})
         </p>
       </div>
 
       {success && (
-        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl border border-green-150">
+        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl border border-green-200">
           {success}
         </div>
       )}
       {error && (
-        <div className="p-3 text-xs text-red-750 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-150">
+        <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-200">
           {error}
         </div>
       )}
@@ -98,12 +98,12 @@ export default function CurrencySettings() {
                   step="0.0001"
                   value={rates[c.id] || ''}
                   onChange={(e) => setRates({ ...rates, [c.id]: e.target.value })}
-                  className="w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs outline-none text-right font-extrabold"
+                  className="w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs outline-none text-right font-extrabold text-slate-800 dark:text-slate-100"
                 />
                 <button
                   onClick={() => handleUpdateRate(c.id, Number(rates[c.id]))}
                   disabled={loading}
-                  className="p-2 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl transition duration-150 disabled:opacity-50"
+                  className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition duration-150 disabled:opacity-50"
                   title="Guardar tasa"
                 >
                   <Save className="w-4 h-4" />
@@ -112,7 +112,7 @@ export default function CurrencySettings() {
             </div>
           ))}
         {currencies.filter((c) => !c.isBase).length === 0 && (
-          <p className="text-3xs text-slate-450 dark:text-slate-500 italic text-center py-2">
+          <p className="text-3xs text-slate-400 dark:text-slate-500 italic text-center py-2">
             No hay monedas extranjeras configuradas.
           </p>
         )}

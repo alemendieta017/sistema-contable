@@ -148,7 +148,7 @@ export default function BudgetsPage() {
   if (loading) {
     return (
       <div className="text-center py-24">
-        <div className="w-10 h-10 border-4 border-indigo-650 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <span className="text-sm text-slate-500 font-semibold dark:text-slate-400">
           Cargando Matriz Anual...
         </span>
@@ -242,7 +242,7 @@ export default function BudgetsPage() {
           <select
             value={selectedFiscalYearId}
             onChange={(e) => setSelectedFiscalYearId(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-850 dark:text-slate-200"
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200"
           >
             {fiscalYears.map((fy) => (
               <option key={fy.id} value={fy.id}>
@@ -260,19 +260,19 @@ export default function BudgetsPage() {
       </div>
 
       {error && (
-        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-2xl border border-red-150/40">
+        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-2xl border border-red-200/40">
           {error}
         </div>
       )}
 
       {/* Main Matrix table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-150/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed min-w-[1500px]">
             {/* Table Header */}
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800">
-                <th className="p-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 w-[240px] sticky left-0 bg-slate-50 dark:bg-slate-850 z-10">
+              <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
+                <th className="p-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 w-[240px] sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">
                   Concepto / Cuenta
                 </th>
                 {periods.map((p) => (
@@ -281,7 +281,7 @@ export default function BudgetsPage() {
                     onClick={() => router.push(`/budgets/${p.id}/edit`)}
                     className="p-4 text-right pr-6 cursor-pointer group hover:bg-indigo-50/50 dark:hover:bg-slate-800 transition"
                   >
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 group-hover:text-indigo-650 dark:group-hover:text-indigo-400">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                       {getMonthLabel(p.name)}
                     </div>
                     <div className="text-[8px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 group-hover:text-indigo-500/80 flex items-center justify-end gap-0.5">
@@ -297,7 +297,7 @@ export default function BudgetsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {/* --- SECTION 1: INGRESOS --- */}
               <tr className="bg-slate-50/30 dark:bg-slate-900/40">
-                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
+                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>Ingresos</span>
                 </td>
@@ -308,9 +308,9 @@ export default function BudgetsPage() {
               {incomeRows.map((row) => (
                 <tr
                   key={row.accountId}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition"
                 >
-                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                     {row.accountName}
                   </td>
                   {periods.map((p) => (
@@ -340,7 +340,7 @@ export default function BudgetsPage() {
 
               {/* --- SECTION 2: EGRESOS --- */}
               <tr className="bg-slate-50/30 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
+                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
                   <TrendingDown className="w-3.5 h-3.5" />
                   <span>Egresos</span>
                 </td>
@@ -351,9 +351,9 @@ export default function BudgetsPage() {
               {expenseRows.map((row) => (
                 <tr
                   key={row.accountId}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition"
                 >
-                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                     {row.accountName}
                   </td>
                   {periods.map((p) => (
@@ -383,7 +383,7 @@ export default function BudgetsPage() {
 
               {/* --- SECTION 3: BALANCE (AHORROS / DEUDAS) --- */}
               <tr className="bg-slate-50/30 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
+                <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5">
                   <Scale className="w-3.5 h-3.5" />
                   <span>Ahorros y Financiación</span>
                 </td>
@@ -394,9 +394,9 @@ export default function BudgetsPage() {
               {balanceRows.map((row) => (
                 <tr
                   key={row.accountId}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-850/20 transition"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition"
                 >
-                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                  <td className="p-3 font-semibold text-slate-700 dark:text-slate-300 pl-6 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                     <div>{row.accountName}</div>
                     <div className="text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">
                       {row.accountType === 'ASSET' ? 'Ahorro/Inversión' : 'Deuda/Préstamo'}
@@ -409,9 +409,9 @@ export default function BudgetsPage() {
                         key={p.id}
                         className={`p-3 text-right pr-6 font-bold whitespace-nowrap ${
                           amount < 0
-                            ? 'text-slate-650 dark:text-slate-400'
+                            ? 'text-slate-600 dark:text-slate-400'
                             : amount > 0
-                              ? 'text-indigo-650 dark:text-indigo-400'
+                              ? 'text-indigo-600 dark:text-indigo-400'
                               : ''
                         }`}
                       >
@@ -439,7 +439,7 @@ export default function BudgetsPage() {
               {/* --- COLUMN SUMMARY: CAJA NETO DEL MES --- */}
               <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 border-t-2 border-indigo-100 dark:border-indigo-900 font-extrabold text-xs">
                 <td className="p-3 sticky left-0 bg-indigo-50/90 dark:bg-indigo-950/90 z-10 flex items-center gap-1.5 text-indigo-950 dark:text-indigo-200">
-                  <PlusCircle className="w-4 h-4 text-indigo-655" />
+                  <PlusCircle className="w-4 h-4 text-indigo-600" />
                   <span>Flujo Caja Neto Mes</span>
                 </td>
                 {periods.map((p) => {
@@ -457,7 +457,7 @@ export default function BudgetsPage() {
                       className={`p-3 text-right pr-6 font-black whitespace-nowrap ${
                         netMonthFlow >= 0
                           ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-650 dark:text-red-400'
+                          : 'text-red-600 dark:text-red-400'
                       }`}
                     >
                       {formatVal(netMonthFlow)}

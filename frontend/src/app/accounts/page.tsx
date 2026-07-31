@@ -151,14 +151,14 @@ export default function AccountsPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Cuentas y Rubros
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-450 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Saldos agregados de activos, pasivos y patrimonio
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
           <span>Agregar Cuenta</span>
@@ -166,7 +166,7 @@ export default function AccountsPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -221,7 +221,7 @@ export default function AccountsPage() {
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
               No hay cuentas configuradas
             </h3>
-            <p className="text-xs text-slate-450 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
               Comienza generando un plan predeterminado de cuentas (Efectivo, Tarjetas, Sueldo,
               Comida, Transporte, etc.) con un solo clic.
             </p>
@@ -230,7 +230,7 @@ export default function AccountsPage() {
             type="button"
             onClick={handleCreateDefaultAccounts}
             disabled={saving}
-            className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+            className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
           >
             {saving ? 'Generando cuentas...' : 'Generar Cuentas Predeterminadas'}
           </button>
@@ -249,7 +249,7 @@ export default function AccountsPage() {
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
-            <p className="text-sm font-bold text-slate-655 dark:text-slate-350">
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
               No se encontraron cuentas que coincidan con &quot;{searchQuery}&quot;
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">

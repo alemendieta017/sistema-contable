@@ -37,19 +37,19 @@ export default function SecuritySettings() {
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
           Seguridad de la Cuenta
         </h3>
-        <p className="text-4xs text-slate-455 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+        <p className="text-4xs text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
           Modificar credenciales de acceso
         </p>
       </div>
 
       {success && (
-        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl flex items-center gap-2 border border-green-150">
+        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl flex items-center gap-2 border border-green-200">
           <CheckCircle className="w-4 h-4 text-green-500" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-150">
+        <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-200">
           {error}
         </div>
       )}
@@ -66,7 +66,7 @@ export default function SecuritySettings() {
               required
               placeholder="••••••••"
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
             />
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function SecuritySettings() {
               required
               placeholder="Mínimo 6 caracteres"
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
             />
           </div>
           <div>
@@ -95,7 +95,7 @@ export default function SecuritySettings() {
               required
               placeholder="Confirmar"
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function SecuritySettings() {
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="text-4xs font-bold uppercase text-slate-450 dark:text-slate-400 hover:text-slate-655 hover:underline"
+            className="text-4xs font-bold uppercase text-slate-400 dark:text-slate-400 hover:text-slate-700 hover:underline"
           >
             {showPass ? 'Ocultar contraseña' : 'Ver contraseña'}
           </button>

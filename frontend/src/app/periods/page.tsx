@@ -233,7 +233,7 @@ export default function PeriodsPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Períodos y Ejercicios Fiscales
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-455 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Gestione años fiscales, cierres mensuales y bloqueos de transacciones
           </p>
         </div>
@@ -242,7 +242,7 @@ export default function PeriodsPage() {
           <button
             onClick={handleReconstructBalances}
             disabled={actionLoading}
-            className="flex items-center justify-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-250 font-bold rounded-xl text-xs transition duration-150 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150 cursor-pointer"
             title="Recalcula el histórico de saldos período por período"
           >
             <RefreshCw className={`w-4.5 h-4.5 ${actionLoading ? 'animate-spin' : ''}`} />
@@ -251,7 +251,7 @@ export default function PeriodsPage() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer"
+            className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Crear Ejercicio</span>
@@ -260,14 +260,14 @@ export default function PeriodsPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-150 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-2xl border border-green-150 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-2xl border border-green-200 flex items-start gap-2.5">
           <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{success}</span>
         </div>
@@ -276,12 +276,12 @@ export default function PeriodsPage() {
       {/* Main List of Fiscal Years */}
       {fiscalYears.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center space-y-4 max-w-lg mx-auto">
-          <Calendar className="w-12 h-12 text-slate-350 dark:text-slate-550 mx-auto" />
+          <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-500 mx-auto" />
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
               No hay ejercicios fiscales creados
             </h3>
-            <p className="text-xs text-slate-450 dark:text-slate-550 mt-1 max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
               Debe registrar un ejercicio fiscal (por ejemplo, el año actual) para que los períodos
               mensuales comiencen a registrar saldos acumulados.
             </p>
@@ -323,7 +323,7 @@ export default function PeriodsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h3 className="font-extrabold text-slate-800 dark:text-slate-150 text-base">
+                        <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base">
                           {fy.name}
                         </h3>
                         <span
@@ -366,7 +366,7 @@ export default function PeriodsPage() {
                 {isExpanded && (
                   <div className="border-t border-slate-100 dark:border-slate-700/80">
                     {filteredPeriodsForFy.length === 0 ? (
-                      <p className="p-5 text-xs text-slate-450 italic">
+                      <p className="p-5 text-xs text-slate-400 italic">
                         No se encontraron meses en este ejercicio.
                       </p>
                     ) : (
@@ -374,7 +374,7 @@ export default function PeriodsPage() {
                         {filteredPeriodsForFy.map((period) => (
                           <div
                             key={period.id}
-                            className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-750/40 transition-colors"
+                            className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors"
                           >
                             <div className="flex items-center gap-3.5">
                               <div
@@ -465,10 +465,10 @@ export default function PeriodsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-150 text-base mb-2">
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base mb-2">
               Crear Nuevo Ejercicio Fiscal
             </h3>
-            <p className="text-3xs text-slate-400 dark:text-slate-550 mb-4">
+            <p className="text-3xs text-slate-400 dark:text-slate-500 mb-4">
               Se creará el año fiscal seleccionado junto con sus 12 períodos mensuales para
               registrar balances contables.
             </p>
@@ -504,7 +504,7 @@ export default function PeriodsPage() {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50"
                 >
                   {actionLoading ? 'Creando...' : 'Crear Ejercicio'}
                 </button>
@@ -518,11 +518,11 @@ export default function PeriodsPage() {
       {closingFy && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-150 text-base mb-2">
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base mb-2">
               Cierre de Ejercicio: {closingFy.name}
             </h3>
 
-            <div className="p-3 bg-amber-50 dark:bg-amber-955/20 border border-amber-250 rounded-2xl flex items-start gap-2.5 mb-4 text-amber-700 dark:text-amber-400">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300 rounded-2xl flex items-start gap-2.5 mb-4 text-amber-700 dark:text-amber-400">
               <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
               <p className="text-[10px] leading-normal font-semibold">
                 Este proceso es <strong>definitivo</strong> e irreversible. Se generará un asiento
@@ -534,7 +534,7 @@ export default function PeriodsPage() {
 
             <form onSubmit={handleCloseFiscalYearSubmit} className="space-y-4">
               <div>
-                <label className="block text-3xs font-bold text-slate-500 dark:text-slate-455 uppercase tracking-wider mb-1">
+                <label className="block text-3xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Cuenta de Resultados Acumulados
                 </label>
 
@@ -589,12 +589,12 @@ export default function PeriodsPage() {
       {actionLoading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 flex flex-col items-center max-w-xs shadow-xl border border-slate-100 dark:border-slate-700 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-indigo-550 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <div>
-              <p className="font-extrabold text-slate-800 dark:text-slate-150 text-sm">
+              <p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
                 Actualizando saldos históricos...
               </p>
-              <p className="text-4xs text-slate-400 dark:text-slate-550 mt-1 font-semibold">
+              <p className="text-4xs text-slate-400 dark:text-slate-500 mt-1 font-semibold">
                 Por favor espere mientras se recalcula la contabilidad.
               </p>
             </div>

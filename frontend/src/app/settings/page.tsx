@@ -106,19 +106,19 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
           Ajustes del Sistema
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-455 mt-0.5">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Configuración global de preferencias, divisas y respaldos de información
         </p>
       </div>
 
       {success && (
-        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl flex items-center gap-2 border border-green-150">
-          <CheckCircle2 className="w-4 h-4 text-green-550" />
+        <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/20 dark:text-green-400 rounded-xl flex items-center gap-2 border border-green-200">
+          <CheckCircle2 className="w-4 h-4 text-green-500" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="p-3 text-xs text-red-750 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-155 flex items-start gap-2.5">
+        <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-xl border border-red-200 flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -129,21 +129,21 @@ export default function SettingsPage() {
         {/* Left Column: Preferences */}
         <div className="space-y-6">
           <div className="space-y-2">
-            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+            <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
               Preferencias Visuales
             </span>
             <ThemeToggle />
           </div>
 
           <div className="space-y-2">
-            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+            <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
               Tipos de Divisas
             </span>
             <CurrencySettings />
           </div>
 
           <div className="space-y-2">
-            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+            <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
               Períodos Contables
             </span>
             <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3">
@@ -167,7 +167,7 @@ export default function SettingsPage() {
         {/* Right Column: Security & Data */}
         <div className="space-y-6">
           <div className="space-y-2">
-            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+            <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
               Seguridad
             </span>
             <SecuritySettings />
@@ -175,7 +175,7 @@ export default function SettingsPage() {
 
           {/* Backup & Export Panel */}
           <div className="space-y-2">
-            <span className="text-3xs font-bold text-slate-450 dark:text-slate-500 uppercase tracking-widest px-1">
+            <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
               Respaldo e Informes
             </span>
 
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                   <button
                     onClick={handleBackupExport}
                     disabled={loading}
-                    className="flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs transition duration-150"
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition duration-150"
                   >
                     <Download className="w-4 h-4" />
                     <span>Exportar</span>

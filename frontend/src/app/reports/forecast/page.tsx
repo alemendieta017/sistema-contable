@@ -230,10 +230,10 @@ export default function ForecastReportPage() {
     const isExpanded = expandedAccounts[acc.accountId];
 
     return (
-      <tr key={acc.accountId} className="hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition">
+      <tr key={acc.accountId} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition">
         {/* Sticky left label */}
         <td
-          className="p-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-350"
+          className="p-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300"
           style={{ paddingLeft: `${Math.max(12, depth * 20)}px` }}
         >
           <div className="flex items-center gap-1.5">
@@ -280,9 +280,9 @@ export default function ForecastReportPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 border border-slate-150/50 dark:border-slate-700 transition"
+            className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl hover:bg-slate-100 border border-slate-200/50 dark:border-slate-700 transition"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-350" />
+            <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-300" />
           </button>
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2">
@@ -290,7 +290,7 @@ export default function ForecastReportPage() {
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Informe consolidado Real vs. Proyectado:{' '}
-              <span className="font-bold text-indigo-650 dark:text-indigo-400">
+              <span className="font-bold text-indigo-600 dark:text-indigo-400">
                 {fiscalYearName}
               </span>
             </p>
@@ -305,7 +305,7 @@ export default function ForecastReportPage() {
           <select
             value={selectedFiscalYearId}
             onChange={(e) => setSelectedFiscalYearId(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-850 dark:text-slate-200"
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200"
           >
             {fiscalYears.map((fy) => (
               <option key={fy.id} value={fy.id}>
@@ -323,7 +323,7 @@ export default function ForecastReportPage() {
       </div>
 
       {error && (
-        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-2xl border border-red-150/40">
+        <div className="p-4 text-xs text-red-700 bg-red-50 dark:bg-red-950/20 dark:text-red-400 rounded-2xl border border-red-200/40">
           {error}
         </div>
       )}
@@ -331,16 +331,16 @@ export default function ForecastReportPage() {
       {/* Control selectors block */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Toggle 1: Cash Flow vs Income Statement */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-850 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Tipo de Proyección
             </h3>
-            <p className="text-[10px] text-slate-450 mt-0.5">
+            <p className="text-[10px] text-slate-400 mt-0.5">
               Alternar base de caja o devengamiento
             </p>
           </div>
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-750">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-700">
             <button
               onClick={() => setReportType('CASH_FLOW')}
               className={`py-2 px-4 rounded-xl text-xs font-bold transition ${
@@ -365,21 +365,21 @@ export default function ForecastReportPage() {
         </div>
 
         {/* Toggle 2: Rolling vs Full Year */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-850 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Ventana Temporal
             </h3>
-            <p className="text-[10px] text-slate-450 mt-0.5">
+            <p className="text-[10px] text-slate-400 mt-0.5">
               Cambiar entre año calendario y 12 meses móviles
             </p>
           </div>
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-750">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-700">
             <button
               onClick={() => setIsRolling(false)}
               className={`py-2 px-4 rounded-xl text-xs font-bold transition ${
                 !isRolling
-                  ? 'bg-indigo-650 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -389,7 +389,7 @@ export default function ForecastReportPage() {
               onClick={() => setIsRolling(true)}
               className={`py-2 px-4 rounded-xl text-xs font-bold transition ${
                 isRolling
-                  ? 'bg-indigo-655 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -402,19 +402,19 @@ export default function ForecastReportPage() {
       {loading ? (
         <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <span className="text-xs text-slate-450 font-semibold">
+          <span className="text-xs text-slate-400 font-semibold">
             Generando reporte de proyecciones...
           </span>
         </div>
       ) : (
         /* Matrix Grid */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-150/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[1500px] table-fixed">
               {/* Dynamic Header */}
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800">
-                  <th className="p-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 w-[260px] sticky left-0 bg-slate-50 dark:bg-slate-850 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800">
+                <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
+                  <th className="p-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 w-[260px] sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800">
                     Concepto / Cuenta
                   </th>
                   {months.map((m) => (
@@ -440,7 +440,7 @@ export default function ForecastReportPage() {
                           className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                             m.isReal
                               ? 'bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400'
-                              : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400'
+                              : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400'
                           }`}
                         >
                           {m.isReal ? 'Real' : 'Proyectado'}
@@ -460,12 +460,12 @@ export default function ForecastReportPage() {
                   /* --- CASH FLOW VIEW --- */
                   <>
                     {/* Saldo Inicial */}
-                    <tr className="bg-slate-50/20 dark:bg-slate-850/10 font-bold border-b border-slate-100 dark:border-slate-800">
-                      <td className="p-3 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                    <tr className="bg-slate-50/20 dark:bg-slate-800/10 font-bold border-b border-slate-100 dark:border-slate-800">
+                      <td className="p-3 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         (+) Saldo Inicial de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-350 whitespace-nowrap">
+                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {formatVal(m.initialCash)}
                         </td>
                       ))}
@@ -473,10 +473,10 @@ export default function ForecastReportPage() {
 
                     {/* Ingresos Operativos Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showIncomeTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
@@ -494,10 +494,10 @@ export default function ForecastReportPage() {
 
                     {/* Entradas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowAssetsInflowTree(!showAssetsInflowTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showAssetsInflowTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
@@ -514,12 +514,12 @@ export default function ForecastReportPage() {
                     {showAssetsInflowTree && accounts.filter(a => (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') && a.parentId === null).map(acc => renderAccountRow(acc, 'CASH_IN'))}
 
                     {/* Total Entradas */}
-                    <tr className="bg-slate-50/30 dark:bg-slate-850/10 font-bold border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                    <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
+                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         (=) Total Entradas de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-indigo-650 dark:text-indigo-400 whitespace-nowrap">
+                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                           {formatVal(m.totalEntradas)}
                         </td>
                       ))}
@@ -527,10 +527,10 @@ export default function ForecastReportPage() {
 
                     {/* Egresos Operativos Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showExpenseTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
@@ -548,17 +548,17 @@ export default function ForecastReportPage() {
 
                     {/* Salidas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowAssetsOutflowTree(!showAssetsOutflowTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showAssetsOutflowTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
                         <span>(-) Salidas de Activo/Pasivo</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-350 whitespace-nowrap">
+                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {formatVal(m.salidasActivoPasivo)}
                         </td>
                       ))}
@@ -568,20 +568,20 @@ export default function ForecastReportPage() {
                     {showAssetsOutflowTree && accounts.filter(a => (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') && a.parentId === null).map(acc => renderAccountRow(acc, 'CASH_OUT'))}
 
                     {/* Total Salidas */}
-                    <tr className="bg-slate-50/30 dark:bg-slate-850/10 font-bold border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                    <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
+                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         (=) Total Salidas de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-red-650 dark:text-red-400 whitespace-nowrap">
+                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-red-600 dark:text-red-400 whitespace-nowrap">
                           {formatVal(m.totalSalidas)}
                         </td>
                       ))}
                     </tr>
 
                     {/* Flujo Neto */}
-                    <tr className="hover:bg-slate-50/40 dark:hover:bg-slate-850/10 border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                    <tr className="hover:bg-slate-50/40 dark:hover:bg-slate-800/10 border-t border-slate-100 dark:border-slate-800">
+                      <td className="p-3 font-extrabold sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         (=) Flujo Neto del Periodo
                       </td>
                       {months.map((m) => (
@@ -599,8 +599,8 @@ export default function ForecastReportPage() {
 
                     {/* Saldo Final */}
                     <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 font-black border-t-2 border-indigo-100 dark:border-indigo-900">
-                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-850 text-xs flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-indigo-650 dark:text-indigo-400" />
+                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>(=) SALDO FINAL DE CAJA</span>
                       </td>
                       {months.map((m) => (
@@ -609,7 +609,7 @@ export default function ForecastReportPage() {
                           className={`p-3 text-right pr-6 font-black text-xs whitespace-nowrap ${
                             m.finalCash >= 0
                               ? 'text-slate-900 dark:text-slate-50'
-                              : 'text-red-650 dark:text-red-400'
+                              : 'text-red-600 dark:text-red-400'
                           }`}
                         >
                           {formatVal(m.finalCash)}
@@ -622,10 +622,10 @@ export default function ForecastReportPage() {
                   <>
                     {/* Ingresos Devengados Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showIncomeTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
@@ -643,10 +643,10 @@ export default function ForecastReportPage() {
 
                     {/* Gastos Devengados Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-650 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-850">
+                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
-                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-850 rounded transition"
+                          className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
                           {showExpenseTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         </button>
@@ -664,8 +664,8 @@ export default function ForecastReportPage() {
 
                     {/* Resultado Neto */}
                     <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 font-black border-t-2 border-indigo-100 dark:border-indigo-900">
-                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-850 text-xs flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-indigo-650 dark:text-indigo-400" />
+                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Resultado Neto (P&L)</span>
                       </td>
                       {months.map((m) => (

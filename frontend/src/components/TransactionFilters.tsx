@@ -170,14 +170,14 @@ export default function TransactionFilters({
 
         {/* Center: Month/Year navigation slider */}
         <div
-          className={`flex items-center border border-slate-200 dark:border-slate-750/70 rounded-xl bg-slate-50 dark:bg-slate-900 p-0.5 shadow-inner transition-opacity ${
+          className={`flex items-center border border-slate-200 dark:border-slate-700/70 rounded-xl bg-slate-50 dark:bg-slate-900 p-0.5 shadow-inner transition-opacity ${
             isCustomRangeActive ? 'opacity-60 hover:opacity-100' : ''
           }`}
         >
           <button
             onClick={handlePrev}
             type="button"
-            className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition cursor-pointer"
+            className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition cursor-pointer"
             title={isCustomRangeActive ? 'Volver a mes completo' : 'Anterior'}
           >
             &larr;
@@ -187,7 +187,7 @@ export default function TransactionFilters({
             disabled={!isCustomRangeActive}
             type="button"
             className={`px-3 py-0.5 font-bold text-center min-w-[110px] text-slate-700 dark:text-slate-200 select-none text-xs tracking-wide cursor-pointer ${
-              isCustomRangeActive ? 'hover:text-indigo-650 dark:hover:text-indigo-400' : ''
+              isCustomRangeActive ? 'hover:text-indigo-600 dark:hover:text-indigo-400' : ''
             }`}
             title={isCustomRangeActive ? 'Volver a mes completo' : ''}
           >
@@ -196,7 +196,7 @@ export default function TransactionFilters({
           <button
             onClick={handleNext}
             type="button"
-            className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition cursor-pointer"
+            className="px-2 py-0.5 text-xs hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg transition cursor-pointer"
             title={isCustomRangeActive ? 'Volver a mes completo' : 'Siguiente'}
           >
             &rarr;
@@ -209,10 +209,10 @@ export default function TransactionFilters({
           type="button"
           className={`flex items-center gap-1 px-2.5 py-1.5 font-bold rounded-xl border transition cursor-pointer text-xs ${
             showAdvanced
-              ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-650 dark:text-indigo-400'
+              ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400'
               : selectedAccountId || isCustomRangeActive
                 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 text-amber-600 dark:text-amber-400'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-750'
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -235,7 +235,7 @@ export default function TransactionFilters({
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 type="button"
-                className="w-full flex items-center justify-between py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 font-bold text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition"
+                className="w-full flex items-center justify-between py-1.5 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-700 dark:text-slate-200 font-bold text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
                 <span className="truncate">
                   {selectedAccount ? formatAccountName(selectedAccount) : 'Todas las cuentas'}
@@ -255,7 +255,7 @@ export default function TransactionFilters({
                   <div className="absolute left-0 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 p-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-100 max-h-72 flex flex-col">
                     {/* Search Box */}
                     <div className="relative flex items-center shrink-0">
-                      <Search className="absolute left-2.5 w-3.5 h-3.5 text-slate-400 dark:text-slate-550 pointer-events-none" />
+                      <Search className="absolute left-2.5 w-3.5 h-3.5 text-slate-400 dark:text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         value={searchTerm}
@@ -277,7 +277,7 @@ export default function TransactionFilters({
                         type="button"
                         className={`w-full flex items-center justify-between text-left px-2 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                           !selectedAccountId
-                            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-450'
+                            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
                             : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                         }`}
                       >
@@ -290,7 +290,7 @@ export default function TransactionFilters({
                         if (groupAccs.length === 0) return null;
                         return (
                           <div key={type} className="space-y-0.5">
-                            <div className="text-[9px] font-extrabold text-slate-400 dark:text-slate-555 uppercase tracking-widest px-2 pt-2 pb-0.5">
+                            <div className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 pt-2 pb-0.5">
                               {type === 'ASSET'
                                 ? 'ACTIVOS'
                                 : type === 'LIABILITY'
@@ -314,7 +314,7 @@ export default function TransactionFilters({
                                   type="button"
                                   className={`w-full flex items-center justify-between text-left px-2 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                     isSelected
-                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-450 font-bold'
+                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
                                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                                   }`}
                                 >
@@ -338,7 +338,7 @@ export default function TransactionFilters({
           {/* Date Selector Section */}
           {view === 'daily' && (
             <div className="flex-1 flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest px-1">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest px-1">
                 Rango de Fecha Personalizado
               </span>
               <div className="flex items-center gap-2 mt-0.5 animate-in fade-in duration-100">

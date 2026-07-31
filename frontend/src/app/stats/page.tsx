@@ -163,14 +163,14 @@ export default function StatsPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Estadísticas e Informes
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-455 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Información analítica visual de sus flujos financieros
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-750 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-155 flex items-start gap-2.5">
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -191,13 +191,13 @@ export default function StatsPage() {
         </div>
 
         {/* Expense/Income Toggle tabs */}
-        <div className="grid grid-cols-2 gap-1 bg-slate-55 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 p-0.5 rounded-xl w-full sm:w-60 text-xs">
+        <div className="grid grid-cols-2 gap-1 bg-slate-500 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 p-0.5 rounded-xl w-full sm:w-60 text-xs">
           <button
             onClick={() => setType('EXPENSE')}
             className={`py-2 font-bold rounded-lg transition duration-150 ${
               type === 'EXPENSE'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
-                : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             Egresos
@@ -207,7 +207,7 @@ export default function StatsPage() {
             className={`py-2 font-bold rounded-lg transition duration-150 ${
               type === 'INCOME'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/10'
-                : 'text-slate-550 dark:text-slate-455 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             Ingresos

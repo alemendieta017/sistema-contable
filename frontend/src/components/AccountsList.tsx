@@ -56,7 +56,7 @@ export default function AccountsList({
               } ${isInactive ? 'opacity-50' : ''}`}
             >
               <span
-                className={`${isChild ? 'text-slate-500 dark:text-slate-450 font-medium' : 'font-bold text-slate-700 dark:text-slate-200'}`}
+                className={`${isChild ? 'text-slate-500 dark:text-slate-400 font-medium' : 'font-bold text-slate-700 dark:text-slate-200'}`}
               >
                 {isChild && <span className="mr-1 text-slate-400">└─</span>}
                 {a.name}

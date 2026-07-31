@@ -109,7 +109,7 @@ export default function PieChart({ data, type }: PieChartProps) {
             })}
           </span>
           {activeItem && (
-            <span className="text-5xs text-slate-450 dark:text-slate-500 font-bold mt-0.5">
+            <span className="text-5xs text-slate-400 dark:text-slate-500 font-bold mt-0.5">
               {activeItem.percentage}%
             </span>
           )}
@@ -135,11 +135,11 @@ export default function PieChart({ data, type }: PieChartProps) {
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-slate-700 dark:text-slate-350 truncate">
+                <span className="text-slate-700 dark:text-slate-300 truncate">
                   {item.accountName}
                 </span>
               </div>
-              <span className="font-semibold text-slate-400 dark:text-slate-550 shrink-0 ml-2">
+              <span className="font-semibold text-slate-400 dark:text-slate-400 shrink-0 ml-2">
                 ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })} (
                 {item.percentage}%)
               </span>

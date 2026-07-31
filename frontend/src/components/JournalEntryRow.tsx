@@ -244,7 +244,7 @@ export default function JournalEntryRow({
           <Search className="absolute left-2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
           <button
             type="button"
-            className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-350 focus:outline-none transition-colors"
+            className="absolute right-2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none transition-colors"
             onMouseDown={(e) => {
               e.preventDefault(); // Prevents input blur
             }}
@@ -309,10 +309,10 @@ export default function JournalEntryRow({
                     return (
                       <div
                         key={groupType}
-                        className="border-b last:border-0 border-slate-100 dark:border-slate-750/30"
+                        className="border-b last:border-0 border-slate-100 dark:border-slate-700/30"
                       >
                         {activeTab === 'ALL' && (
-                          <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-900/40 sticky top-0 backdrop-blur-sm z-10">
+                          <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-900/40 sticky top-0 backdrop-blur-sm z-10">
                             {groupType === 'ASSET'
                               ? 'ACTIVOS'
                               : groupType === 'LIABILITY'
@@ -341,7 +341,7 @@ export default function JournalEntryRow({
                                 className={`w-full text-left px-3 py-2 sm:py-2.5 transition text-xs font-semibold flex items-center justify-between outline-none ${
                                   isFocused
                                     ? 'bg-indigo-50/50 text-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200'
-                                    : 'text-slate-750 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                                 }`}
                               >
                                 <div className="flex flex-col">
@@ -461,7 +461,7 @@ export default function JournalEntryRow({
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="h-8 w-8 flex items-center justify-center text-slate-450 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-sm border border-transparent hover:border-red-100 dark:hover:border-red-900 transition-all duration-150 mb-[1px]"
+          className="h-8 w-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-sm border border-transparent hover:border-red-100 dark:hover:border-red-900 transition-all duration-150 mb-[1px]"
           title="Eliminar apunte"
         >
           <Trash2 className="w-4 h-4" />

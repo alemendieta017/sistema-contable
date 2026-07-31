@@ -227,12 +227,12 @@ export default function TransactionsPage() {
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* API Toast Messages */}
       {success && (
-        <div className="p-2.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl border border-green-150">
+        <div className="p-2.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl border border-green-200">
           {success}
         </div>
       )}
       {error && (
-        <div className="p-2.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-150">
+        <div className="p-2.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl border border-red-200">
           {error}
         </div>
       )}
@@ -249,7 +249,7 @@ export default function TransactionsPage() {
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'daily'
                   ? 'bg-indigo-600 text-white'
-                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
               <ReceiptText className="w-3.5 h-3.5" />
@@ -260,7 +260,7 @@ export default function TransactionsPage() {
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'calendar'
                   ? 'bg-indigo-600 text-white'
-                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
@@ -271,7 +271,7 @@ export default function TransactionsPage() {
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'monthly'
                   ? 'bg-indigo-600 text-white'
-                  : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -281,7 +281,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Counters Row */}
-        <div className="grid grid-cols-3 divide-x divide-slate-150 dark:divide-slate-700/60 py-2.5 bg-slate-50/30 dark:bg-slate-900/10">
+        <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 py-2.5 bg-slate-50/30 dark:bg-slate-900/10">
           <div className="text-center px-1 min-w-0">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
               Ingresos
@@ -331,7 +331,7 @@ export default function TransactionsPage() {
                 className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                   view === 'daily'
                     ? 'bg-indigo-600 text-white'
-                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <ReceiptText className="w-3.5 h-3.5" />
@@ -342,7 +342,7 @@ export default function TransactionsPage() {
                 className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                   view === 'calendar'
                     ? 'bg-indigo-600 text-white'
-                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <CalendarIcon className="w-3.5 h-3.5" />
@@ -353,7 +353,7 @@ export default function TransactionsPage() {
                 className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                   view === 'monthly'
                     ? 'bg-indigo-600 text-white'
-                    : 'text-slate-550 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
@@ -376,7 +376,7 @@ export default function TransactionsPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
-              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
                 Ingresos
               </p>
               <h4 className="text-sm sm:text-base font-extrabold text-green-500 mt-0.5 truncate">
@@ -390,7 +390,7 @@ export default function TransactionsPage() {
 
           <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
-              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
                 Egresos
               </p>
               <h4 className="text-sm sm:text-base font-extrabold text-red-500 mt-0.5 truncate">
@@ -404,7 +404,7 @@ export default function TransactionsPage() {
 
           <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between min-w-0">
             <div className="min-w-0">
-              <p className="text-4xs font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider truncate">
+              <p className="text-4xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
                 Saldo Neto
               </p>
               <h4
@@ -419,7 +419,7 @@ export default function TransactionsPage() {
               className={`hidden sm:flex w-8 h-8 rounded-xl items-center justify-center shrink-0 border ${
                 netBalance >= 0
                   ? 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 border-indigo-100'
-                  : 'bg-red-50 dark:bg-red-950/20 text-red-550 border-red-100'
+                  : 'bg-red-50 dark:bg-red-950/20 text-red-500 border-red-100'
               }`}
             >
               <DollarSign className="w-4 h-4" />

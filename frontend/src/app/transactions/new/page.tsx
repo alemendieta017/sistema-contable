@@ -276,10 +276,10 @@ function TransactionForm() {
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"
             title="Volver"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-350" />
+            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
           <div>
-            <h1 className="text-sm sm:text-base font-bold text-slate-850 dark:text-slate-100 uppercase tracking-wide">
+            <h1 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
               {isEditMode
                 ? 'Editar Asiento'
                 : isCloneMode
@@ -308,7 +308,7 @@ function TransactionForm() {
             className={`px-4 py-2 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center gap-1.5 shadow-sm ${
               isBalanced
                 ? 'bg-indigo-600 hover:bg-indigo-700'
-                : 'bg-slate-350 dark:bg-slate-800 text-slate-450 cursor-not-allowed shadow-none'
+                : 'bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
             }`}
           >
             <Save className="w-3.5 h-3.5" />
@@ -371,7 +371,7 @@ function TransactionForm() {
           {/* Journal Entries List Block */}
           <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-sm border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase text-slate-450 dark:text-slate-400 tracking-wider">
+              <h3 className="text-xs font-bold uppercase text-slate-400 dark:text-slate-400 tracking-wider">
                 Detalle de Asientos (Debe / Haber)
               </h3>
               <button
@@ -418,7 +418,7 @@ function TransactionForm() {
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Total Haber
               </p>
-              <p className="font-extrabold text-sm sm:text-base text-emerald-600 dark:text-emerald-450 mt-0.5">
+              <p className="font-extrabold text-sm sm:text-base text-emerald-600 dark:text-emerald-500 mt-0.5">
                 {formatCurrency(totalCredits, baseCurrency)}
               </p>
             </div>
@@ -454,7 +454,7 @@ function TransactionForm() {
               className={`flex-1 sm:flex-none px-6 py-2.5 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center justify-center gap-1.5 shadow-sm ${
                 isBalanced
                   ? 'bg-indigo-600 hover:bg-indigo-700'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-450 cursor-not-allowed shadow-none'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
               }`}
             >
               <Save className="w-4 h-4" />
@@ -467,7 +467,7 @@ function TransactionForm() {
       {/* Accidental Navigation Cancel Confirmation Overlay Dialog */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-850 rounded-sm w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
               ¿Descartar Cambios?
             </h3>
@@ -490,7 +490,7 @@ function TransactionForm() {
                   setIsDirty(false);
                   router.push('/transactions');
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-750 text-white font-bold rounded-sm text-xs transition shadow-sm"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-sm text-xs transition shadow-sm"
               >
                 Salir de Todos Modos
               </button>
