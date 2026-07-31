@@ -10,14 +10,19 @@ import { AccountPeriodBalanceEntity } from './entities/account-period-balance.en
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DATABASE_HOST || 'localhost',
-      port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-      username: process.env.DATABASE_USER || 'postgres',
-      password: process.env.DATABASE_PASSWORD || 'postgres_password',
-      database: process.env.DATABASE_NAME || 'sistema_contable',
+      ...(process.env.DATABASE_URL
+        ? { url: process.env.DATABASE_URL }
+        : {
+            host: process.env.DATABASE_HOST || 'localhost',
+            port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+            username: process.env.DATABASE_USER || 'postgres',
+            password: process.env.DATABASE_PASSWORD || 'postgres_password',
+            database: process.env.DATABASE_NAME || 'sistema_contable',
+          }),
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production', // Habilitado solo en desarrollo local rápido, deshabilitado en producción
-      logging: ['query', 'error'],
+      synchronize: process.env.NODE_ENV !== 'production', // Desactivado en producción para proteger los datos
+      migrationsRun: process.env.NODE_ENV === 'production', // Ejecuta migraciones automáticamente en producción
+      logging: process.env.NODE_ENV === 'production' ? ['error'] : ['query', 'error'],
     }),
     TypeOrmModule.forFeature([FiscalYearEntity, PeriodEntity, AccountPeriodBalanceEntity]),
   ],
