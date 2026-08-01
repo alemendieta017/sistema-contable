@@ -23,11 +23,7 @@ function ResetPasswordForm() {
   }, [token]);
 
   const rules = [
-    { label: 'At least 8 characters long', valid: newPassword.length >= 8 },
-    { label: 'One uppercase letter (A-Z)', valid: /[A-Z]/.test(newPassword) },
-    { label: 'One lowercase letter (a-z)', valid: /[a-z]/.test(newPassword) },
-    { label: 'One number (0-9)', valid: /\d/.test(newPassword) },
-    { label: 'One special character (!@#$%^&*)', valid: /[^a-zA-Z0-9]/.test(newPassword) },
+    { label: 'At least 6 characters long', valid: newPassword.length >= 6 },
   ];
 
   const isPasswordValid = rules.every((r) => r.valid);

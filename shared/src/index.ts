@@ -8,9 +8,9 @@ export enum AuthErrorCode {
   UNAUTHORIZED = 'AUTH_UNAUTHORIZED',
 }
 
-export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+export const PASSWORD_REGEX = /^.{6,}$/;
 export const PASSWORD_COMPLEXITY_MESSAGE =
-  'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character';
+  'Password must be at least 6 characters long';
 
 // Base User Schema
 export const UserSchema = z.object({

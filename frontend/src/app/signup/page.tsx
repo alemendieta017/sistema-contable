@@ -17,11 +17,7 @@ export default function SignupPage() {
 
   // Password rules validation
   const rules = [
-    { label: 'At least 8 characters long', valid: password.length >= 8 },
-    { label: 'One uppercase letter (A-Z)', valid: /[A-Z]/.test(password) },
-    { label: 'One lowercase letter (a-z)', valid: /[a-z]/.test(password) },
-    { label: 'One number (0-9)', valid: /\d/.test(password) },
-    { label: 'One special character (!@#$%^&*)', valid: /[^a-zA-Z0-9]/.test(password) },
+    { label: 'At least 6 characters long', valid: password.length >= 6 },
   ];
 
   const isPasswordValid = rules.every((r) => r.valid);
