@@ -1,6 +1,7 @@
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { join } from 'path';
 import { CurrencyEntity } from './entities/currency.entity';
 import { FiscalYearEntity } from './entities/fiscal-year.entity';
 import { PeriodEntity } from './entities/period.entity';
@@ -23,6 +24,7 @@ import { PasswordResetTokenEntity } from './entities/password-reset-token.entity
             database: process.env.DATABASE_NAME || 'sistema_contable',
           }),
       autoLoadEntities: true,
+      migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
       synchronize: process.env.NODE_ENV !== 'production', // Desactivado en producción para proteger los datos
       migrationsRun: process.env.NODE_ENV === 'production', // Ejecuta migraciones automáticamente en producción
       logging: process.env.NODE_ENV === 'production' ? ['error'] : ['query', 'error'],
