@@ -6,6 +6,9 @@ import { FiscalYearEntity } from './entities/fiscal-year.entity';
 import { PeriodEntity } from './entities/period.entity';
 import { AccountPeriodBalanceEntity } from './entities/account-period-balance.entity';
 
+import { UserEntity } from './entities/user.entity';
+import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -24,7 +27,13 @@ import { AccountPeriodBalanceEntity } from './entities/account-period-balance.en
       migrationsRun: process.env.NODE_ENV === 'production', // Ejecuta migraciones automáticamente en producción
       logging: process.env.NODE_ENV === 'production' ? ['error'] : ['query', 'error'],
     }),
-    TypeOrmModule.forFeature([FiscalYearEntity, PeriodEntity, AccountPeriodBalanceEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      PasswordResetTokenEntity,
+      FiscalYearEntity,
+      PeriodEntity,
+      AccountPeriodBalanceEntity,
+    ]),
   ],
 })
 export class DatabaseModule implements OnApplicationBootstrap {

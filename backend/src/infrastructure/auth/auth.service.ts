@@ -1,53 +1,92 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserEntity } from '../database/entities/user.entity';
-import { AccountEntity } from '../database/entities/account.entity';
-import { CurrencyEntity } from '../database/entities/currency.entity';
 import * as bcrypt from 'bcrypt';
-import { LoginRequest } from '@sistema-contable/shared';
+import * as crypto from 'crypto';
+import { UserEntity } from '../database/entities/user.entity';
+import { PasswordResetTokenEntity } from '../database/entities/password-reset-token.entity';
+import { EmailService } from '../mail/email.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AuthErrorCode } from '@sistema-contable/shared';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(PasswordResetTokenEntity)
+    private readonly tokenRepository: Repository<PasswordResetTokenEntity>,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async register(body: LoginRequest) {
-    const existing = await this.userRepository.findOne({ where: { email: body.email } });
+  async register(dto: RegisterDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await this.userRepository.findOne({ where: { email: normalizedEmail } });
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException({
+        code: AuthErrorCode.EMAIL_ALREADY_EXISTS,
+        message: 'Email already registered',
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(body.password, salt);
+    const passwordHash = await bcrypt.hash(dto.password, salt);
 
     const user = this.userRepository.create({
-      email: body.email,
+      fullName: dto.fullName.trim(),
+      email: normalizedEmail,
       passwordHash,
+      isActive: true,
     });
 
     const saved = await this.userRepository.save(user);
 
+    const payload = { sub: saved.id, email: saved.email };
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      id: saved.id,
-      email: saved.email,
-      created_at: saved.createdAt,
+      access_token,
+      user: {
+        id: saved.id,
+        fullName: saved.fullName,
+        email: saved.email,
+        createdAt: saved.createdAt?.toISOString(),
+      },
     };
   }
 
-  async login(body: LoginRequest) {
-    const user = await this.userRepository.findOne({ where: { email: body.email } });
+  async login(dto: LoginDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const user = await this.userRepository.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException({
+        code: AuthErrorCode.INVALID_CREDENTIALS,
+        message: 'Invalid email or password',
+      });
     }
 
-    const isMatch = await bcrypt.compare(body.password, user.passwordHash);
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+
+    const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException({
+        code: AuthErrorCode.INVALID_CREDENTIALS,
+        message: 'Invalid email or password',
+      });
     }
 
     const payload = { sub: user.id, email: user.email };
@@ -55,8 +94,109 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
+        fullName: user.fullName,
         email: user.email,
+        createdAt: user.createdAt?.toISOString(),
       },
+    };
+  }
+
+  async getProfile(user: UserEntity) {
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      createdAt: user.createdAt?.toISOString(),
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new UnauthorizedException({
+        code: AuthErrorCode.INVALID_CURRENT_PASSWORD,
+        message: 'Current password verification failed',
+      });
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('New password cannot be identical to current password');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(dto.newPassword, salt);
+    await this.userRepository.save(user);
+
+    return {
+      message: 'Password updated successfully',
+    };
+  }
+
+  async requestForgotPassword(dto: ForgotPasswordDto) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const user = await this.userRepository.findOne({ where: { email: normalizedEmail } });
+
+    if (user) {
+      const rawToken = crypto.randomUUID();
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 60 minutes
+
+      const tokenRecord = this.tokenRepository.create({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+        used: false,
+      });
+
+      await this.tokenRepository.save(tokenRecord);
+
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      const resetUrl = `${appUrl}/reset-password?token=${rawToken}`;
+
+      await this.emailService.sendPasswordResetEmail({
+        to: user.email,
+        fullName: user.fullName,
+        resetUrl,
+      });
+    }
+
+    return {
+      message: 'If the email is registered, a password reset link has been sent.',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenHash = crypto.createHash('sha256').update(dto.token).digest('hex');
+    const tokenRecord = await this.tokenRepository.findOne({
+      where: { tokenHash, used: false },
+    });
+
+    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+      throw new BadRequestException({
+        code: AuthErrorCode.EXPIRED_OR_INVALID_TOKEN,
+        message: 'Invalid or expired password reset token',
+      });
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: tokenRecord.userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(dto.newPassword, salt);
+    await this.userRepository.save(user);
+
+    tokenRecord.used = true;
+    await this.tokenRepository.save(tokenRecord);
+
+    return {
+      message: 'Password reset successfully. You may now log in with your new password.',
     };
   }
 }

@@ -12,18 +12,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
+  const publicAuthRoutes = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
+  const isAuthPage = publicAuthRoutes.includes(pathname);
+
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    const isAuthRoute = pathname === '/';
 
-    if (!token && !isAuthRoute) {
-      router.replace('/');
-    } else if (token && isAuthRoute) {
+    if (!token && !isAuthPage) {
+      router.replace('/login');
+    } else if (token && isAuthPage) {
       router.replace('/transactions');
     } else {
       setLoading(false);
     }
-  }, [pathname, router]);
+  }, [pathname, router, isAuthPage]);
 
   if (loading) {
     return (
@@ -36,7 +38,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  const isAuthPage = pathname === '/';
   const isTransactionEntryPage =
     pathname === '/transactions/new' || pathname?.startsWith('/transactions/new/');
 

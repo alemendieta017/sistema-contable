@@ -10,3 +10,5 @@ Thumbs.db
 .vscode/
 .idea/
 frontend/.next
+frontend/.next_local
+*.tsbuildinfo

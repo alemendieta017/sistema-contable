@@ -52,17 +52,8 @@ async function handleResponse(response: Response) {
 
 export const api = {
   auth: {
-    async register(data: LoginRequest) {
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return handleResponse(res);
-    },
-
-    async login(data: LoginRequest) {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    async register(data: { fullName: string; email: string; password: string }) {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -75,9 +66,60 @@ export const api = {
       return result;
     },
 
+    async login(data: { email: string; password: string }) {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await handleResponse(res);
+      if (result && result.access_token) {
+        localStorage.setItem('auth_token', result.access_token);
+        localStorage.setItem('auth_user', JSON.stringify(result.user));
+      }
+      return result;
+    },
+
+    async me() {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async changePassword(data: { currentPassword: string; newPassword: string }) {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/change-password`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async forgotPassword(data: { email: string }) {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async resetPassword(data: { token: string; newPassword: string }) {
+      const res = await fetch(`${API_BASE_URL}/v1/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
     logout() {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+      }
     },
 
     getUser() {
