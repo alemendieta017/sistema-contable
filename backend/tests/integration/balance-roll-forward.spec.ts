@@ -3,14 +3,12 @@ import { UpdatePeriodUseCase } from '../../src/application/periods/update-period
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { DataSource } from 'typeorm';
 
 describe('Balance Roll Forward Integration Tests', () => {
   let updateUseCase: UpdatePeriodUseCase;
-  let balanceUpdateService: BalanceUpdateService;
   let mockEntityManager: any;
   let mockDataSource: any;
 
@@ -54,7 +52,6 @@ describe('Balance Roll Forward Integration Tests', () => {
     }).compile();
 
     updateUseCase = module.get<UpdatePeriodUseCase>(UpdatePeriodUseCase);
-    balanceUpdateService = module.get<BalanceUpdateService>(BalanceUpdateService);
   });
 
   it('should trigger balance propagation when reopening a period (CLOSED -> OPEN)', async () => {
@@ -76,7 +73,7 @@ describe('Balance Roll Forward Integration Tests', () => {
       },
     };
 
-    mockEntityManager.findOne.mockImplementation(async (cls, options) => {
+    mockEntityManager.findOne.mockImplementation(async (cls: any, _options?: any) => {
       if (cls === PeriodEntity) {
         return mockPeriod;
       }
@@ -149,12 +146,13 @@ describe('Balance Roll Forward Integration Tests', () => {
     ];
 
     // Mock finding entities in propagateBalancesFromPeriod
-    mockEntityManager.find.mockImplementation(async (cls, options) => {
+    mockEntityManager.find.mockImplementation(async (cls: any, options?: any) => {
       if (cls === AccountPeriodBalanceEntity) {
         if (options && options.where && options.where.periodId === 'p-1') {
           return mockCurrentBalances;
         }
-        return [];
+        // Handle bulk query for future periods
+        return Array.from(existingBalances.values());
       }
       if (cls === AccountEntity) {
         return mockAccounts;
@@ -181,7 +179,7 @@ describe('Balance Roll Forward Integration Tests', () => {
       closingBalance: 20,
     });
 
-    mockEntityManager.findOne.mockImplementation(async (cls, options) => {
+    mockEntityManager.findOne.mockImplementation(async (cls: any, options?: any) => {
       if (cls === PeriodEntity) {
         return mockPeriod;
       }
@@ -194,11 +192,18 @@ describe('Balance Roll Forward Integration Tests', () => {
     });
 
     const savedBalances: any[] = [];
-    mockEntityManager.save.mockImplementation(async (cls, entity) => {
-      if (cls === AccountPeriodBalanceEntity || entity.openingBalance !== undefined) {
-        savedBalances.push(entity);
+    mockEntityManager.save.mockImplementation(async (cls: any, entityOrEntities?: any) => {
+      const items = Array.isArray(cls)
+        ? cls
+        : Array.isArray(entityOrEntities)
+          ? entityOrEntities
+          : [entityOrEntities];
+      for (const item of items) {
+        if (item && (item.openingBalance !== undefined || item.accountId)) {
+          savedBalances.push(item);
+        }
       }
-      return entity;
+      return entityOrEntities;
     });
 
     // Call UseCase

@@ -44,7 +44,9 @@ export class BalanceUpdateService {
       throw new BadRequestException('The accounting period for the transaction date is closed');
     }
     if (!bypassLock && targetPeriod.status === 'PLANNING') {
-      throw new BadRequestException('The accounting period for the transaction date is in planning status');
+      throw new BadRequestException(
+        'The accounting period for the transaction date is in planning status',
+      );
     }
 
     // 3. Precompute first periods of all fiscal years for the user
@@ -255,7 +257,20 @@ export class BalanceUpdateService {
       accountMap.set(acc.id, acc);
     }
 
-    // 6. Propagate balance forward for each account
+    // 6. Pre-fetch existing future period balances in bulk to prevent N+1 queries
+    const futurePeriodIds = futurePeriods.map((p) => p.id);
+    const existingFutureBalances = await entityManager.find(AccountPeriodBalanceEntity, {
+      where: { accountId: In(accountIds), periodId: In(futurePeriodIds) },
+    });
+
+    const balanceMap = new Map<string, AccountPeriodBalanceEntity>();
+    for (const fb of existingFutureBalances) {
+      balanceMap.set(`${fb.accountId}:${fb.periodId}`, fb);
+    }
+
+    const balancesToSave: AccountPeriodBalanceEntity[] = [];
+
+    // 7. Propagate balance forward for each account
     for (const currentBalance of currentPeriodBalances) {
       const accountId = currentBalance.accountId;
       const account = accountMap.get(accountId);
@@ -267,9 +282,8 @@ export class BalanceUpdateService {
       let previousClosing = Number(currentBalance.closingBalance);
 
       for (const futurePeriod of futurePeriods) {
-        let futureBalance = await entityManager.findOne(AccountPeriodBalanceEntity, {
-          where: { accountId, periodId: futurePeriod.id },
-        });
+        const key = `${accountId}:${futurePeriod.id}`;
+        let futureBalance = balanceMap.get(key);
 
         const isFirstPeriodOfFy =
           firstPeriodOfFiscalYear.get(futurePeriod.fiscalYearId) === futurePeriod.id;
@@ -287,6 +301,7 @@ export class BalanceUpdateService {
             totalCredits: 0,
             closingBalance: expectedOpening,
           });
+          balanceMap.set(key, futureBalance);
         } else {
           futureBalance.openingBalance = expectedOpening;
         }
@@ -300,9 +315,13 @@ export class BalanceUpdateService {
           futureBalance.closingBalance = expectedOpening + credits - debits;
         }
 
-        await entityManager.save(AccountPeriodBalanceEntity, futureBalance);
+        balancesToSave.push(futureBalance);
         previousClosing = futureBalance.closingBalance;
       }
+    }
+
+    if (balancesToSave.length > 0) {
+      await entityManager.save(AccountPeriodBalanceEntity, balancesToSave);
     }
   }
 }
