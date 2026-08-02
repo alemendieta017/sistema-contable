@@ -1,20 +1,80 @@
 import { z } from 'zod';
 
+export enum AuthErrorCode {
+  EMAIL_ALREADY_EXISTS = 'AUTH_EMAIL_ALREADY_EXISTS',
+  INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS',
+  INVALID_CURRENT_PASSWORD = 'AUTH_INVALID_CURRENT_PASSWORD',
+  EXPIRED_OR_INVALID_TOKEN = 'AUTH_EXPIRED_OR_INVALID_TOKEN',
+  UNAUTHORIZED = 'AUTH_UNAUTHORIZED',
+}
+
+export const PASSWORD_REGEX = /^.{6,}$/;
+export const PASSWORD_COMPLEXITY_MESSAGE =
+  'Password must be at least 6 characters long';
+
 // Base User Schema
 export const UserSchema = z.object({
   id: z.string().uuid(),
+  fullName: z.string().min(1),
   email: z.string().email(),
-  created_at: z.string().datetime(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;
 
-export const LoginRequestSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+export const RegisterRequestSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().regex(PASSWORD_REGEX, PASSWORD_COMPLEXITY_MESSAGE),
 });
 
-export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+export type RegisterDto = z.infer<typeof RegisterRequestSchema>;
+
+export const LoginRequestSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+export type LoginDto = z.infer<typeof LoginRequestSchema>;
+export type LoginRequest = LoginDto;
+
+export const ChangePasswordRequestSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().regex(PASSWORD_REGEX, PASSWORD_COMPLEXITY_MESSAGE),
+});
+
+export type ChangePasswordDto = z.infer<typeof ChangePasswordRequestSchema>;
+
+export const ForgotPasswordRequestSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export type ForgotPasswordDto = z.infer<typeof ForgotPasswordRequestSchema>;
+
+export const ResetPasswordRequestSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+  newPassword: z.string().regex(PASSWORD_REGEX, PASSWORD_COMPLEXITY_MESSAGE),
+});
+
+export type ResetPasswordDto = z.infer<typeof ResetPasswordRequestSchema>;
+
+export interface AuthResponse {
+  access_token: string;
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+    createdAt?: string;
+  };
+}
+
+export interface UserProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  createdAt?: string;
+}
 
 // Account Types
 export const AccountTypeSchema = z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']);

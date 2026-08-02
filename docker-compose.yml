@@ -2,17 +2,16 @@ services:
   db:
     image: postgres:16-alpine
     container_name: sistema-contable-db
-    restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-sistema_contable}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
+      POSTGRES_DB: sistema_contable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sistema_contable}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sistema_contable"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,21 +19,25 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/Dockerfile.dev
     container_name: sistema-contable-backend
-    restart: always
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: production
-      DATABASE_HOST: ${DATABASE_HOST:-db}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_USER: ${POSTGRES_USER:-postgres}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
-      DATABASE_NAME: ${POSTGRES_DB:-sistema_contable}
-      DATABASE_URL: ${DATABASE_URL:-}
-      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey1234!}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres_password
+      DATABASE_NAME: sistema_contable
+      JWT_SECRET: supersecretjwtkey1234!
       PORT: 3001
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/shared/node_modules
+      - /app/backend/node_modules
+      - /app/backend/dist
     depends_on:
       db:
         condition: service_healthy
@@ -42,17 +45,20 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+      dockerfile: frontend/Dockerfile.dev
     container_name: sistema-contable-frontend
-    restart: always
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
       PORT: 3000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/shared/node_modules
+      - /app/frontend/node_modules
+      - /app/frontend/.next
     depends_on:
       - backend
 

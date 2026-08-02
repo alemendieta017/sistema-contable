@@ -43,7 +43,7 @@ export default function HomePage() {
     setLoading(true);
     setError('');
     try {
-      await api.auth.register({ email, password });
+      await api.auth.register({ fullName: name, email, password });
       setView('login');
       setError('Registration successful! Please log in.');
     } catch (err: any) {

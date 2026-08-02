@@ -6,8 +6,8 @@
   "scripts": {
     "build": "nest build",
     "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start:dev": "npx nest start --watch",
+    "start:debug": "npx nest start --debug --watch",
     "start:prod": "node dist/main",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -37,9 +37,9 @@
     "class-validator": "^0.14.1",
     "class-transformer": "^0.5.1",
     "exceljs": "^4.4.0",
-    "zod": "^3.23.8",
-    "rxjs": "^7.8.1",
     "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^3.23.8",
     "@sistema-contable/shared": "*"
   },
   "devDependencies": {

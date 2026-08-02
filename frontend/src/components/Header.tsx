@@ -5,20 +5,12 @@ import { Search, User, Sun, Moon } from 'lucide-react';
 import { useSearch } from '../lib/search-context';
 import { useTheme } from '../lib/theme-context';
 import { usePathname } from 'next/navigation';
-import { api } from '../services/api';
+import HeaderProfileMenu from './layout/HeaderProfileMenu';
 
 export default function Header() {
   const { searchQuery, setSearchQuery } = useSearch();
   const { theme, toggleTheme } = useTheme();
-  const [userEmail, setUserEmail] = useState('');
   const pathname = usePathname();
-
-  useEffect(() => {
-    const user = api.auth.getUser();
-    if (user && user.email) {
-      setUserEmail(user.email);
-    }
-  }, []);
 
   // Reset search query when navigating between pages
   useEffect(() => {
@@ -55,17 +47,8 @@ export default function Header() {
           {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </button>
 
-        {/* User Card */}
-        {userEmail && (
-          <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700">
-            <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-950/60 rounded-full flex items-center justify-center border border-indigo-200 dark:border-indigo-800">
-              <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <span className="hidden sm:inline text-xs font-semibold text-slate-600 dark:text-slate-300">
-              {userEmail.split('@')[0]}
-            </span>
-          </div>
-        )}
+        {/* Top-Right Header Profile Dropdown */}
+        <HeaderProfileMenu />
       </div>
     </header>
   );

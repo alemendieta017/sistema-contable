@@ -1,12 +1,10 @@
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
-import { LoginRequest } from '@sistema-contable/shared';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
-export class LoginDto implements LoginRequest {
-  @IsEmail()
+export class LoginDto {
+  @IsEmail({}, { message: 'Invalid email address' })
   @IsNotEmpty()
   email: string;
 
-  @IsNotEmpty()
-  @MinLength(6)
+  @IsNotEmpty({ message: 'Password is required' })
   password: string;
 }
