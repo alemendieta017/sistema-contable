@@ -78,8 +78,15 @@ export default function BalanceSheetPage() {
       setCurrencies(currencyData || []);
 
       if (sortedPeriods.length > 0) {
-        setSelectedPeriodId(sortedPeriods[0].id);
-        setSelectedPeriodIds([sortedPeriods[0].id, sortedPeriods[1]?.id || sortedPeriods[0].id]);
+        const todayStr = new Date().toISOString().substring(0, 7);
+        const currentPeriod = sortedPeriods.find((p: any) => p.name === todayStr);
+        const pastOrCurrentPeriods = sortedPeriods.filter((p: any) => p.name <= todayStr);
+        const defaultPeriod = currentPeriod || pastOrCurrentPeriods[0] || sortedPeriods[0];
+
+        setSelectedPeriodId(defaultPeriod.id);
+        const secondPeriod =
+          sortedPeriods.find((p: any) => p.id !== defaultPeriod.id) || defaultPeriod;
+        setSelectedPeriodIds([defaultPeriod.id, secondPeriod.id]);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar los períodos contables.');

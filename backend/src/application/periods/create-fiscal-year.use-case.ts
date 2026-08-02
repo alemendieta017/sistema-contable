@@ -6,6 +6,7 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { CreateFiscalYearRequest } from '@sistema-contable/shared';
 import { IsString, IsNotEmpty, IsInt, Min, Max } from 'class-validator';
+import { BalanceUpdateService } from './balance-update.service';
 
 export class CreateFiscalYearDto implements CreateFiscalYearRequest {
   @IsInt()
@@ -30,6 +31,7 @@ export class CreateFiscalYearUseCase {
     @InjectRepository(PeriodEntity)
     private readonly periodRepository: Repository<PeriodEntity>,
     private readonly dataSource: DataSource,
+    private readonly balanceUpdateService: BalanceUpdateService,
   ) {}
 
   async execute(userId: string, dto: CreateFiscalYearRequest) {
@@ -122,6 +124,24 @@ export class CreateFiscalYearUseCase {
           name: budgetFriendlyName,
         });
         await entityManager.save(BudgetEntity, budgetEntity);
+      }
+
+      // Propagate balances from previous period if one exists
+      const previousPeriod = await entityManager
+        .getRepository(PeriodEntity)
+        .createQueryBuilder('period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.endDate < :startDate', { startDate })
+        .orderBy('period.endDate', 'DESC')
+        .getOne();
+
+      if (previousPeriod) {
+        await this.balanceUpdateService.propagateBalancesFromPeriod(
+          entityManager,
+          userId,
+          previousPeriod.id,
+        );
       }
 
       return {
