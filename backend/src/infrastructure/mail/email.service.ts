@@ -15,6 +15,11 @@ export class ConsoleEmailService extends EmailService {
   private readonly logger = new Logger(ConsoleEmailService.name);
 
   async sendPasswordResetEmail({ to, fullName, resetUrl }: SendPasswordResetEmailParams): Promise<void> {
+    if (process.env.NODE_ENV === 'production') {
+      this.logger.warn('ConsoleEmailService is running in PRODUCTION mode. Sensitive URLs are suppressed in production logs.');
+      return;
+    }
+
     this.logger.log(`
 ==================================================
 [DEVELOPMENT EMAIL SERVICE]

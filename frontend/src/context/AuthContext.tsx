@@ -42,11 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(null);
         }
       }
-    } catch {
-      // Token expired or invalid
-      authService.logout();
-      setUser(null);
-      setToken(null);
+    } catch (err: any) {
+      if (err?.status === 401) {
+        // Token expired or invalid
+        authService.logout();
+        setUser(null);
+        setToken(null);
+      }
     } finally {
       setIsLoading(false);
     }

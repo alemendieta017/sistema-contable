@@ -30,7 +30,9 @@ async function handleResponse(response: Response) {
     } catch {
       // Ignore if response is not JSON
     }
-    throw new Error(errorMessage);
+    const error = new Error(errorMessage) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
   if (response.status === 204) {
     return null;

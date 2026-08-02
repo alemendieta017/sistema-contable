@@ -20,6 +20,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthErrorCode } from '@sistema-contable/shared';
 
+const DUMMY_HASH = '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -70,7 +72,11 @@ export class AuthService {
   async login(dto: LoginDto) {
     const normalizedEmail = dto.email.trim().toLowerCase();
     const user = await this.userRepository.findOne({ where: { email: normalizedEmail } });
-    if (!user) {
+    const hashToCompare = user ? user.passwordHash : DUMMY_HASH;
+
+    const isMatch = await bcrypt.compare(dto.password, hashToCompare);
+
+    if (!user || !isMatch) {
       throw new UnauthorizedException({
         code: AuthErrorCode.INVALID_CREDENTIALS,
         message: 'Invalid email or password',
@@ -79,14 +85,6 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Account is deactivated');
-    }
-
-    const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!isMatch) {
-      throw new UnauthorizedException({
-        code: AuthErrorCode.INVALID_CREDENTIALS,
-        message: 'Invalid email or password',
-      });
     }
 
     const payload = { sub: user.id, email: user.email };
@@ -189,11 +187,24 @@ export class AuthService {
     }
 
     const salt = await bcrypt.genSalt(10);
-    user.passwordHash = await bcrypt.hash(dto.newPassword, salt);
-    await this.userRepository.save(user);
+    const passwordHash = await bcrypt.hash(dto.newPassword, salt);
 
-    tokenRecord.used = true;
-    await this.tokenRepository.save(tokenRecord);
+    await this.tokenRepository.manager.transaction(async (transactionalEntityManager) => {
+      // Mark current token as used
+      tokenRecord.used = true;
+      await transactionalEntityManager.save(tokenRecord);
+
+      // Update user password
+      user.passwordHash = passwordHash;
+      await transactionalEntityManager.save(user);
+
+      // Invalidate any other active reset tokens for this user
+      await transactionalEntityManager.update(
+        PasswordResetTokenEntity,
+        { userId: user.id, used: false },
+        { used: true },
+      );
+    });
 
     return {
       message: 'Password reset successfully. You may now log in with your new password.',

@@ -13,9 +13,17 @@ import { EmailService, ConsoleEmailService } from '../mail/email.service';
   imports: [
     TypeOrmModule.forFeature([UserEntity, PasswordResetTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'supersecretjwtkey1234!',
-      signOptions: { expiresIn: '7d' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret && process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET environment variable must be set in production mode');
+        }
+        return {
+          secret: secret || 'supersecretjwtkey1234!',
+          signOptions: { expiresIn: '7d' },
+        };
+      },
     }),
   ],
   providers: [

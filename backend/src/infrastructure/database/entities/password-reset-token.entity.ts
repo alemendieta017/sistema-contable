@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { UserEntity } from './user.entity';
 
 @Entity('password_reset_tokens')
@@ -13,6 +13,7 @@ export class PasswordResetTokenEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
+  @Index('IDX_password_reset_tokens_token_hash')
   @Column({ name: 'token_hash' })
   tokenHash: string;
 
