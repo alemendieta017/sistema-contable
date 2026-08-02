@@ -84,8 +84,9 @@ export default function BalanceSheetPage() {
         const defaultPeriod = currentPeriod || pastOrCurrentPeriods[0] || sortedPeriods[0];
 
         setSelectedPeriodId(defaultPeriod.id);
+        const defaultIndex = sortedPeriods.findIndex((p: any) => p.id === defaultPeriod.id);
         const secondPeriod =
-          sortedPeriods.find((p: any) => p.id !== defaultPeriod.id) || defaultPeriod;
+          sortedPeriods[defaultIndex + 1] || sortedPeriods[defaultIndex - 1] || defaultPeriod;
         setSelectedPeriodIds([defaultPeriod.id, secondPeriod.id]);
       }
     } catch (err: any) {
@@ -207,7 +208,10 @@ export default function BalanceSheetPage() {
         {isComparative && Array.isArray(totals) ? (
           <div className="flex gap-4">
             {totals.map((tot, idx) => (
-              <span key={idx} className={`${totalColorClass} min-w-[120px] text-right text-sm whitespace-nowrap`}>
+              <span
+                key={idx}
+                className={`${totalColorClass} min-w-[120px] text-right text-sm whitespace-nowrap`}
+              >
                 {formatCurrency(tot, baseCurrency)}
               </span>
             ))}

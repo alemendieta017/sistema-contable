@@ -17,6 +17,14 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
   let mockPeriodRepo: any;
   let mockBalanceUpdateService: any;
 
+  const createMockQueryBuilder = (getOneValue: any = null) => ({
+    innerJoin: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    getOne: jest.fn().mockResolvedValue(getOneValue),
+  });
+
   const mockDataSource = {
     transaction: jest.fn().mockImplementation(async (cb) => {
       return cb(mockEntityManager);
@@ -24,14 +32,6 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
   };
 
   beforeEach(async () => {
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(null),
-    };
-
     mockEntityManager = {
       create: jest.fn().mockImplementation((entityClass, plainObject) => {
         return {
@@ -40,16 +40,21 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
         };
       }),
       save: jest.fn().mockImplementation(async (entityClass, entity) => {
-        return { id: entity.id || `mock-${entityClass.name ? entityClass.name.toLowerCase() : 'entity'}-uuid`, ...entity };
+        return {
+          id:
+            entity.id ||
+            `mock-${entityClass.name ? entityClass.name.toLowerCase() : 'entity'}-uuid`,
+          ...entity,
+        };
       }),
       getRepository: jest.fn().mockReturnValue({
-        createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+        createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
       }),
     };
 
     mockFiscalYearRepo = {
       findOne: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
     };
 
     mockPeriodRepo = {};
@@ -140,16 +145,8 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
       endDate: '2026-12-31',
     };
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(previousPeriod),
-    };
-
     mockEntityManager.getRepository.mockReturnValue({
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder(previousPeriod)),
     });
 
     await useCase.execute(userId, dto);
@@ -197,14 +194,9 @@ describe('Fiscal Year and Period Creation Integration Tests', () => {
 
     mockFiscalYearRepo.findOne.mockResolvedValue(null);
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'existing-fy-id', name: 'Ejercicio 2026' }),
-    };
-    mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    mockFiscalYearRepo.createQueryBuilder.mockReturnValue(
+      createMockQueryBuilder({ id: 'existing-fy-id', name: 'Ejercicio 2026' }),
+    );
 
     await expect(useCase.execute(userId, dto)).rejects.toThrow(
       new BadRequestException(
