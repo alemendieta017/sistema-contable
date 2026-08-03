@@ -1,4 +1,4 @@
-import { Module, OnApplicationBootstrap } from '@nestjs/common';
+import { Module, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
@@ -12,22 +12,42 @@ import { PasswordResetTokenEntity } from './entities/password-reset-token.entity
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      ...(process.env.DATABASE_URL
-        ? { url: process.env.DATABASE_URL }
-        : {
-            host: process.env.DATABASE_HOST || 'localhost',
-            port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-            username: process.env.DATABASE_USER || 'postgres',
-            password: process.env.DATABASE_PASSWORD || 'postgres_password',
-            database: process.env.DATABASE_NAME || 'sistema_contable',
-          }),
-      autoLoadEntities: true,
-      migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
-      synchronize: process.env.NODE_ENV !== 'production', // Desactivado en producción para proteger los datos
-      migrationsRun: process.env.NODE_ENV === 'production', // Ejecuta migraciones automáticamente en producción
-      logging: process.env.NODE_ENV === 'production' ? ['error'] : ['query', 'error'],
+    TypeOrmModule.forRootAsync({
+      useFactory: () => {
+        const isProd = process.env.NODE_ENV === 'production';
+        const isSsl =
+          process.env.DATABASE_SSL === 'true' ||
+          (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode=require'));
+
+        const hostInfo = process.env.DATABASE_URL
+          ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')
+          : `${process.env.DATABASE_HOST || 'localhost'}:${process.env.DATABASE_PORT || '5432'}/${process.env.DATABASE_NAME || 'sistema_contable'}`;
+
+        Logger.log(
+          `Initializing database connection to: ${hostInfo} (SSL: ${Boolean(isSsl)}, Env: ${process.env.NODE_ENV || 'development'})`,
+          'DatabaseModule',
+        );
+
+        return {
+          type: 'postgres',
+          ...(process.env.DATABASE_URL
+            ? { url: process.env.DATABASE_URL }
+            : {
+                host: process.env.DATABASE_HOST || 'localhost',
+                port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+                username: process.env.DATABASE_USER || 'postgres',
+                password: process.env.DATABASE_PASSWORD || 'postgres_password',
+                database: process.env.DATABASE_NAME || 'sistema_contable',
+              }),
+          ssl: isSsl ? { rejectUnauthorized: false } : false,
+          connectTimeoutMS: 10000,
+          autoLoadEntities: true,
+          migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
+          synchronize: !isProd,
+          migrationsRun: isProd,
+          logging: isProd ? ['error'] : ['query', 'error'],
+        };
+      },
     }),
     TypeOrmModule.forFeature([
       UserEntity,
