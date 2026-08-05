@@ -54,7 +54,11 @@ export class LedgerController {
       query.andWhere('tx.accountingDate <= :endDate', { endDate });
     }
 
-    return query.orderBy('tx.accountingDate', 'DESC').getMany();
+    return query
+      .orderBy('tx.accountingDate', 'DESC')
+      .addOrderBy('tx.createdAt', 'DESC')
+      .addOrderBy('tx.id', 'DESC')
+      .getMany();
   }
 
   @Post()

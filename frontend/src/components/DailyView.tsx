@@ -31,6 +31,7 @@ interface Entry {
 interface Transaction {
   id: string;
   accountingDate: string;
+  createdAt?: string;
   description: string;
   status?: string;
   reversalOfId?: string | null;
@@ -83,6 +84,12 @@ export default function DailyView({
     <div className="space-y-3">
       {sortedDates.map((dateStr) => {
         const dayTxs = grouped[dateStr];
+        const sortedDayTxs = [...dayTxs].sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          }
+          return 0;
+        });
         const dateObj = new Date(dateStr + 'T00:00:00');
 
         // Sum total flows for the day (aggregates in base currency)
@@ -118,7 +125,7 @@ export default function DailyView({
 
             {/* Day Transactions */}
             <div className="space-y-1">
-              {dayTxs.map((tx) => {
+              {sortedDayTxs.map((tx) => {
                 const isExpanded = expandedTxId === tx.id;
                 const isReversed = tx.status === 'REVERSED';
                 const isReversion = !!tx.reversalOfId;

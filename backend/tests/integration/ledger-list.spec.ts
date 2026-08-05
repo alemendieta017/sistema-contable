@@ -27,6 +27,7 @@ describe('LedgerController List Timezone Handling (pure date strings)', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
     };
 
@@ -85,5 +86,15 @@ describe('LedgerController List Timezone Handling (pure date strings)', () => {
 
     expect(startCall[1].startDate).toBe('2026-06-01');
     expect(endCall[1].endDate).toBe('2026-06-30');
+  });
+
+  it('should order transactions by accountingDate DESC, createdAt DESC, and id DESC', async () => {
+    const user = { id: 'user-uuid', email: 'user@example.com' } as any;
+
+    await controller.list(user);
+
+    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('tx.accountingDate', 'DESC');
+    expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('tx.createdAt', 'DESC');
+    expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('tx.id', 'DESC');
   });
 });
