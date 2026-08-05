@@ -85,10 +85,10 @@ export default function DailyView({
       {sortedDates.map((dateStr) => {
         const dayTxs = grouped[dateStr];
         const sortedDayTxs = [...dayTxs].sort((a, b) => {
-          if (a.createdAt && b.createdAt) {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          }
-          return 0;
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeA !== timeB) return timeB - timeA;
+          return b.id.localeCompare(a.id);
         });
         const dateObj = new Date(dateStr + 'T00:00:00');
 
