@@ -1,3 +1,5 @@
+export type SystemRole = 'NET_INCOME' | 'RETAINED_EARNINGS';
+
 export class Account {
   constructor(
     public readonly id: string,
@@ -8,6 +10,7 @@ export class Account {
     public readonly parentId?: string,
     public readonly status: 'ACTIVE' | 'INACTIVE' = 'ACTIVE',
     public readonly metadata?: Record<string, any>,
+    public readonly systemRole?: SystemRole | null,
   ) {}
 }
 

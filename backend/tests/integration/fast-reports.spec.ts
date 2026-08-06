@@ -165,7 +165,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       ]);
       expect(result.equity).toEqual([
         { accountId: 'acc-equity-1', name: 'Common Stock', balance: 10000.3 },
-        { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
       ]);
 
       expect(result.totalAssets).toBe(15000.5);
@@ -528,7 +527,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
       expect(result.equity).toEqual([
-        { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
         {
           accountId: 'virtual-accumulated-results',
           name: 'Resultados Acumulados',
@@ -611,7 +609,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
       expect(result.equity).toEqual([
-        { accountId: 'virtual-net-income', name: 'Resultado del Ejercicio', balance: 0.0 },
         {
           accountId: 'virtual-accumulated-results',
           name: 'Resultados Acumulados',
@@ -619,6 +616,63 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         },
       ]);
       expect(result.balanced).toBe(true);
+    });
+
+    it('should omit zero-balance system accounts from equity report section', async () => {
+      const mockPeriod = {
+        id: periodId,
+        name: '2026-03',
+        fiscalYearId: 'fy-uuid',
+      } as PeriodEntity;
+
+      const mockAccounts = [
+        { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
+        {
+          id: 'acc-stock',
+          name: 'Common Stock',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-ni',
+          name: 'Resultado del Ejercicio',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'NET_INCOME',
+        } as AccountEntity,
+        {
+          id: 'acc-re',
+          name: 'Resultados Acumulados',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'RETAINED_EARNINGS',
+        } as AccountEntity,
+      ];
+
+      const mockBalances = [
+        { accountId: 'acc-cash', periodId, closingBalance: 1000 } as AccountPeriodBalanceEntity,
+        { accountId: 'acc-stock', periodId, closingBalance: 1000 } as AccountPeriodBalanceEntity,
+        { accountId: 'acc-ni', periodId, closingBalance: 0 } as AccountPeriodBalanceEntity,
+        { accountId: 'acc-re', periodId, closingBalance: 0 } as AccountPeriodBalanceEntity,
+      ];
+
+      mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
+      mockAccountRepo.find!.mockResolvedValue(mockAccounts);
+      mockBalanceRepo.find!.mockResolvedValue(mockBalances);
+
+      const result = (await balanceSheetUseCase.execute(userId, {
+        mode: 'period',
+        periodId,
+      })) as any;
+
+      expect(result.equity).toEqual([
+        { accountId: 'acc-stock', name: 'Common Stock', balance: 1000.0 },
+      ]);
+      expect(result.equity.some((e: any) => e.accountId === 'acc-ni')).toBe(false);
+      expect(result.equity.some((e: any) => e.accountId === 'acc-re')).toBe(false);
     });
   });
 

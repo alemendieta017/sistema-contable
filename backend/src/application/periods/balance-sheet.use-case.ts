@@ -107,8 +107,6 @@ export class BalanceSheetUseCase {
       }
 
       // 3. Apply depth collapse to ASSET, LIABILITY, EQUITY
-      const collapsed = this.applyDepthCollapse(accounts, balanceMap, depth);
-
       // 4. Calculate virtual Net Income for the current fiscal year up to date
       const fiscalYear = await this.dataSource
         .getRepository(FiscalYearEntity)
@@ -186,20 +184,59 @@ export class BalanceSheetUseCase {
       }
       const priorNetIncome = priorCredits - priorDebits;
       const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
+      const netIncomeFixed = Number(cumulativeNetIncome.toFixed(4));
 
-      if (priorNetIncomeFixed !== 0) {
-        collapsed.equity.push({
-          accountId: 'virtual-accumulated-results',
-          name: 'Resultados Acumulados',
-          balance: priorNetIncomeFixed,
-        });
+      // Inject outcomes into system accounts before depth collapse
+      const netIncomeAccDate = accounts.find((a) => a.systemRole === 'NET_INCOME');
+      if (netIncomeAccDate) {
+        const currentVal = balanceMap.get(netIncomeAccDate.id) ?? 0;
+        balanceMap.set(netIncomeAccDate.id, currentVal + netIncomeFixed);
+      } else {
+        const fallbackId = 'virtual-net-income';
+        accounts.push({
+          id: fallbackId,
+          name: 'Resultado del Ejercicio',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'NET_INCOME',
+        } as AccountEntity);
+        balanceMap.set(fallbackId, netIncomeFixed);
       }
 
-      // Append virtual Net Income
-      collapsed.equity.push({
-        accountId: 'virtual-net-income',
-        name: 'Resultado del Ejercicio',
-        balance: Number(cumulativeNetIncome.toFixed(4)),
+      const retainedAccDate = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
+      if (retainedAccDate) {
+        if (priorNetIncomeFixed !== 0) {
+          const currentVal = balanceMap.get(retainedAccDate.id) ?? 0;
+          balanceMap.set(retainedAccDate.id, currentVal + priorNetIncomeFixed);
+        }
+      } else if (priorNetIncomeFixed !== 0) {
+        const fallbackId = 'virtual-accumulated-results';
+        accounts.push({
+          id: fallbackId,
+          name: 'Resultados Acumulados',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'RETAINED_EARNINGS',
+        } as AccountEntity);
+        balanceMap.set(fallbackId, priorNetIncomeFixed);
+      }
+
+      // 3. Apply depth collapse to ASSET, LIABILITY, EQUITY
+      const collapsed = this.applyDepthCollapse(accounts, balanceMap, depth);
+
+      // Filter zero-balance system accounts
+      const accountMapDate = new Map<string, AccountEntity>();
+      for (const acc of accounts) {
+        accountMapDate.set(acc.id, acc);
+      }
+      collapsed.equity = collapsed.equity.filter((item) => {
+        const acc = accountMapDate.get(item.accountId);
+        if (acc?.systemRole && Math.abs(item.balance) < 0.0001) {
+          return false;
+        }
+        return true;
       });
 
       // Sort equity by name
@@ -312,10 +349,7 @@ export class BalanceSheetUseCase {
       balanceMap.set(bal.accountId, Number(bal.closingBalance));
     }
 
-    // 3. Apply depth collapse to ASSET, LIABILITY, EQUITY
-    const collapsed = this.applyDepthCollapse(accounts, balanceMap, targetDepth);
-
-    // 4. Compute virtual Net Income
+    // 3. Compute virtual Net Income
     const tempAccounts = accounts.filter((a) => a.type === 'INCOME' || a.type === 'EXPENSE');
     const tempAccountIds = tempAccounts.map((a) => a.id);
     const tempBalances =
@@ -379,19 +413,58 @@ export class BalanceSheetUseCase {
     }
 
     const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
-    if (priorNetIncomeFixed !== 0) {
-      collapsed.equity.push({
-        accountId: 'virtual-accumulated-results',
-        name: 'Resultados Acumulados',
-        balance: priorNetIncomeFixed,
-      });
+
+    // Inject outcomes into system accounts before depth collapse
+    const netIncomeAcc = accounts.find((a) => a.systemRole === 'NET_INCOME');
+    if (netIncomeAcc) {
+      const currentVal = balanceMap.get(netIncomeAcc.id) ?? 0;
+      balanceMap.set(netIncomeAcc.id, currentVal + netIncome);
+    } else {
+      const fallbackId = 'virtual-net-income';
+      accounts.push({
+        id: fallbackId,
+        name: 'Resultado del Ejercicio',
+        type: 'EQUITY',
+        status: 'ACTIVE',
+        userId,
+        systemRole: 'NET_INCOME',
+      } as AccountEntity);
+      balanceMap.set(fallbackId, netIncome);
     }
 
-    // Append virtual Net Income
-    collapsed.equity.push({
-      accountId: 'virtual-net-income',
-      name: 'Resultado del Ejercicio',
-      balance: netIncome,
+    const retainedAcc = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
+    if (retainedAcc) {
+      if (priorNetIncomeFixed !== 0) {
+        const currentVal = balanceMap.get(retainedAcc.id) ?? 0;
+        balanceMap.set(retainedAcc.id, currentVal + priorNetIncomeFixed);
+      }
+    } else if (priorNetIncomeFixed !== 0) {
+      const fallbackId = 'virtual-accumulated-results';
+      accounts.push({
+        id: fallbackId,
+        name: 'Resultados Acumulados',
+        type: 'EQUITY',
+        status: 'ACTIVE',
+        userId,
+        systemRole: 'RETAINED_EARNINGS',
+      } as AccountEntity);
+      balanceMap.set(fallbackId, priorNetIncomeFixed);
+    }
+
+    // 4. Apply depth collapse to ASSET, LIABILITY, EQUITY
+    const collapsed = this.applyDepthCollapse(accounts, balanceMap, targetDepth);
+
+    // Filter zero-balance system accounts
+    const accountMapPeriod = new Map<string, AccountEntity>();
+    for (const acc of accounts) {
+      accountMapPeriod.set(acc.id, acc);
+    }
+    collapsed.equity = collapsed.equity.filter((item) => {
+      const acc = accountMapPeriod.get(item.accountId);
+      if (acc?.systemRole && Math.abs(item.balance) < 0.0001) {
+        return false;
+      }
+      return true;
     });
 
     // Sort equity by name again

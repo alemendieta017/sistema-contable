@@ -135,8 +135,7 @@ export default function PeriodsPage() {
 
   const handleCloseFiscalYearSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!closingFy || !selectedEarningsAccountId) {
-      setError('Debe seleccionar una cuenta de Resultados Acumulados.');
+    if (!closingFy) {
       return;
     }
 
@@ -146,7 +145,7 @@ export default function PeriodsPage() {
       setSuccess('');
 
       await api.fiscalYears.close(closingFy.id, {
-        retainedEarningsAccountId: selectedEarningsAccountId,
+        retainedEarningsAccountId: selectedEarningsAccountId || undefined,
       });
 
       setSuccess(
@@ -347,7 +346,10 @@ export default function PeriodsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end sm:self-auto" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-3 self-end sm:self-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {fy.status === 'OPEN' && (
                       <button
                         onClick={() => setClosingFy(fy)}
@@ -435,7 +437,9 @@ export default function PeriodsPage() {
                               <button
                                 onClick={() => handleTogglePeriod(period.id, period.status)}
                                 disabled={actionLoading}
-                                title={period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'}
+                                title={
+                                  period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'
+                                }
                                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                                   period.status === 'OPEN'
                                     ? 'bg-indigo-600 dark:bg-indigo-500'
@@ -545,14 +549,11 @@ export default function PeriodsPage() {
                   </div>
                 ) : (
                   <select
-                    required
                     value={selectedEarningsAccountId}
                     onChange={(e) => setSelectedEarningsAccountId(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
-                    <option value="" disabled>
-                      Seleccione una cuenta de Patrimonio...
-                    </option>
+                    <option value="">Automático: Cuenta del sistema (Resultados Acumulados)</option>
                     {equityAccounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
                         {acc.name}

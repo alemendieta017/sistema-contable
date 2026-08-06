@@ -14,7 +14,11 @@ export async function readyForClosingScenario(
   const { user, baseCurrency } = await baseScenario(em);
 
   // 2. Crear las cuentas contables necesarias específicamente para este escenario de transacciones y cierre
-  const accountsToCreate = [
+  const accountsToCreate: Array<{
+    name: string;
+    type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+    systemRole?: 'NET_INCOME' | 'RETAINED_EARNINGS';
+  }> = [
     { name: 'Efectivo', type: 'ASSET' },
     { name: 'Capital Inicial', type: 'EQUITY' },
     { name: 'Sueldo', type: 'INCOME' },
@@ -22,7 +26,8 @@ export async function readyForClosingScenario(
     { name: 'Comida', type: 'EXPENSE' },
     { name: 'Servicios', type: 'EXPENSE' },
     { name: 'Ropa', type: 'EXPENSE' },
-    { name: 'Utilidades Retenidas', type: 'EQUITY' },
+    { name: 'Resultado del Ejercicio', type: 'EQUITY', systemRole: 'NET_INCOME' },
+    { name: 'Utilidades Retenidas', type: 'EQUITY', systemRole: 'RETAINED_EARNINGS' },
   ];
 
   const accountMap = new Map<string, AccountEntity>();
@@ -32,10 +37,14 @@ export async function readyForClosingScenario(
       account = em.create(AccountEntity, {
         userId: user.id,
         name: acc.name,
-        type: acc.type as any,
+        type: acc.type,
         currencyId: baseCurrency.id,
         status: 'ACTIVE',
+        systemRole: acc.systemRole || null,
       });
+      account = await em.save(AccountEntity, account);
+    } else if (acc.systemRole && !account.systemRole) {
+      account.systemRole = acc.systemRole;
       account = await em.save(AccountEntity, account);
     }
     accountMap.set(acc.name, account);

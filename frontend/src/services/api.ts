@@ -1,12 +1,10 @@
 import {
-  LoginRequest,
   CreateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
 } from '@sistema-contable/shared';
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 function getHeaders(): HeadersInit {
   const headers: HeadersInit = {
@@ -383,11 +381,11 @@ export const api = {
       return handleResponse(res);
     },
 
-    async close(id: string, data: { retainedEarningsAccountId: string }) {
+    async close(id: string, data?: { retainedEarningsAccountId?: string }) {
       const res = await fetch(`${API_BASE_URL}/fiscal-years/${id}/close`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify(data),
+        body: JSON.stringify(data || {}),
       });
       return handleResponse(res);
     },

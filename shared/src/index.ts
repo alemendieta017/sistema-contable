@@ -9,8 +9,7 @@ export enum AuthErrorCode {
 }
 
 export const PASSWORD_REGEX = /^.{6,}$/;
-export const PASSWORD_COMPLEXITY_MESSAGE =
-  'Password must be at least 6 characters long';
+export const PASSWORD_COMPLEXITY_MESSAGE = 'Password must be at least 6 characters long';
 
 // Base User Schema
 export const UserSchema = z.object({
@@ -77,6 +76,9 @@ export interface UserProfile {
 }
 
 // Account Types
+export const SystemRoleSchema = z.enum(['NET_INCOME', 'RETAINED_EARNINGS']).nullable().optional();
+export type SystemRole = 'NET_INCOME' | 'RETAINED_EARNINGS';
+
 export const AccountTypeSchema = z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']);
 export type AccountType = z.infer<typeof AccountTypeSchema>;
 
@@ -88,6 +90,7 @@ export const CreateAccountRequestSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
   isCashOrBank: z.boolean().optional(),
   metadata: z.record(z.any()).optional(),
+  systemRole: SystemRoleSchema,
 });
 
 export type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
@@ -124,7 +127,7 @@ export type CreateFiscalYearRequest = z.infer<typeof CreateFiscalYearRequestSche
 
 // Close Fiscal Year Schema
 export const CloseFiscalYearRequestSchema = z.object({
-  retainedEarningsAccountId: z.string().uuid(),
+  retainedEarningsAccountId: z.string().uuid().optional(),
 });
 
 export type CloseFiscalYearRequest = z.infer<typeof CloseFiscalYearRequestSchema>;

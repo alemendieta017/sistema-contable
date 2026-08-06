@@ -124,7 +124,7 @@ describe('Annual Closing Integration Tests', () => {
       },
     ];
 
-    mockEntityManager.findOne.mockImplementation((cls, options) => {
+    mockEntityManager.findOne.mockImplementation((cls, _options) => {
       if (cls === FiscalYearEntity) {
         return {
           id: 'fy-1',
@@ -151,7 +151,7 @@ describe('Annual Closing Integration Tests', () => {
   });
 
   it('should throw BadRequestException if retained earnings account is not an EQUITY account', async () => {
-    mockEntityManager.findOne.mockImplementation((cls, options) => {
+    mockEntityManager.findOne.mockImplementation((cls, _options) => {
       if (cls === FiscalYearEntity) {
         return {
           id: 'fy-1',
@@ -178,7 +178,7 @@ describe('Annual Closing Integration Tests', () => {
     const periodStartDate = '2026-12-01';
     const periodEndDate = '2026-12-31';
 
-    mockEntityManager.findOne.mockImplementation((cls, options) => {
+    mockEntityManager.findOne.mockImplementation((cls, _options) => {
       if (cls === FiscalYearEntity) {
         return {
           id: 'fy-1',
@@ -209,7 +209,7 @@ describe('Annual Closing Integration Tests', () => {
       { id: 'acc-rent', type: 'EXPENSE', userId: 'user-1' },
     ];
 
-    mockEntityManager.find.mockImplementation((cls, options) => {
+    mockEntityManager.find.mockImplementation((cls, _options) => {
       if (cls === AccountEntity) {
         return mockAccounts;
       }
@@ -277,5 +277,53 @@ describe('Annual Closing Integration Tests', () => {
     const fySave = savedEntities.find((e) => e.cls === FiscalYearEntity);
     expect(fySave).toBeDefined();
     expect(fySave.entity.status).toBe('CLOSED');
+  });
+
+  it('should automatically locate system account with RETAINED_EARNINGS when retainedEarningsAccountId is omitted', async () => {
+    const periodStartDate = '2026-12-01';
+    const periodEndDate = '2026-12-31';
+
+    mockEntityManager.findOne.mockImplementation((cls: any, _options: any) => {
+      if (cls === FiscalYearEntity) {
+        return {
+          id: 'fy-1',
+          userId: 'user-1',
+          name: '2026',
+          status: 'OPEN',
+          endDate: periodEndDate,
+          periods: [
+            {
+              id: 'p-1',
+              name: '2026-12',
+              startDate: periodStartDate,
+              endDate: periodEndDate,
+              status: 'CLOSED',
+            },
+          ],
+        };
+      }
+      if (cls === AccountEntity) {
+        return {
+          id: 'acc-re-system',
+          type: 'EQUITY',
+          userId: 'user-1',
+          systemRole: 'RETAINED_EARNINGS',
+        };
+      }
+      return null;
+    });
+
+    mockEntityManager.find.mockImplementation((cls: any, _options: any) => {
+      if (cls === AccountEntity) {
+        return [{ id: 'acc-sales', type: 'INCOME', userId: 'user-1' }];
+      }
+      if (cls === AccountPeriodBalanceEntity) {
+        return [{ accountId: 'acc-sales', closingBalance: 1000 }];
+      }
+      return [];
+    });
+
+    const result = await closeUseCase.execute('user-1', 'fy-1');
+    expect(result.message).toBe('Fiscal year closed successfully');
   });
 });
