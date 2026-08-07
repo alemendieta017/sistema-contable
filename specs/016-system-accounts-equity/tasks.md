@@ -139,3 +139,7 @@
 1. Deliver US1 (Real System Accounts in Balance Sheet)
 2. Add US2 (Zero-balance hiding)
 3. Add US3 (Automated Fiscal Year Closing)
+
+## Phase 7: Convergence
+
+- [x] T017 Remove account selector dropdown from close fiscal year modal in `frontend/src/app/periods/page.tsx` for 100% automatic system account assignment (`RETAINED_EARNINGS`) per US3/AC1
