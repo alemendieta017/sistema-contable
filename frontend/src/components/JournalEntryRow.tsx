@@ -9,7 +9,9 @@ interface Account {
   name: string;
   type: string;
   parentId?: string | null;
+  systemRole?: string | null;
 }
+
 
 interface Entry {
   accountId: string;
@@ -109,8 +111,10 @@ export default function JournalEntryRow({
     const fullName = formatAccountName(a).toLowerCase();
     const matchesSearch = fullName.includes(search.toLowerCase());
     const matchesTab = activeTab === 'ALL' || a.type === activeTab;
-    return matchesSearch && matchesTab;
+    const isOperable = a.systemRole !== 'NET_INCOME';
+    return matchesSearch && matchesTab && isOperable;
   });
+
 
   const groups = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
 
@@ -161,15 +165,17 @@ export default function JournalEntryRow({
   };
 
   const getCount = (tabId: string) => {
+    const operableAccounts = accounts.filter((a) => a.systemRole !== 'NET_INCOME');
     if (tabId === 'ALL') {
-      return accounts.filter((a) =>
+      return operableAccounts.filter((a) =>
         formatAccountName(a).toLowerCase().includes(search.toLowerCase()),
       ).length;
     }
-    return accounts.filter(
+    return operableAccounts.filter(
       (a) => a.type === tabId && formatAccountName(a).toLowerCase().includes(search.toLowerCase()),
     ).length;
   };
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {

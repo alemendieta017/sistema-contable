@@ -106,12 +106,13 @@
 
 ### Tests for User Story 4 (TDD) ⚠️
 
-- [ ] T018 [P] [US4] Add backend integration tests verifying that creating a journal entry targeting `NET_INCOME` throws a validation exception, whereas targeting `RETAINED_EARNINGS` succeeds in `backend/tests/integration/`
+- [x] T018 [P] [US4] Add backend integration tests verifying that creating a journal entry targeting `NET_INCOME` throws a validation exception, whereas targeting `RETAINED_EARNINGS` succeeds in `backend/tests/integration/`
 
 ### Implementation for User Story 4
 
-- [ ] T019 [US4] Add domain/use-case validation in `CreateJournalEntryUseCase` to reject manual journal entries that reference accounts with `systemRole = 'NET_INCOME'` in `backend/src/application/entries/`
-- [ ] T020 [P] [US4] Update frontend journal entry account selection dropdowns to filter out accounts with `systemRole = 'NET_INCOME'`, while keeping `RETAINED_EARNINGS` visible and operable in `frontend/src/`
+- [x] T019 [US4] Add domain/use-case validation in `CreateJournalEntryUseCase` to reject manual journal entries that reference accounts with `systemRole = 'NET_INCOME'` in `backend/src/application/entries/`
+- [x] T020 [P] [US4] Update frontend journal entry account selection dropdowns to filter out accounts with `systemRole = 'NET_INCOME'`, while keeping `RETAINED_EARNINGS` visible and operable in `frontend/src/`
+
 
 ---
 
