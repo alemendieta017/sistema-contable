@@ -98,7 +98,24 @@
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 6: User Story 4 - Operability Restrictions on System Accounts in Journal Entries (Priority: P1)
+
+**Goal**: Restrict manual posting to `NET_INCOME` (*Resultado del Ejercicio*) in both backend validation and frontend UI selectors, while ensuring `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable.
+
+**Independent Test**: Try selecting or posting a manual journal entry to `NET_INCOME` (fails in UI & API), then post to `RETAINED_EARNINGS` (succeeds).
+
+### Tests for User Story 4 (TDD) ⚠️
+
+- [ ] T018 [P] [US4] Add backend integration tests verifying that creating a journal entry targeting `NET_INCOME` throws a validation exception, whereas targeting `RETAINED_EARNINGS` succeeds in `backend/tests/integration/`
+
+### Implementation for User Story 4
+
+- [ ] T019 [US4] Add domain/use-case validation in `CreateJournalEntryUseCase` to reject manual journal entries that reference accounts with `systemRole = 'NET_INCOME'` in `backend/src/application/entries/`
+- [ ] T020 [P] [US4] Update frontend journal entry account selection dropdowns to filter out accounts with `systemRole = 'NET_INCOME'`, while keeping `RETAINED_EARNINGS` visible and operable in `frontend/src/`
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: Suite verification and quickstart validation
 
@@ -107,39 +124,7 @@
 
 ---
 
-## Dependencies & Execution Order
-
-### Phase Dependencies
-
-- **Setup (Phase 1)**: Can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Story 1 (Phase 3)**: Depends on Foundational phase completion
-- **User Story 2 (Phase 4)**: Depends on Foundational phase completion
-- **User Story 3 (Phase 5)**: Depends on Foundational phase completion
-- **Polish (Phase 6)**: Depends on all user stories completion
-
-### Parallel Opportunities
-
-- `T001` & `T002` in Setup can run in parallel
-- `T006` (US1 test), `T009` (US2 test), and `T011` (US3 test) can be prepared in parallel
-- `T013` (Controller) & `T014` (Frontend) in US3 can run in parallel once `T012` completes
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-
-1. Phase 1 (Setup) + Phase 2 (Foundational)
-2. Phase 3 (User Story 1 - Real System Account Injection in Balance Sheet)
-3. Validate US1 independently
-
-### Incremental Delivery
-
-1. Deliver US1 (Real System Accounts in Balance Sheet)
-2. Add US2 (Zero-balance hiding)
-3. Add US3 (Automated Fiscal Year Closing)
-
-## Phase 7: Convergence
+## Phase 8: Convergence
 
 - [x] T017 Remove account selector dropdown from close fiscal year modal in `frontend/src/app/periods/page.tsx` for 100% automatic system account assignment (`RETAINED_EARNINGS`) per US3/AC1
+

@@ -42,3 +42,9 @@ npm run test -- tests/integration/fast-reports.spec.ts
    - Post to `POST /api/periods/fiscal-years/:id/close` with `{}` body.
    - Verify HTTP 200 response.
    - Verify closing journal entry posts discrepancy to the company's real `RETAINED_EARNINGS` account.
+
+3. **Manual Entry Restrictions on System Accounts**:
+   - Open New Journal Entry UI form (or send `POST /api/entries`).
+   - Verify `Resultado del Ejercicio` (`NET_INCOME`) is excluded from account dropdown options, while `Resultados Acumulados / Utilidades Retenidas` (`RETAINED_EARNINGS`) is visible and selectable.
+   - Send `POST /api/entries` payload with a line item targeting `NET_INCOME` account ID and verify server returns HTTP 400 Bad Request error.
+

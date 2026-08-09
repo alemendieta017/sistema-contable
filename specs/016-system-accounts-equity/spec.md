@@ -55,6 +55,22 @@ As an accountant, I want to close a fiscal year without having to manually selec
 1. **Given** an open fiscal year ready for closing, **When** initiating fiscal year close, **Then** the system automatically selects the account with `system_role = 'RETAINED_EARNINGS'` for the company without requiring account selection input.
 2. **Given** a closing request payload, **When** sent to the application backend, **Then** `retainedEarningsAccountId` is optional/removed from the request DTO.
 
+### User Story 4 - Operability Restrictions on System Accounts in Journal Entries (Priority: P1)
+
+As an accountant, I want system-calculated accounts like `NET_INCOME` (*Resultado del Ejercicio*) to be non-operable and hidden from manual journal entry account selectors, while `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable, so that manual entries cannot distort current fiscal period net income calculations while still permitting dividend distributions and prior-period adjustments.
+
+**Why this priority**: Prevents financial statement corruption and guarantees double-entry integrity between the Balance Sheet and Income Statement.
+
+**Independent Test**:
+1. Verify that when searching or browsing accounts in the manual journal entry UI form, `NET_INCOME` is excluded/hidden, whereas `RETAINED_EARNINGS` is visible and selectable.
+2. Verify that sending an HTTP POST request to create a manual journal entry referencing the `NET_INCOME` account ID results in a 400 Bad Request domain validation failure.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user creating a manual journal entry in the UI, **When** searching for accounts, **Then** the account with `systemRole = 'NET_INCOME'` is excluded from the selectable options list.
+2. **Given** a user creating a manual journal entry in the UI, **When** searching for accounts, **Then** the account with `systemRole = 'RETAINED_EARNINGS'` is visible and selectable as a valid target account.
+3. **Given** an API request to post a journal entry, **When** a line item attempts to post debits or credits directly to `NET_INCOME`, **Then** the backend rejects the transaction with a domain error ("System account NET_INCOME is non-operable for manual journal entries").
+
 ---
 
 ### Edge Cases
@@ -62,6 +78,7 @@ As an accountant, I want to close a fiscal year without having to manually selec
 - **Missing System Account Assignment on Legacy Data**: Data migration ensures all existing companies receive designated `NET_INCOME` and `RETAINED_EARNINGS` system roles attached to valid Equity accounts (or creates default Equity accounts if absent).
 - **Zero Balance vs Non-Zero Balance Visibility**: If net income is non-zero (even $0.01 positive or negative), it must be visible in Equity; only exact $0.00 balances are hidden.
 - **Hierarchical Aggregation at shallow depth (e.g. Level 1 or Level 2)**: When collapsing the Balance Sheet to parent levels, zero-balance child system accounts should not contribute floating entries, while non-zero child system accounts must sum correctly into total Equity.
+- **Attempting to Post Manual Entry to NET_INCOME**: Both frontend UI selectors and backend UseCase validations strictly block manual posting to `NET_INCOME` while permitting `RETAINED_EARNINGS`.
 
 ## Requirements _(mandatory)_
 
@@ -74,10 +91,12 @@ As an accountant, I want to close a fiscal year without having to manually selec
 - **FR-005**: System MUST hide any system account (including `NET_INCOME` and `RETAINED_EARNINGS`) from the Equity section of the Balance Sheet if its balance evaluates to zero ($0.00).
 - **FR-006**: System MUST update `CloseFiscalYearUseCase` to automatically retrieve and utilize the company's designated account with `systemRole = 'RETAINED_EARNINGS'` without requiring a target account ID parameter in the HTTP DTO.
 - **FR-007**: System MUST preserve hierarchical tree structure, account code, and grouping when rendering system accounts in the Balance Sheet across all depth levels.
+- **FR-008**: System MUST enforce that `NET_INCOME` (*Resultado del Ejercicio*) is non-operable (`allowManualEntry = false`), filtering it out from UI manual journal entry selectors and rejecting manual posting attempts in backend entry validation.
+- **FR-009**: System MUST ensure that `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable (`allowManualEntry = true`), allowing users to select it in manual journal entries for dividend distribution, reserves, or prior-period adjustments.
 
 ### Key Entities
 
-- **Account**: System entity representing a node in the Chart of Accounts. Attributes include `id`, `code`, `name`, `type` (e.g., Equity / Patrimonio Neto), `parentId`, and `systemRole` (`NET_INCOME`, `RETAINED_EARNINGS`, etc.).
+- **Account**: System entity representing a node in the Chart of Accounts. Attributes include `id`, `code`, `name`, `type` (e.g., Equity / Patrimonio Neto), `parentId`, `systemRole` (`NET_INCOME`, `RETAINED_EARNINGS`, etc.), and `allowManualEntry` (boolean flag).
 - **BalanceSheetReport**: Financial report entity representing Assets, Liabilities, and Equity hierarchy, where Equity accounts dynamically reflect period outcomes mapped to real system account nodes.
 
 ## Success Criteria _(mandatory)_
@@ -88,6 +107,7 @@ As an accountant, I want to close a fiscal year without having to manually selec
 - **SC-002**: 100% of zero-balance system accounts are omitted from the Equity section in generated Balance Sheets across all account tree depth levels.
 - **SC-003**: Fiscal year closing execution succeeds without requiring manual selection of retained earnings account IDs in 100% of test scenarios.
 - **SC-004**: Tree view consolidation under Equity accurately reflects proper mathematical totals across depth expansion levels 1 through 5.
+- **SC-005**: 100% of attempts to manually select or post entries to the `NET_INCOME` account are blocked in both frontend UI dropdowns and backend validation endpoints, while `RETAINED_EARNINGS` remains fully operable.
 
 ## Assumptions
 
