@@ -1195,7 +1195,7 @@
   dependencies:
     "@sinonjs/commons" "^3.0.1"
 
-"@sistema-contable/backend@file:C:\\Users\\amend\\Dev\\sistema-contable\\backend":
+"@sistema-contable/backend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\optimize_balance_calculation_nan\\backend":
   version "1.0.0"
   resolved "file:backend"
   dependencies:
@@ -1218,7 +1218,7 @@
     typeorm "^0.3.20"
     zod "^3.23.8"
 
-"@sistema-contable/frontend@file:C:\\Users\\amend\\Dev\\sistema-contable\\frontend":
+"@sistema-contable/frontend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\optimize_balance_calculation_nan\\frontend":
   version "1.0.0"
   resolved "file:frontend"
   dependencies:
@@ -1235,7 +1235,7 @@
     tailwind-merge "^2.3.0"
     zod "^3.23.8"
 
-"@sistema-contable/shared@*", "@sistema-contable/shared@file:C:\\Users\\amend\\Dev\\sistema-contable\\shared":
+"@sistema-contable/shared@*", "@sistema-contable/shared@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\optimize_balance_calculation_nan\\shared":
   version "1.0.0"
   resolved "file:shared"
   dependencies:

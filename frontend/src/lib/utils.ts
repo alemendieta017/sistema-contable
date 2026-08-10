@@ -39,7 +39,8 @@ export function formatCurrency(
     }
   }
 
-  const numAmount = amount !== null && amount !== undefined ? Number(amount) : 0;
+  const rawNum = amount !== null && amount !== undefined ? Number(amount) : 0;
+  const numAmount = isNaN(rawNum) ? 0 : rawNum;
 
   const formatted = numAmount.toLocaleString('es-PY', {
     minimumFractionDigits: decimals,

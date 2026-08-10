@@ -142,16 +142,16 @@ export class BalanceUpdateService {
       const currentOpening = Number(currentBalance.openingBalance);
       if (isDebitNature) {
         currentBalance.closingBalance =
-          currentOpening + currentBalance.totalDebits - currentBalance.totalCredits;
+          currentOpening + Number(currentBalance.totalDebits) - Number(currentBalance.totalCredits);
       } else {
         currentBalance.closingBalance =
-          currentOpening + currentBalance.totalCredits - currentBalance.totalDebits;
+          currentOpening + Number(currentBalance.totalCredits) - Number(currentBalance.totalDebits);
       }
 
       await entityManager.save(AccountPeriodBalanceEntity, currentBalance);
 
       // Roll forward to future periods chronologically
-      let previousClosing = currentBalance.closingBalance;
+      let previousClosing = Number(currentBalance.closingBalance);
 
       for (const futurePeriod of futurePeriods) {
         let futureBalance = await entityManager.findOne(AccountPeriodBalanceEntity, {
@@ -163,7 +163,7 @@ export class BalanceUpdateService {
         const expectedOpening =
           isFirstPeriodOfFy && (account.type === 'INCOME' || account.type === 'EXPENSE')
             ? 0
-            : previousClosing;
+            : Number(previousClosing);
 
         if (!futureBalance) {
           futureBalance = entityManager.create(AccountPeriodBalanceEntity, {
@@ -188,7 +188,7 @@ export class BalanceUpdateService {
         }
 
         await entityManager.save(AccountPeriodBalanceEntity, futureBalance);
-        previousClosing = futureBalance.closingBalance;
+        previousClosing = Number(futureBalance.closingBalance);
       }
     }
   }
@@ -316,7 +316,7 @@ export class BalanceUpdateService {
         }
 
         balancesToSave.push(futureBalance);
-        previousClosing = futureBalance.closingBalance;
+        previousClosing = Number(futureBalance.closingBalance);
       }
     }
 

@@ -13,13 +13,12 @@ import { CurrencyEntity } from '../../src/infrastructure/database/entities/curre
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
-import { DataSource, EntityManager } from 'typeorm';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { BadRequestException } from '@nestjs/common';
 
 describe('Balance Propagation and Period Locking Integration Tests', () => {
   let createUseCase: CreateTransactionUseCase;
   let deleteUseCase: DeleteTransactionUseCase;
-  let updateUseCase: UpdateTransactionUseCase;
   let reverseUseCase: ReverseTransactionUseCase;
   let reconstructUseCase: ReconstructBalancesUseCase;
   let balanceUpdateService: BalanceUpdateService;
@@ -94,7 +93,6 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
 
     createUseCase = module.get<CreateTransactionUseCase>(CreateTransactionUseCase);
     deleteUseCase = module.get<DeleteTransactionUseCase>(DeleteTransactionUseCase);
-    updateUseCase = module.get<UpdateTransactionUseCase>(UpdateTransactionUseCase);
     reverseUseCase = module.get<ReverseTransactionUseCase>(ReverseTransactionUseCase);
     reconstructUseCase = module.get<ReconstructBalancesUseCase>(ReconstructBalancesUseCase);
     balanceUpdateService = module.get<BalanceUpdateService>(BalanceUpdateService);
@@ -239,7 +237,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         return null;
       });
 
-      mockEntityManager.find.mockImplementation((cls, options) => {
+      mockEntityManager.find.mockImplementation((cls, _options) => {
         if (cls === AccountEntity) {
           return [mockCashAccount, mockRentAccount];
         }
@@ -275,6 +273,99 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       expect(cashBalanceFuture).toBeDefined();
       expect(Number(cashBalanceFuture.openingBalance)).toBe(100);
       expect(Number(cashBalanceFuture.closingBalance)).toBe(100);
+    });
+
+    it('should correctly propagate balances when future period has string decimal values from DB without string concatenation', async () => {
+      const userId = 'user-1';
+      const txDate = '2024-12-15';
+
+      const p2024_12 = {
+        id: 'p-2024-12',
+        fiscalYearId: 'fy-2024',
+        name: '2024-12',
+        startDate: '2024-12-01',
+        endDate: '2024-12-31',
+        status: 'OPEN',
+        fiscalYear: { userId, id: 'fy-2024', name: '2024' },
+      };
+      const p2025_01 = {
+        id: 'p-2025-01',
+        fiscalYearId: 'fy-2025',
+        name: 'Periodo 01/2025',
+        startDate: '2025-01-01',
+        endDate: '2025-01-31',
+        status: 'OPEN',
+        fiscalYear: { userId, id: 'fy-2025', name: '2025' },
+      };
+
+      const mockQueryBuilder = {
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([p2024_12, p2025_01]),
+        getOne: jest.fn().mockResolvedValue(p2024_12),
+      };
+      mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const mockCashAccount = {
+        id: 'acc-cash',
+        userId,
+        type: 'ASSET',
+        status: 'ACTIVE',
+        currencyId: 'USD',
+      };
+
+      mockEntityManager.find.mockImplementation((cls: any) => {
+        if (cls === AccountEntity) {
+          return [mockCashAccount];
+        }
+        return [];
+      });
+
+      // Simulate existing DB entity with string decimals returned by Postgres driver
+      const existing2025Balance = {
+        id: 'bal-2025-01',
+        accountId: 'acc-cash',
+        periodId: 'p-2025-01',
+        openingBalance: '0.0000',
+        totalDebits: '135000.0000',
+        totalCredits: '0.0000',
+        closingBalance: '135000.0000',
+      };
+
+      mockEntityManager.findOne.mockImplementation((cls: any, options: any) => {
+        if (cls === AccountEntity) {
+          return mockCashAccount;
+        }
+        if (cls === AccountPeriodBalanceEntity) {
+          const where = options?.where;
+          if (where?.periodId === 'p-2025-01') {
+            return existing2025Balance;
+          }
+          return null;
+        }
+        return null;
+      });
+
+      const savedBalances: any[] = [];
+      mockEntityManager.save.mockImplementation((cls: any, entity: any) => {
+        if (cls === AccountPeriodBalanceEntity) {
+          savedBalances.push(entity);
+        }
+        return Promise.resolve(entity);
+      });
+
+      // Execute update for a transaction in 2024-12 crediting cash by 1000
+      await balanceUpdateService.updateBalances(mockEntityManager, userId, txDate, [
+        { accountId: 'acc-cash', debitDiff: 0, creditDiff: 1000 },
+      ]);
+
+      const bal2025 = savedBalances.find((b) => b.periodId === 'p-2025-01');
+      expect(bal2025).toBeDefined();
+      expect(Number(bal2025.openingBalance)).toBe(-1000);
+      expect(Number(bal2025.closingBalance)).toBe(134000);
     });
   });
 
@@ -326,7 +417,7 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         { id: 'acc-cash', type: 'ASSET', userId },
         { id: 'acc-revenue', type: 'INCOME', userId },
       ];
-      mockEntityManager.find.mockImplementation((cls, options) => {
+      mockEntityManager.find.mockImplementation((cls, _options) => {
         if (cls === AccountEntity) {
           return accounts;
         }
