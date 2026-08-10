@@ -33,6 +33,13 @@ export function isFullMonth(start: string, end: string) {
   );
 }
 
+function formatToYYYYMMDD(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function MonthNavigator({
   startDate,
   endDate,
@@ -69,12 +76,6 @@ export function MonthNavigator({
     const d = isNaN(currentDate.getTime()) ? new Date() : currentDate;
     const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
     const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    const formatToYYYYMMDD = (date: Date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
     onDateRangeChange(formatToYYYYMMDD(startOfMonth), formatToYYYYMMDD(endOfMonth));
   };
 
@@ -93,13 +94,6 @@ export function MonthNavigator({
       const d = isNaN(currentDate.getTime()) ? new Date() : currentDate;
       const prevMonth = new Date(d.getFullYear(), d.getMonth() - 1, 1);
       const lastDay = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0);
-
-      const formatToYYYYMMDD = (date: Date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-      };
 
       onDateRangeChange(formatToYYYYMMDD(prevMonth), formatToYYYYMMDD(lastDay));
     }
@@ -120,13 +114,6 @@ export function MonthNavigator({
       const d = isNaN(currentDate.getTime()) ? new Date() : currentDate;
       const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       const lastDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
-
-      const formatToYYYYMMDD = (date: Date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-      };
 
       onDateRangeChange(formatToYYYYMMDD(nextMonth), formatToYYYYMMDD(lastDay));
     }
@@ -348,7 +335,8 @@ export function FilterDrawer({
 
 export default function TransactionFilters(props: TransactionFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const isCustomRangeActive = props.view === 'daily' && !isFullMonth(props.startDate, props.endDate);
+  const isCustomRangeActive =
+    props.view === 'daily' && !isFullMonth(props.startDate, props.endDate);
 
   return (
     <div className="sm:hidden bg-white dark:bg-slate-800 -mx-4 border-b border-slate-100 dark:border-slate-800 shadow-sm flex flex-col -mt-4">
@@ -392,4 +380,3 @@ export default function TransactionFilters(props: TransactionFiltersProps) {
     </div>
   );
 }
-

@@ -4,7 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../../services/api';
 import { useSearch } from '../../lib/search-context';
-import TransactionFilters, { MonthNavigator, FilterDrawer, isFullMonth } from '../../components/TransactionFilters';
+import TransactionFilters, {
+  MonthNavigator,
+  FilterDrawer,
+  isFullMonth,
+} from '../../components/TransactionFilters';
 import DailyView from '../../components/DailyView';
 import MonthlyView from '../../components/MonthlyView';
 import CalendarView from '../../components/CalendarView';
@@ -199,30 +203,6 @@ export default function TransactionsPage() {
 
   const handleViewChange = (newView: 'daily' | 'calendar' | 'monthly') => {
     setView(newView);
-  };
-
-  const handleMonthChange = (newDate: Date) => {
-    const firstDay = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
-    const lastDay = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
-
-    const formatToYYYYMMDD = (date: Date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-
-    setCalendarDates({
-      startDate: formatToYYYYMMDD(firstDay),
-      endDate: formatToYYYYMMDD(lastDay),
-    });
-  };
-
-  const handleYearChange = (newYear: number) => {
-    setMonthlyDates({
-      startDate: `${newYear}-01-01`,
-      endDate: `${newYear}-12-31`,
-    });
   };
 
   const netBalance = totalIncome - totalExpense;
