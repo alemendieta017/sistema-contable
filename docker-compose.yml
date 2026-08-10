@@ -1,13 +1,12 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: sistema-contable-db
     environment:
       POSTGRES_DB: sistema_contable
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,9 +19,8 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
-    container_name: sistema-contable-backend
     ports:
-      - '3001:3001'
+      - '${BACKEND_PORT:-3001}:3001'
     environment:
       DATABASE_HOST: db
       DATABASE_PORT: 5432
@@ -39,6 +37,7 @@ services:
       - /app/shared/node_modules
       - /app/backend/node_modules
       - /app/backend/dist
+    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && (npm --prefix /app run watch -w @sistema-contable/shared &) && npx nest build && npm run start:dev"
     depends_on:
       db:
         condition: service_healthy
@@ -47,11 +46,10 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
-    container_name: sistema-contable-frontend
     ports:
-      - '3000:3000'
+      - '${FRONTEND_PORT:-3000}:3000'
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_API_URL: 'http://localhost:${BACKEND_PORT:-3001}/api'
       PORT: 3000
       WATCHPACK_POLLING: 'true'
     volumes:
@@ -60,6 +58,7 @@ services:
       - /app/shared/node_modules
       - /app/frontend/node_modules
       - /app/frontend/.next
+    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && npm run dev"
     depends_on:
       - backend
 

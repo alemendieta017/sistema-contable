@@ -155,7 +155,9 @@ export default function BalanceSheetPage() {
     );
   }
 
-  const isComparative = report?.mode === 'comparative';
+  const isComparative =
+    report?.mode === 'comparative' ||
+    Boolean(report?.periods && Array.isArray(report.periods) && report.periods.length > 0);
 
   // Check balance integrity
   const isBalanced = report
