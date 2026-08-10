@@ -10,6 +10,18 @@ import {
 import { AccountEntity } from './account.entity';
 import { PeriodEntity } from './period.entity';
 
+export class ColumnNumericTransformer {
+  to(data: number | null | undefined): number | null {
+    if (data === null || data === undefined || isNaN(data)) return 0;
+    return data;
+  }
+  from(data: string | number | null): number {
+    if (data === null || data === undefined) return 0;
+    const parsed = typeof data === 'number' ? data : parseFloat(data);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+}
+
 @Entity('account_period_balances')
 @Index(['accountId', 'periodId'], { unique: true })
 export class AccountPeriodBalanceEntity {
@@ -30,16 +42,44 @@ export class AccountPeriodBalanceEntity {
   @JoinColumn({ name: 'period_id' })
   period: PeriodEntity;
 
-  @Column({ name: 'opening_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
+  @Column({
+    name: 'opening_balance',
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0.0,
+    transformer: new ColumnNumericTransformer(),
+  })
   openingBalance: number;
 
-  @Column({ name: 'total_debits', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
+  @Column({
+    name: 'total_debits',
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0.0,
+    transformer: new ColumnNumericTransformer(),
+  })
   totalDebits: number;
 
-  @Column({ name: 'total_credits', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
+  @Column({
+    name: 'total_credits',
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0.0,
+    transformer: new ColumnNumericTransformer(),
+  })
   totalCredits: number;
 
-  @Column({ name: 'closing_balance', type: 'decimal', precision: 18, scale: 4, default: 0.0 })
+  @Column({
+    name: 'closing_balance',
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0.0,
+    transformer: new ColumnNumericTransformer(),
+  })
   closingBalance: number;
 
   @UpdateDateColumn({ name: 'last_updated', type: 'timestamp with time zone' })

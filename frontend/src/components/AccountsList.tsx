@@ -15,6 +15,7 @@ interface AccountSummary {
   parentId?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
   isCashOrBank?: boolean;
+  systemRole?: string | null;
 }
 
 interface AccountsListProps {
@@ -28,7 +29,7 @@ export default function AccountsList({
   accounts,
   onDelete,
   deletingId,
-  onToggleCashOrBank,
+  onToggleCashOrBank: _onToggleCashOrBank,
 }: AccountsListProps) {
   const renderAccountList = (list: AccountSummary[]) => {
     const roots = list.filter((a) => !a.parentId);
@@ -70,6 +71,14 @@ export default function AccountsList({
                     Caja/Banco
                   </span>
                 )}
+                {a.systemRole && (
+                  <span
+                    className="ml-1.5 text-5xs bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 px-1 rounded uppercase tracking-wider font-bold"
+                    title="Cuenta especial reservada por el sistema"
+                  >
+                    Sistema ({a.systemRole === 'NET_INCOME' ? 'Resultado' : 'Retenidas'})
+                  </span>
+                )}
               </span>
               <div className="flex items-center gap-4">
                 <span
@@ -89,7 +98,7 @@ export default function AccountsList({
                     decimalPlaces: a.decimalPlaces,
                   })}
                 </span>
-                {!isInactive && (
+                {!isInactive && !a.systemRole && (
                   <button
                     type="button"
                     onClick={() => onDelete(a.id)}

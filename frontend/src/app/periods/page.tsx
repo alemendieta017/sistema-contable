@@ -52,7 +52,6 @@ export default function PeriodsPage() {
 
   // Modal State for Closing Fiscal Year
   const [closingFy, setClosingFy] = useState<FiscalYear | null>(null);
-  const [selectedEarningsAccountId, setSelectedEarningsAccountId] = useState('');
 
   // Accordion State: only one fiscal year expanded at a time
   const [expandedFyId, setExpandedFyId] = useState<string | null>(null);
@@ -135,8 +134,7 @@ export default function PeriodsPage() {
 
   const handleCloseFiscalYearSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!closingFy || !selectedEarningsAccountId) {
-      setError('Debe seleccionar una cuenta de Resultados Acumulados.');
+    if (!closingFy) {
       return;
     }
 
@@ -145,15 +143,12 @@ export default function PeriodsPage() {
       setError('');
       setSuccess('');
 
-      await api.fiscalYears.close(closingFy.id, {
-        retainedEarningsAccountId: selectedEarningsAccountId,
-      });
+      await api.fiscalYears.close(closingFy.id);
 
       setSuccess(
         `El ejercicio fiscal "${closingFy.name}" ha sido cerrado con éxito. Se generó el asiento de cierre.`,
       );
       setClosingFy(null);
-      setSelectedEarningsAccountId('');
       await loadData(false);
     } catch (err: any) {
       setError(err.message || 'Error al cerrar el ejercicio fiscal.');
@@ -347,7 +342,10 @@ export default function PeriodsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end sm:self-auto" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-3 self-end sm:self-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {fy.status === 'OPEN' && (
                       <button
                         onClick={() => setClosingFy(fy)}
@@ -435,7 +433,9 @@ export default function PeriodsPage() {
                               <button
                                 onClick={() => handleTogglePeriod(period.id, period.status)}
                                 disabled={actionLoading}
-                                title={period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'}
+                                title={
+                                  period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'
+                                }
                                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                                   period.status === 'OPEN'
                                     ? 'bg-indigo-600 dark:bg-indigo-500'
@@ -533,33 +533,14 @@ export default function PeriodsPage() {
             </div>
 
             <form onSubmit={handleCloseFiscalYearSubmit} className="space-y-4">
-              <div>
-                <label className="block text-3xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                  Cuenta de Resultados Acumulados
-                </label>
-
-                {equityAccounts.length === 0 ? (
-                  <div className="text-4xs font-semibold text-red-500 bg-red-50 dark:bg-red-950/20 p-3 rounded-xl border border-red-100">
-                    No se encontró ninguna cuenta de tipo <strong>Patrimonio Neto (EQUITY)</strong>.
-                    Cree una cuenta de patrimonio primero.
-                  </div>
-                ) : (
-                  <select
-                    required
-                    value={selectedEarningsAccountId}
-                    onChange={(e) => setSelectedEarningsAccountId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
-                  >
-                    <option value="" disabled>
-                      Seleccione una cuenta de Patrimonio...
-                    </option>
-                    {equityAccounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl">
+                <span className="block text-4xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                  Cuenta Destino de Cierre
+                </span>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span>Automático: Cuenta del Sistema (Resultados Acumulados)</span>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -567,7 +548,6 @@ export default function PeriodsPage() {
                   type="button"
                   onClick={() => {
                     setClosingFy(null);
-                    setSelectedEarningsAccountId('');
                   }}
                   className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150"
                 >
@@ -575,7 +555,7 @@ export default function PeriodsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={actionLoading || !selectedEarningsAccountId}
+                  disabled={actionLoading}
                   className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50"
                 >
                   {actionLoading ? 'Cerrando...' : 'Confirmar Cierre'}

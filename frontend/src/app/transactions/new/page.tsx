@@ -13,7 +13,9 @@ interface Account {
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   currencyId: string;
   parentId?: string | null;
+  systemRole?: string | null;
 }
+
 
 interface Entry {
   accountId: string;

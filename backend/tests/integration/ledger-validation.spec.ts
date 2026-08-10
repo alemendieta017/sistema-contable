@@ -132,4 +132,69 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
       new BadRequestException('Transaction is unbalanced by 2000'),
     );
   });
+
+  it('should throw BadRequestException when creating a journal entry targeting NET_INCOME system account (US4)', async () => {
+    // Arrange
+    const userId = 'user-uuid';
+    const dto = {
+      accountingDate: '2026-07-03',
+      description: 'Asiento manual a resultado del ejercicio',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50000 },
+        { accountId: 'acc-net-income', entryType: 'DEBIT' as const, amount: 50000 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockImplementation((cls, options) => {
+      const id = options.where.id;
+      return Promise.resolve({
+        id,
+        userId,
+        name: id === 'acc-cash' ? 'Efectivo' : 'Resultado del Ejercicio',
+        type: id === 'acc-cash' ? 'ASSET' : 'EQUITY',
+        status: 'ACTIVE',
+        systemRole: id === 'acc-net-income' ? 'NET_INCOME' : null,
+        currency: { rateToBase: 1.0 },
+      });
+    });
+
+    // Act & Assert
+    await expect(useCase.execute(userId, dto)).rejects.toThrow(
+      new BadRequestException('System account NET_INCOME is non-operable for manual journal entries'),
+    );
+  });
+
+  it('should allow creating a journal entry targeting RETAINED_EARNINGS system account (US4)', async () => {
+    // Arrange
+    const userId = 'user-uuid';
+    const dto = {
+      accountingDate: '2026-07-03',
+      description: 'Distribución de dividendos a resultados acumulados',
+      entries: [
+        { accountId: 'acc-retained-earnings', entryType: 'DEBIT' as const, amount: 50000 },
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50000 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockImplementation((cls, options) => {
+      const id = options.where.id;
+      return Promise.resolve({
+        id,
+        userId,
+        name: id === 'acc-cash' ? 'Efectivo' : 'Resultados Acumulados',
+        type: id === 'acc-cash' ? 'ASSET' : 'EQUITY',
+        status: 'ACTIVE',
+        systemRole: id === 'acc-retained-earnings' ? 'RETAINED_EARNINGS' : null,
+        currency: { rateToBase: 1.0 },
+      });
+    });
+
+    // Act
+    const result = await useCase.execute(userId, dto);
+
+    // Assert
+    expect(result).toBeDefined();
+    expect(result.id).toBe('saved-id');
+  });
 });
+

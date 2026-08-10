@@ -56,6 +56,7 @@ export class AccountController {
       currencyId,
       parentId: body.parentId,
       metadata: body.metadata,
+      systemRole: body.systemRole || null,
       status: 'ACTIVE',
     });
     return this.accountRepository.save(account);

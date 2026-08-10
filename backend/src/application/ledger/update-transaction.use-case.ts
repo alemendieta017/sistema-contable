@@ -137,6 +137,13 @@ export class UpdateTransactionUseCase {
           throw new BadRequestException(`Account ${account.name} is inactive`);
         }
 
+        if (account.systemRole === 'NET_INCOME') {
+          throw new BadRequestException(
+            'System account NET_INCOME is non-operable for manual journal entries',
+          );
+        }
+
+
         const rateAtDate = Number(currency?.rateToBase ?? 1.0);
         const amountBase = Number((entry.amount * rateAtDate).toFixed(4));
 

@@ -9,7 +9,9 @@ type Account = {
   id: string;
   name: string;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  systemRole?: string | null;
 };
+
 
 type EntryLine = {
   accountId: string;
@@ -224,11 +226,14 @@ export default function AsientoLibrePage() {
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs outline-none focus:border-indigo-500 transition text-slate-800 dark:text-slate-200 font-semibold"
                   >
                     <option value="">Seleccionar cuenta...</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({a.type})
-                      </option>
-                    ))}
+                    {accounts
+                      .filter((a) => a.systemRole !== 'NET_INCOME')
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.type})
+                        </option>
+                      ))}
+
                   </select>
                 </div>
 

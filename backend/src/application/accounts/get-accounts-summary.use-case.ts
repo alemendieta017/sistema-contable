@@ -80,6 +80,7 @@ export class GetAccountsSummaryUseCase {
           parentId: acc.parentId,
           status: acc.status,
           isCashOrBank: acc.isCashOrBank,
+          systemRole: acc.systemRole || null,
           balance,
         };
       });

@@ -7,13 +7,13 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { CloseFiscalYearRequest } from '@sistema-contable/shared';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { BalanceUpdateService } from './balance-update.service';
 
 export class CloseFiscalYearDto implements CloseFiscalYearRequest {
   @IsString()
-  @IsNotEmpty()
-  retainedEarningsAccountId: string;
+  @IsOptional()
+  retainedEarningsAccountId?: string;
 }
 
 @Injectable()
@@ -23,7 +23,7 @@ export class CloseFiscalYearUseCase {
     private readonly balanceUpdateService: BalanceUpdateService,
   ) {}
 
-  async execute(userId: string, fiscalYearId: string, dto: CloseFiscalYearDto) {
+  async execute(userId: string, fiscalYearId: string, dto?: CloseFiscalYearDto) {
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Fetch the fiscal year with periods
       const fiscalYear = await entityManager.findOne(FiscalYearEntity, {
@@ -46,8 +46,27 @@ export class CloseFiscalYearUseCase {
       await entityManager.save(PeriodEntity, fiscalYear.periods);
 
       // 3. Check if Retained Earnings account exists, belongs to the user, and is an EQUITY account
+      let targetAccountId = dto?.retainedEarningsAccountId;
+
+      if (!targetAccountId) {
+        const reAcc =
+          (await entityManager.findOne(AccountEntity, {
+            where: { userId, systemRole: 'RETAINED_EARNINGS', status: 'ACTIVE' },
+          })) ||
+          (await entityManager.findOne(AccountEntity, {
+            where: { userId, systemRole: 'RETAINED_EARNINGS' },
+          }));
+
+        if (!reAcc) {
+          throw new BadRequestException(
+            'No account with systemRole RETAINED_EARNINGS found for this user',
+          );
+        }
+        targetAccountId = reAcc.id;
+      }
+
       const retainedEarningsAcc = await entityManager.findOne(AccountEntity, {
-        where: { id: dto.retainedEarningsAccountId, userId },
+        where: { id: targetAccountId, userId },
       });
 
       if (!retainedEarningsAcc || retainedEarningsAcc.type !== 'EQUITY') {
@@ -130,7 +149,7 @@ export class CloseFiscalYearUseCase {
           const reAmount = Math.abs(discrepancy);
 
           closingEntries.push({
-            accountId: dto.retainedEarningsAccountId,
+            accountId: targetAccountId,
             entryType: reEntryType,
             amount: reAmount,
           });

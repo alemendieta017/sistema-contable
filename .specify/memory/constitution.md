@@ -1,10 +1,10 @@
 <!--
 SYNC IMPACT REPORT
-- Version change: 2.1.0 -> 2.2.0
-- List of modified principles: V. Strict Test-Driven Development (TDD) -> V. Strict Test-Driven Development (TDD) & Quality Verification
-- Added sections: None
+- Version change: 2.2.0 -> 2.3.0
+- List of modified principles: None
+- Added sections: VII. Mandatory ESLint Compliance & Static Code Quality
 - Removed sections: None
-- Templates requiring updates: None
+- Templates requiring updates: None (checked plan-template.md, spec-template.md, tasks-template.md)
 - Follow-up TODOs: None
 -->
 
@@ -13,30 +13,43 @@ SYNC IMPACT REPORT
 ## Core Principles
 
 ### I. Double-Entry Bookkeeping & Ledger Integrity
+
 All financial recordings MUST strictly follow the double-entry bookkeeping principle (partida doble). Every transaction must consist of at least one debit and one credit, and the total value of debits must always equal the total value of credits. The ledger records must be append-only and immutable; errors or adjustments must be resolved using correction/reversal journal entries rather than modifying existing entries.
 
 ### II. Clean Architecture & SOLID Principles (MANDATORY)
+
 The software codebase MUST adhere to Clean Architecture patterns (separation of domain entities, use cases/application business logic, interface adapters, and external infrastructure/frameworks) and SOLID design principles. NestJS modules must encapsulate services using Dependency Injection to ensure decoupling and testability. The domain layer must be completely free of framework-specific dependencies.
 
 ### III. Monorepo Organization & Unified Type Safety
+
 The repository is structured as a Monorepo containing both the NestJS backend and Next.js frontend projects. Shared assets, types, schemas, and API contracts MUST be centralized (e.g., in a shared packages folder) to maintain strict compile-time type safety across both frontend and backend systems, eliminating code duplication.
 
 ### IV. Budgetary Control and Personal/Family Domain
+
 The accounting engine MUST support budgeting features, permitting the definition, allocation, and enforcement of budget limits across personal and family account categories. Budget limits must be dynamically evaluated against actual ledger transactions.
 
 ### V. Strict Test-Driven Development (TDD) & Quality Verification
+
 Test-Driven Development is strictly mandatory. Tests must be written and approved before implementation. Financial calculations, double-entry verification, budget checks, and ledger integrity constraints must maintain 100% test coverage. No code modification is allowed to bypass failing tests. All code changes MUST successfully pass ESLint/Prettier verification and the complete automated test suite before a task or development is considered ready or complete.
 
 ### VI. Prevention of Magic Strings & Strict Type Constants
+
 To prevent runtime errors, maintain codebase readability, and ensure strict type safety, inline magic strings MUST be strictly avoided. TypeScript enums, read-only constant objects (dictionaries), or union types MUST be utilized for all categorized statuses, action types, config keys, routes, or any other set of finite values.
 
+### VII. Mandatory ESLint Compliance & Static Code Quality
+
+All codebase components (backend, frontend, and shared monorepo packages) MUST strictly pass ESLint checks with zero errors and zero warnings prior to merging or completing work. Inline lint suppressions (`eslint-disable`) are prohibited unless accompanied by an explicit, documented technical justification approved during code review. ESLint configurations MUST enforce unified coding standards, modern TypeScript best practices, and guard against runtime anti-patterns.
+
 ## Technical Constraints
-The backend will use Node.js with NestJS framework and the frontend will use Next.js. Both projects will be written in TypeScript to guarantee end-to-end type safety. Styling will be implemented using TailwindCSS v4.3 for utility styling, and shadcn/ui for reusable components. Database integrity must be enforced via relational foreign keys and transaction isolation levels (Serializable or Repeatable Read) to prevent race conditions in ledger balance updates.
+
+The backend will use Node.js with NestJS framework and the frontend will use Next.js. Both projects will be written in TypeScript to guarantee end-to-end type safety. Code quality and static analysis MUST be strictly enforced via ESLint across all projects in the monorepo. Styling will be implemented using TailwindCSS v4.3 for utility styling, and shadcn/ui for reusable components. Database integrity must be enforced via relational foreign keys and transaction isolation levels (Serializable or Repeatable Read) to prevent race conditions in ledger balance updates.
 
 ## Development Workflow & Quality Gates
-Every development and pull request must successfully pass the automated test suite, maintain 100% test coverage on financial calculation engines, and pass strict ESLint/Prettier formatting and quality compliance before it is marked ready. Architectures must be reviewed to verify adherence to SOLID principles and Clean Architecture layers.
+
+Every development and pull request must successfully pass the automated test suite, maintain 100% test coverage on financial calculation engines, and pass strict ESLint/Prettier formatting and quality compliance (zero errors, zero warnings) before it is marked ready. Architectures must be reviewed to verify adherence to SOLID principles and Clean Architecture layers.
 
 ## Governance
+
 This constitution supersedes all other development practices. Amendments or modifications to these principles require documentation of the rationale, a minor or major version bump, and approval from the lead developers.
 
-**Version**: 2.2.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-06-29
+**Version**: 2.3.0 | **Ratified**: 2026-06-27 | **Last Amended**: 2026-08-07

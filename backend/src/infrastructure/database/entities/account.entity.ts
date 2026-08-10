@@ -1,9 +1,11 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { CurrencyEntity } from './currency.entity';
+import { SystemRole } from '@sistema-contable/shared';
 
 @Entity('accounts')
 @Index(['userId', 'name'], { unique: true })
+@Index(['userId', 'systemRole'], { unique: true, where: 'system_role IS NOT NULL' })
 export class AccountEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -43,4 +45,7 @@ export class AccountEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
+
+  @Column({ name: 'system_role', type: 'varchar', length: 30, nullable: true })
+  systemRole: SystemRole | null;
 }
