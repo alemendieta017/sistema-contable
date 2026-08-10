@@ -11,12 +11,14 @@ import { AccountEntity } from './account.entity';
 import { PeriodEntity } from './period.entity';
 
 export class ColumnNumericTransformer {
-  to(data: number | null): number | null {
+  to(data: number | null | undefined): number | null {
+    if (data === null || data === undefined || isNaN(data)) return 0;
     return data;
   }
   from(data: string | number | null): number {
     if (data === null || data === undefined) return 0;
-    return typeof data === 'number' ? data : parseFloat(data);
+    const parsed = typeof data === 'number' ? data : parseFloat(data);
+    return isNaN(parsed) ? 0 : parsed;
   }
 }
 

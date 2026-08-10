@@ -88,6 +88,23 @@ export class BalanceUpdateService {
     // 6. Chronological future periods list
     const futurePeriods = allUserPeriods.filter((p) => p.startDate > targetPeriod.endDate);
 
+    // Pre-fetch existing future period balances in bulk to prevent N+1 queries
+    const futurePeriodIds = futurePeriods.map((p) => p.id);
+    const affectedAccountIds = Array.from(groupedChanges.keys());
+    const existingFutureBalances =
+      futurePeriodIds.length > 0 && affectedAccountIds.length > 0
+        ? await entityManager.find(AccountPeriodBalanceEntity, {
+            where: { accountId: In(affectedAccountIds), periodId: In(futurePeriodIds) },
+          })
+        : [];
+
+    const futureBalanceMap = new Map<string, AccountPeriodBalanceEntity>();
+    for (const fb of existingFutureBalances) {
+      futureBalanceMap.set(`${fb.accountId}:${fb.periodId}`, fb);
+    }
+
+    const balancesToSave: AccountPeriodBalanceEntity[] = [];
+
     // 7. Apply and propagate balances for each account
     for (const [accountId, diffs] of groupedChanges.entries()) {
       const account = accountMap.get(accountId);
@@ -154,9 +171,8 @@ export class BalanceUpdateService {
       let previousClosing = Number(currentBalance.closingBalance);
 
       for (const futurePeriod of futurePeriods) {
-        let futureBalance = await entityManager.findOne(AccountPeriodBalanceEntity, {
-          where: { accountId, periodId: futurePeriod.id },
-        });
+        const key = `${accountId}:${futurePeriod.id}`;
+        let futureBalance = futureBalanceMap.get(key);
 
         const isFirstPeriodOfFy =
           firstPeriodOfFiscalYear.get(futurePeriod.fiscalYearId) === futurePeriod.id;
@@ -174,6 +190,7 @@ export class BalanceUpdateService {
             totalCredits: 0,
             closingBalance: expectedOpening,
           });
+          futureBalanceMap.set(key, futureBalance);
         } else {
           futureBalance.openingBalance = expectedOpening;
         }
@@ -187,9 +204,13 @@ export class BalanceUpdateService {
           futureBalance.closingBalance = expectedOpening + credits - debits;
         }
 
-        await entityManager.save(AccountPeriodBalanceEntity, futureBalance);
+        balancesToSave.push(futureBalance);
         previousClosing = Number(futureBalance.closingBalance);
       }
+    }
+
+    if (balancesToSave.length > 0) {
+      await entityManager.save(AccountPeriodBalanceEntity, balancesToSave);
     }
   }
 

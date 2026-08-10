@@ -116,14 +116,7 @@ export class BalanceSheetUseCase {
           const isDebitNature = account
             ? account.type === 'ASSET' || account.type === 'EXPENSE'
             : true;
-          const net =
-            row.entryType === 'DEBIT'
-              ? isDebitNature
-                ? amount
-                : -amount
-              : isDebitNature
-                ? -amount
-                : amount;
+          const net = this.calculateNetEntryAmount(row.entryType, amount, isDebitNature);
           balanceMap.set(row.accountId, current + net);
         }
       } else {
@@ -169,14 +162,7 @@ export class BalanceSheetUseCase {
             const isDebitNature = account
               ? account.type === 'ASSET' || account.type === 'EXPENSE'
               : true;
-            const net =
-              row.entryType === 'DEBIT'
-                ? isDebitNature
-                  ? amount
-                  : -amount
-                : isDebitNature
-                  ? -amount
-                  : amount;
+            const net = this.calculateNetEntryAmount(row.entryType, amount, isDebitNature);
             balanceMap.set(row.accountId, current + net);
           }
         } else {
@@ -695,5 +681,17 @@ export class BalanceSheetUseCase {
     equity.sort((a, b) => a.name.localeCompare(b.name));
 
     return { assets, liabilities, equity };
+  }
+
+  private calculateNetEntryAmount(
+    entryType: string,
+    amount: number,
+    isDebitNature: boolean,
+  ): number {
+    if (entryType === 'DEBIT') {
+      return isDebitNature ? amount : -amount;
+    } else {
+      return isDebitNature ? -amount : amount;
+    }
   }
 }

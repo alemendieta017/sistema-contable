@@ -246,9 +246,13 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
 
       // Asserting that BalanceUpdateService.updateBalances computes correct opening/closing balance
       const savedBalances: any[] = [];
-      mockEntityManager.save.mockImplementation((cls, entity) => {
+      mockEntityManager.save.mockImplementation((cls: any, entity: any) => {
         if (cls === AccountPeriodBalanceEntity) {
-          savedBalances.push(entity);
+          if (Array.isArray(entity)) {
+            savedBalances.push(...entity);
+          } else {
+            savedBalances.push(entity);
+          }
         }
         return Promise.resolve(entity);
       });
@@ -321,6 +325,9 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         if (cls === AccountEntity) {
           return [mockCashAccount];
         }
+        if (cls === AccountPeriodBalanceEntity) {
+          return [existing2025Balance];
+        }
         return [];
       });
 
@@ -352,7 +359,11 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       const savedBalances: any[] = [];
       mockEntityManager.save.mockImplementation((cls: any, entity: any) => {
         if (cls === AccountPeriodBalanceEntity) {
-          savedBalances.push(entity);
+          if (Array.isArray(entity)) {
+            savedBalances.push(...entity);
+          } else {
+            savedBalances.push(entity);
+          }
         }
         return Promise.resolve(entity);
       });
