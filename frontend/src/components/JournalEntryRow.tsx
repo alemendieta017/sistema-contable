@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, Search, ChevronDown } from 'lucide-react';
 import type { CurrencyInfo } from '../lib/utils';
 
@@ -11,7 +11,6 @@ interface Account {
   parentId?: string | null;
   systemRole?: string | null;
 }
-
 
 interface Entry {
   accountId: string;
@@ -115,7 +114,6 @@ export default function JournalEntryRow({
     return matchesSearch && matchesTab && isOperable;
   });
 
-
   const groups = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
 
   // Construct flat list of displayed accounts in the exact rendering order (by groups)
@@ -175,7 +173,6 @@ export default function JournalEntryRow({
       (a) => a.type === tabId && formatAccountName(a).toLowerCase().includes(search.toLowerCase()),
     ).length;
   };
-
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {

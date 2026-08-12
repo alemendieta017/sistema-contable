@@ -281,6 +281,65 @@ export const api = {
       });
       return handleResponse(res);
     },
+
+    async getMatrix(fiscalYearId: string, categoryId?: string) {
+      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${fiscalYearId}`;
+      if (categoryId) {
+        url += `&categoryId=${encodeURIComponent(categoryId)}`;
+      }
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async updateMatrixBatch(data: {
+      fiscalYearId: string;
+      updates: Array<{ periodId: string; accountId: string; amount: number }>;
+    }) {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async applyDriver(data: any) {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/apply-driver`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async baselineActuals(data: any) {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/baseline-actuals`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async getControl(periodId: string) {
+      const res = await fetch(`${API_BASE_URL}/budgets/control?periodId=${periodId}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async transferControl(data: any) {
+      const res = await fetch(`${API_BASE_URL}/budgets/control/transfer`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
   },
 
   reports: {

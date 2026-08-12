@@ -5,7 +5,6 @@ import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
-import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 
 describe('CashFlowStatementForecastUseCase (US4)', () => {
   let useCase: CashFlowStatementForecastUseCase;
@@ -53,9 +52,7 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
     const mockFy = {
       id: 'fy-2026',
       name: 'Ejercicio 2026',
-      periods: [
-        { id: 'p-1', name: '2026-01', startDate: '2026-01-01', status: 'CLOSED' },
-      ],
+      periods: [{ id: 'p-1', name: '2026-01', startDate: '2026-01-01', status: 'CLOSED' }],
     };
 
     const mockAccounts: Partial<AccountEntity>[] = [
@@ -70,7 +67,12 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
         openingBalance: 1000,
         totalDebits: 500,
         totalCredits: 100,
-        account: { id: 'cash-1', name: 'Efectivo', type: 'ASSET', isCashOrBank: true } as AccountEntity,
+        account: {
+          id: 'cash-1',
+          name: 'Efectivo',
+          type: 'ASSET',
+          isCashOrBank: true,
+        } as AccountEntity,
       },
       {
         id: 'bal-exp',
@@ -78,11 +80,16 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
         openingBalance: 0,
         totalDebits: 100,
         totalCredits: 0,
-        account: { id: 'exp-1', name: 'Comida', type: 'EXPENSE', isCashOrBank: false } as AccountEntity,
+        account: {
+          id: 'exp-1',
+          name: 'Comida',
+          type: 'EXPENSE',
+          isCashOrBank: false,
+        } as AccountEntity,
       },
     ];
 
-    entityManagerMock.findOne.mockImplementation((entity: any, opts: any) => {
+    entityManagerMock.findOne.mockImplementation((entity: any, _opts: any) => {
       if (entity === FiscalYearEntity) return Promise.resolve(mockFy);
       return Promise.resolve(null);
     });

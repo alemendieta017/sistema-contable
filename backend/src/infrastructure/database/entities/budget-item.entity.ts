@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BudgetEntity } from './budget.entity';
 import { AccountEntity } from './account.entity';
+import { FlowIntention } from '@sistema-contable/shared';
 
 @Entity('budget_items')
 @Index(['budgetId', 'accountId'], { unique: true })
@@ -24,4 +25,7 @@ export class BudgetItemEntity {
 
   @Column({ type: 'decimal', precision: 18, scale: 4 })
   amount: number;
+
+  @Column({ type: 'varchar', nullable: true, name: 'flow_intention' })
+  flowIntention: FlowIntention | null;
 }

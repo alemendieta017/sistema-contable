@@ -58,7 +58,7 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     const periodId = 'period-123';
 
     // Mock period entity lookup
-    mockEntityManager.findOne.mockImplementation(async (entity, options) => {
+    mockEntityManager.findOne.mockImplementation(async (entity, _options) => {
       if (entity.name === 'PeriodEntity') {
         return {
           id: periodId,
@@ -187,7 +187,7 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     const periodId = 'period-123';
 
     // Mock period and budget
-    mockEntityManager.findOne.mockImplementation(async (entity, options) => {
+    mockEntityManager.findOne.mockImplementation(async (entity, _options) => {
       if (entity.name === 'PeriodEntity') {
         return {
           id: periodId,
@@ -308,7 +308,7 @@ describe('GetBudgetExecutionUseCase Unit Tests', () => {
     const periodId = 'period-123';
 
     // Mock period and budget
-    mockEntityManager.findOne.mockImplementation(async (entity, options) => {
+    mockEntityManager.findOne.mockImplementation(async (entity, _options) => {
       if (entity.name === 'PeriodEntity') {
         return {
           id: periodId,

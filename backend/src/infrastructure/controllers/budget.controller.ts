@@ -11,9 +11,21 @@ import { UpdateBudgetItemsUseCase } from '../../application/budgets/update-budge
 import { ReplicateBudgetItemUseCase } from '../../application/budgets/replicate-budget-item.use-case';
 import { GetBudgetExecutionUseCase } from '../../application/budgets/get-budget-execution.use-case';
 import { CopyPreviousBudgetUseCase } from '../../application/budgets/copy-previous-budget.use-case';
+import { GetBudgetMatrixUseCase } from '../../application/budgets/get-budget-matrix.use-case';
+import { UpdateBudgetMatrixUseCase } from '../../application/budgets/update-budget-matrix.use-case';
+import { ApplyBudgetDriverUseCase } from '../../application/budgets/apply-budget-driver.use-case';
+import { GetPriorYearActualsUseCase } from '../../application/budgets/get-prior-year-actuals.use-case';
+import { GetBudgetControlUseCase } from '../../application/budgets/get-budget-control.use-case';
+import { TransferBudgetFundsUseCase } from '../../application/budgets/transfer-budget-funds.use-case';
 import { SetBudgetDto } from './dto/set-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { ReplicateBudgetItemDto } from './dto/replicate-budget-item.dto';
+import {
+  UpdateBudgetMatrixRequest,
+  ApplyBudgetDriverRequest,
+  BaselineActualsRequest,
+  TransferBudgetFundsRequest,
+} from '@sistema-contable/shared';
 
 @Controller('api/budgets')
 @UseGuards(JwtAuthGuard)
@@ -25,9 +37,55 @@ export class BudgetController {
     private readonly replicateBudgetItemUseCase: ReplicateBudgetItemUseCase,
     private readonly getBudgetExecutionUseCase: GetBudgetExecutionUseCase,
     private readonly copyPreviousBudgetUseCase: CopyPreviousBudgetUseCase,
+    private readonly getBudgetMatrixUseCase: GetBudgetMatrixUseCase,
+    private readonly updateBudgetMatrixUseCase: UpdateBudgetMatrixUseCase,
+    private readonly applyBudgetDriverUseCase: ApplyBudgetDriverUseCase,
+    private readonly getPriorYearActualsUseCase: GetPriorYearActualsUseCase,
+    private readonly getBudgetControlUseCase: GetBudgetControlUseCase,
+    private readonly transferBudgetFundsUseCase: TransferBudgetFundsUseCase,
     @InjectRepository(BudgetEntity)
     private readonly budgetRepository: Repository<BudgetEntity>,
   ) {}
+
+  @Get('matrix')
+  async getBudgetMatrix(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('categoryId') categoryId?: string,
+  ) {
+    return this.getBudgetMatrixUseCase.execute(user.id, fiscalYearId, categoryId);
+  }
+
+  @Put('matrix/batch-update')
+  async updateBudgetMatrix(
+    @CurrentUser() user: UserEntity,
+    @Body() body: UpdateBudgetMatrixRequest,
+  ) {
+    return this.updateBudgetMatrixUseCase.execute(user.id, body.fiscalYearId, body.updates);
+  }
+
+  @Post('matrix/apply-driver')
+  async applyBudgetDriver(@CurrentUser() user: UserEntity, @Body() body: ApplyBudgetDriverRequest) {
+    return this.applyBudgetDriverUseCase.execute(user.id, body);
+  }
+
+  @Post('matrix/baseline-actuals')
+  async getPriorYearActuals(@CurrentUser() user: UserEntity, @Body() body: BaselineActualsRequest) {
+    return this.getPriorYearActualsUseCase.execute(user.id, body);
+  }
+
+  @Get('control')
+  async getBudgetControl(@CurrentUser() user: UserEntity, @Query('periodId') periodId: string) {
+    return this.getBudgetControlUseCase.execute(user.id, periodId);
+  }
+
+  @Post('control/transfer')
+  async transferBudgetFunds(
+    @CurrentUser() user: UserEntity,
+    @Body() body: TransferBudgetFundsRequest,
+  ) {
+    return this.transferBudgetFundsUseCase.execute(user.id, body);
+  }
 
   @Get('summary')
   async summary(@CurrentUser() user: UserEntity, @Query('period') period: string) {

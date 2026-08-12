@@ -16,7 +16,6 @@ interface Account {
   systemRole?: string | null;
 }
 
-
 interface Entry {
   accountId: string;
   entryType: 'DEBIT' | 'CREDIT';
@@ -93,7 +92,7 @@ function TransactionForm() {
       const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar cuentas y monedas de respaldo.');
     }
   };
@@ -128,7 +127,7 @@ function TransactionForm() {
         );
         setIsDirty(false);
       }
-    } catch (err: any) {
+    } catch {
       setError('Error al recuperar los datos del asiento contable.');
     } finally {
       setFetchLoading(false);

@@ -166,3 +166,144 @@ export const ReplicateBudgetItemRequestSchema = z.object({
 });
 
 export type ReplicateBudgetItemRequest = z.infer<typeof ReplicateBudgetItemRequestSchema>;
+
+// Budget Planning Matrix & Execution Control
+export enum BudgetDriverType {
+  FLAT_PRORATE = 'FLAT_PRORATE',
+  WEIGHTED_HISTORICAL = 'WEIGHTED_HISTORICAL',
+  PERCENTAGE_GROWTH = 'PERCENTAGE_GROWTH',
+  FORWARD_FILL = 'FORWARD_FILL',
+  PRIOR_YEAR_ACTUAL = 'PRIOR_YEAR_ACTUAL',
+}
+
+export const BudgetDriverTypeSchema = z.nativeEnum(BudgetDriverType);
+
+export enum FlowIntention {
+  PAY = 'PAY',
+  RECEIVE = 'RECEIVE',
+  INVEST = 'INVEST',
+  SAVE = 'SAVE',
+  DIVEST = 'DIVEST',
+}
+
+export const FlowIntentionSchema = z.nativeEnum(FlowIntention).nullable().optional();
+
+export enum BudgetGaugeStatus {
+  NORMAL = 'NORMAL',
+  WARNING = 'WARNING',
+  OVERBUDGET = 'OVERBUDGET',
+}
+
+export const BudgetGaugeStatusSchema = z.nativeEnum(BudgetGaugeStatus);
+
+export const MatrixCellUpdateSchema = z.object({
+  periodId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  amount: z.number().min(0),
+  flowIntention: FlowIntentionSchema,
+});
+
+export type MatrixCellUpdate = z.infer<typeof MatrixCellUpdateSchema>;
+
+export const UpdateBudgetMatrixRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  updates: z.array(MatrixCellUpdateSchema),
+});
+
+export type UpdateBudgetMatrixRequest = z.infer<typeof UpdateBudgetMatrixRequestSchema>;
+
+export const ApplyBudgetDriverRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  driverType: BudgetDriverTypeSchema,
+  annualTotal: z.number().optional().nullable(),
+  growthPercentage: z.number().optional().nullable(),
+  sourcePeriodId: z.string().uuid().optional().nullable(),
+});
+
+export type ApplyBudgetDriverRequest = z.infer<typeof ApplyBudgetDriverRequestSchema>;
+
+export const BaselineActualsRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  adjustmentPercentage: z.number().default(0),
+  accountIds: z.array(z.string().uuid()).optional(),
+});
+
+export type BaselineActualsRequest = z.infer<typeof BaselineActualsRequestSchema>;
+
+export const TransferBudgetFundsRequestSchema = z.object({
+  periodId: z.string().uuid(),
+  sourceAccountId: z.string().uuid(),
+  targetAccountId: z.string().uuid(),
+  amount: z.number().positive(),
+  reason: z.string().optional().nullable(),
+});
+
+export type TransferBudgetFundsRequest = z.infer<typeof TransferBudgetFundsRequestSchema>;
+
+export interface BudgetMatrixPeriod {
+  id: string;
+  name: string;
+  friendlyName: string;
+  status: string;
+}
+
+export interface BudgetMatrixRow {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  parentId: string | null;
+  amounts: Record<string, number>;
+  flowIntentions?: Record<string, FlowIntention | null>;
+  rowTotal: number;
+}
+
+export interface BudgetMatrixResponse {
+  fiscalYearId: string;
+  fiscalYearName: string;
+  periods: BudgetMatrixPeriod[];
+  rows: BudgetMatrixRow[];
+  categoryTotals: Record<string, Record<string, number> & { total: number }>;
+}
+
+export interface BudgetControlItem {
+  accountId: string;
+  accountName: string;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+}
+
+export interface BudgetControlCategory {
+  categoryName: string;
+  accountType: string;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+  items: BudgetControlItem[];
+}
+
+export interface BudgetControlSummary {
+  totalBudgeted: number;
+  totalExecuted: number;
+  totalCommitted: number;
+  totalAvailable: number;
+  overallConsumptionPercentage: number;
+  overallGaugeStatus: BudgetGaugeStatus;
+}
+
+export interface BudgetControlResponse {
+  periodId: string;
+  periodName: string;
+  friendlyName: string;
+  isLocked: boolean;
+  summary: BudgetControlSummary;
+  categories: BudgetControlCategory[];
+}

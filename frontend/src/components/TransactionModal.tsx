@@ -15,7 +15,6 @@ interface Account {
   systemRole?: string | null;
 }
 
-
 interface Entry {
   accountId: string;
   entryType: 'DEBIT' | 'CREDIT';
@@ -57,7 +56,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
       const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar cuentas y monedas.');
     }
   };

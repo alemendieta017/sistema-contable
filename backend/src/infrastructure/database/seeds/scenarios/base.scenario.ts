@@ -1,7 +1,6 @@
 import { EntityManager } from 'typeorm';
 import { UserEntity } from '../../entities/user.entity';
 import { CurrencyEntity } from '../../entities/currency.entity';
-import { AccountEntity } from '../../entities/account.entity';
 import * as bcrypt from 'bcrypt';
 
 export async function baseScenario(

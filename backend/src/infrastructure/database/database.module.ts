@@ -9,6 +9,9 @@ import { AccountPeriodBalanceEntity } from './entities/account-period-balance.en
 
 import { UserEntity } from './entities/user.entity';
 import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
+import { BudgetReassignmentEntity } from './entities/budget-reassignment.entity';
+import { BudgetEntity } from './entities/budget.entity';
+import { BudgetItemEntity } from './entities/budget-item.entity';
 
 @Module({
   imports: [
@@ -55,6 +58,9 @@ import { PasswordResetTokenEntity } from './entities/password-reset-token.entity
       FiscalYearEntity,
       PeriodEntity,
       AccountPeriodBalanceEntity,
+      BudgetEntity,
+      BudgetItemEntity,
+      BudgetReassignmentEntity,
     ]),
   ],
 })

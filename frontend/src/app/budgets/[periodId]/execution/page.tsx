@@ -3,16 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '../../../../services/api';
-import {
-  ArrowLeft,
-  Edit3,
-  ShieldAlert,
-  BadgeAlert,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
-} from 'lucide-react';
+import { ArrowLeft, Edit3, ShieldAlert, BadgeAlert, TrendingUp, TrendingDown } from 'lucide-react';
 
 type ExecutionItem = {
   accountId: string;
@@ -179,9 +170,12 @@ export default function BudgetExecutionPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                   {consumos.income.map((item) => {
-                    const varPct = item.budgeted === 0 
-                      ? (item.real === 0 ? '0%' : '100%') 
-                      : `${((item.deviation / item.budgeted) * 100).toFixed(1)}%`;
+                    const varPct =
+                      item.budgeted === 0
+                        ? item.real === 0
+                          ? '0%'
+                          : '100%'
+                        : `${((item.deviation / item.budgeted) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
                         <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
@@ -219,7 +213,9 @@ export default function BudgetExecutionPage() {
                   })}
                   <tr className="font-extrabold border-t-2 border-slate-100 dark:border-slate-700">
                     <td className="py-2.5 whitespace-nowrap">Total Ingresos</td>
-                    <td className="py-2.5 text-right whitespace-nowrap">{formatNum(consumos.totalBudgetedIncome)}</td>
+                    <td className="py-2.5 text-right whitespace-nowrap">
+                      {formatNum(consumos.totalBudgetedIncome)}
+                    </td>
                     <td className="py-2.5 text-right text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                       {formatNum(consumos.totalRealIncome)}
                     </td>
@@ -233,7 +229,9 @@ export default function BudgetExecutionPage() {
                       className={`py-2.5 text-right whitespace-nowrap ${consumos.totalRealIncome < consumos.totalBudgetedIncome ? 'text-red-500' : 'text-green-500'}`}
                     >
                       {consumos.totalBudgetedIncome === 0
-                        ? (consumos.totalRealIncome === 0 ? '0%' : '100%')
+                        ? consumos.totalRealIncome === 0
+                          ? '0%'
+                          : '100%'
                         : `${(((consumos.totalRealIncome - consumos.totalBudgetedIncome) / consumos.totalBudgetedIncome) * 100).toFixed(1)}%`}
                     </td>
                     <td></td>
@@ -263,9 +261,12 @@ export default function BudgetExecutionPage() {
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                   {consumos.expense.map((item) => {
                     const variation = item.real - item.budgeted;
-                    const varPct = item.budgeted === 0 
-                      ? (item.real === 0 ? '0%' : '100%') 
-                      : `${((variation / item.budgeted) * 100).toFixed(1)}%`;
+                    const varPct =
+                      item.budgeted === 0
+                        ? item.real === 0
+                          ? '0%'
+                          : '100%'
+                        : `${((variation / item.budgeted) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
                         <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
@@ -319,7 +320,9 @@ export default function BudgetExecutionPage() {
                       className={`py-2.5 text-right whitespace-nowrap ${consumos.totalRealExpense > consumos.totalBudgetedExpense ? 'text-red-500' : 'text-green-500'}`}
                     >
                       {consumos.totalBudgetedExpense === 0
-                        ? (consumos.totalRealExpense === 0 ? '0%' : '100%')
+                        ? consumos.totalRealExpense === 0
+                          ? '0%'
+                          : '100%'
                         : `${(((consumos.totalRealExpense - consumos.totalBudgetedExpense) / consumos.totalBudgetedExpense) * 100).toFixed(1)}%`}
                     </td>
                     <td></td>
@@ -362,9 +365,12 @@ export default function BudgetExecutionPage() {
                   </tr>
                 ) : (
                   savings.map((item) => {
-                    const varPct = item.budgeted === 0 
-                      ? (item.real === 0 ? '0%' : '100%') 
-                      : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
+                    const varPct =
+                      item.budgeted === 0
+                        ? item.real === 0
+                          ? '0%'
+                          : '100%'
+                        : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
                         <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
@@ -373,7 +379,9 @@ export default function BudgetExecutionPage() {
                         <td className="py-2.5 text-right font-semibold whitespace-nowrap">
                           {formatNum(item.budgeted)}
                         </td>
-                        <td className="py-2.5 text-right font-semibold whitespace-nowrap">{formatNum(item.real)}</td>
+                        <td className="py-2.5 text-right font-semibold whitespace-nowrap">
+                          {formatNum(item.real)}
+                        </td>
                         <td
                           className={`py-2.5 text-right font-bold whitespace-nowrap ${item.isNegativeDeviation ? 'text-red-500 bg-red-50 dark:bg-red-950/20 px-1.5 py-0.5 rounded-lg' : 'text-green-500'}`}
                         >
@@ -436,9 +444,12 @@ export default function BudgetExecutionPage() {
                   </tr>
                 ) : (
                   debts.map((item) => {
-                    const varPct = item.budgeted === 0 
-                      ? (item.real === 0 ? '0%' : '100%') 
-                      : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
+                    const varPct =
+                      item.budgeted === 0
+                        ? item.real === 0
+                          ? '0%'
+                          : '100%'
+                        : `${((item.deviation / Math.abs(item.budgeted)) * 100).toFixed(1)}%`;
                     return (
                       <tr key={item.accountId}>
                         <td className="py-2.5 font-medium text-slate-700 dark:text-slate-300">
@@ -602,7 +613,7 @@ export default function BudgetExecutionPage() {
                   {formatNum(resumenLiquidez.saldoCajaFinal.real)}
                 </span>
               </div>
-          </div>
+            </div>
           </div>
         </div>
       </div>

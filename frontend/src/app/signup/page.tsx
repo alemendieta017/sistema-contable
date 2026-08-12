@@ -3,8 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/services/auth.service';
-import { PASSWORD_REGEX } from '@sistema-contable/shared';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,9 +14,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Password rules validation
-  const rules = [
-    { label: 'At least 6 characters long', valid: password.length >= 6 },
-  ];
+  const rules = [{ label: 'At least 6 characters long', valid: password.length >= 6 }];
 
   const isPasswordValid = rules.every((r) => r.valid);
   const isFormValid =

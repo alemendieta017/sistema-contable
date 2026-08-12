@@ -12,7 +12,6 @@ type Account = {
   systemRole?: string | null;
 };
 
-
 type EntryLine = {
   accountId: string;
   entryType: 'DEBIT' | 'CREDIT';
@@ -50,7 +49,7 @@ export default function AsientoLibrePage() {
       const [accList, curList] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accList || []);
       setCurrencies(curList || []);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar datos iniciales.');
     }
   };
@@ -233,7 +232,6 @@ export default function AsientoLibrePage() {
                           {a.name} ({a.type})
                         </option>
                       ))}
-
                   </select>
                 </div>
 

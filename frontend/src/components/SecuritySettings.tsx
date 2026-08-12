@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 export default function SecuritySettings() {
   const [currentPassword, setCurrentPassword] = useState('');

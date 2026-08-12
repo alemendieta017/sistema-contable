@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import PieChart from '../../components/PieChart';
 import NetWorthChart from '../../components/NetWorthChart';
 import IncomeStatementChart from '../../components/IncomeStatementChart';
-import { BarChart3, TrendingUp, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 type StatItem = {
   accountId: string;
@@ -105,7 +105,6 @@ export default function StatsPage() {
       'Dic',
     ];
 
-    const currentYear = new Date().getFullYear();
     const comparative: Record<
       string,
       { monthName: string; income: number; expense: number; monthVal: number }
@@ -143,8 +142,6 @@ export default function StatsPage() {
 
     return Object.values(comparative);
   };
-
-  const totalAmount = stats.reduce((sum, item) => sum + item.amount, 0);
 
   if (loading) {
     return (

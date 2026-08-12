@@ -6,12 +6,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthErrorCode } from '@sistema-contable/shared';
 import { AppModule } from '../src/app.module';
 import { PasswordResetTokenEntity } from '../src/infrastructure/database/entities/password-reset-token.entity';
-import { UserEntity } from '../src/infrastructure/database/entities/user.entity';
 
 describe('Auth Forgot & Reset Password (E2E)', () => {
   let app: INestApplication;
   let tokenRepo: Repository<PasswordResetTokenEntity>;
-  let userRepo: Repository<UserEntity>;
 
   const userEmail = `forgot_pass_${Date.now()}@example.com`;
   const initialPassword = 'InitialPassword123!';
@@ -30,16 +28,13 @@ describe('Auth Forgot & Reset Password (E2E)', () => {
     tokenRepo = moduleFixture.get<Repository<PasswordResetTokenEntity>>(
       getRepositoryToken(PasswordResetTokenEntity),
     );
-    userRepo = moduleFixture.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
 
     // Register user
-    const regRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'Forgot Password User',
-        email: userEmail,
-        password: initialPassword,
-      });
+    const regRes = await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'Forgot Password User',
+      email: userEmail,
+      password: initialPassword,
+    });
 
     userId = regRes.body.user.id;
   });
@@ -74,12 +69,10 @@ describe('Auth Forgot & Reset Password (E2E)', () => {
   });
 
   it('POST /api/v1/auth/reset-password - rejects invalid or fake token with 400', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/reset-password')
-      .send({
-        token: 'invalid-token-12345',
-        newPassword: resetPassword,
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({
+      token: 'invalid-token-12345',
+      newPassword: resetPassword,
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe(AuthErrorCode.EXPIRED_OR_INVALID_TOKEN);
@@ -103,23 +96,19 @@ describe('Auth Forgot & Reset Password (E2E)', () => {
     await tokenRepo.save(latestToken);
 
     // Perform reset
-    const resetRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/reset-password')
-      .send({
-        token: rawToken,
-        newPassword: resetPassword,
-      });
+    const resetRes = await request(app.getHttpServer()).post('/api/v1/auth/reset-password').send({
+      token: rawToken,
+      newPassword: resetPassword,
+    });
 
     expect(resetRes.status).toBe(200);
     expect(resetRes.body.message).toContain('Password reset successfully');
 
     // Login with reset password
-    const loginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: userEmail,
-        password: resetPassword,
-      });
+    const loginRes = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: userEmail,
+      password: resetPassword,
+    });
 
     expect(loginRes.status).toBe(200);
   });

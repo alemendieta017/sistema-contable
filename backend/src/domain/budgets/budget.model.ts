@@ -148,3 +148,58 @@ export interface ICashFlowForecastReport {
   fiscalYearName: string;
   months: ICashFlowMonthForecast[];
 }
+
+// --- Annual Budget Matrix & Execution Control Domain Interfaces ---
+
+export type FlowIntentionType = 'PAY' | 'RECEIVE' | 'INVEST' | 'SAVE' | 'DIVEST';
+
+export interface IBudgetMatrixPeriodDomain {
+  id: string;
+  name: string;
+  friendlyName: string;
+  status: string;
+}
+
+export interface IBudgetMatrixRowDomain {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  parentId: string | null;
+  amounts: Record<string, number>;
+  flowIntentions?: Record<string, FlowIntentionType | null>;
+  rowTotal: number;
+}
+
+export interface IBudgetMatrixDataDomain {
+  fiscalYearId: string;
+  fiscalYearName: string;
+  periods: IBudgetMatrixPeriodDomain[];
+  rows: IBudgetMatrixRowDomain[];
+  categoryTotals: Record<string, Record<string, number> & { total: number }>;
+}
+
+export interface IBudgetDriverApplyParams {
+  fiscalYearId: string;
+  accountId: string;
+  driverType:
+    | 'FLAT_PRORATE'
+    | 'WEIGHTED_HISTORICAL'
+    | 'PERCENTAGE_GROWTH'
+    | 'FORWARD_FILL'
+    | 'PRIOR_YEAR_ACTUAL';
+  annualTotal?: number | null;
+  growthPercentage?: number | null;
+  sourcePeriodId?: string | null;
+}
+
+export interface IBudgetReassignmentDomain {
+  id?: string;
+  userId: string;
+  periodId: string;
+  sourceAccountId: string;
+  targetAccountId: string;
+  amount: number;
+  reason?: string | null;
+  createdAt?: Date;
+}
