@@ -136,4 +136,51 @@ describe('TransactionModal Double-Entry Validation', () => {
       });
     });
   });
+
+  test('should open inline AccountModal when Crear Cuenta action is clicked in combobox', async () => {
+    render(<TransactionModal onClose={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Registrar Asiento/i)).toBeInTheDocument();
+    });
+
+    const select1 = screen.getAllByRole('combobox')[0];
+    fireEvent.focus(select1);
+
+    const quickCreateBtn = screen.getByText('Crear Cuenta');
+    expect(quickCreateBtn).toBeInTheDocument();
+    fireEvent.mouseDown(quickCreateBtn);
+
+    // AccountModal should be open with title "Crear Cuenta o Categoría"
+    expect(screen.getByText('Crear Cuenta o Categoría')).toBeInTheDocument();
+  });
+
+  test('should preserve transaction form draft data when quick account creation modal is cancelled', async () => {
+    render(<TransactionModal onClose={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Registrar Asiento/i)).toBeInTheDocument();
+    });
+
+    const descInput = screen.getByPlaceholderText(/Ej. Compra alimentos/i);
+    fireEvent.change(descInput, { target: { value: 'Borrador Guardado' } });
+
+    const amount1 = screen.getAllByPlaceholderText('0.00')[0];
+    fireEvent.change(amount1, { target: { value: '250' } });
+
+    // Open quick create modal
+    const select1 = screen.getAllByRole('combobox')[0];
+    fireEvent.focus(select1);
+    const quickCreateBtn = screen.getByText('Crear Cuenta');
+    fireEvent.mouseDown(quickCreateBtn);
+
+    // Click Cancel in AccountModal
+    const cancelBtns = screen.getAllByRole('button', { name: /Cancelar/i });
+    fireEvent.click(cancelBtns[cancelBtns.length - 1]);
+
+    // Verify AccountModal closed and draft data is 100% intact
+    expect(screen.queryByText('Crear Cuenta o Categoría')).not.toBeInTheDocument();
+    expect(descInput).toHaveValue('Borrador Guardado');
+    expect(amount1).toHaveValue(250);
+  });
 });

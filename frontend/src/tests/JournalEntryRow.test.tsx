@@ -1,0 +1,89 @@
+import React from 'react';
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import JournalEntryRow from '../components/JournalEntryRow';
+
+// Mock Lucide React icons
+jest.mock('lucide-react', () => ({
+  Trash2: () => <span data-testid="trash-icon">Trash</span>,
+  Search: () => <span data-testid="search-icon">Search</span>,
+  ChevronDown: () => <span data-testid="chevron-icon">Chevron</span>,
+  Plus: () => <span data-testid="plus-icon">+</span>,
+}));
+
+describe('JournalEntryRow Component', () => {
+  const mockAccounts = [
+    { id: 'acc-1', name: 'Caja Chica', type: 'ASSET' },
+    { id: 'acc-2', name: 'Servicios Básicos', type: 'EXPENSE' },
+  ];
+
+  const defaultProps = {
+    entry: { accountId: '', entryType: 'DEBIT' as const, amount: 100 as number | '' },
+    accounts: mockAccounts,
+    index: 0,
+    onUpdate: jest.fn(),
+    onRemove: jest.fn(),
+    canRemove: true,
+    baseCurrency: { code: 'USD', symbol: '$', decimalPlaces: 2 },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('renders selected account name in combobox input when accountId is set', () => {
+    render(
+      <JournalEntryRow {...defaultProps} entry={{ ...defaultProps.entry, accountId: 'acc-1' }} />,
+    );
+    const input = screen.getByRole('combobox');
+    expect(input).toHaveValue('Caja Chica');
+  });
+
+  test('opens dropdown on focus or click and shows all accounts when search is empty', () => {
+    render(<JournalEntryRow {...defaultProps} />);
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    expect(screen.getByText('Caja Chica')).toBeInTheDocument();
+    expect(screen.getByText('Servicios Básicos')).toBeInTheDocument();
+  });
+
+  test('calls onUpdate when selecting an account option', () => {
+    render(<JournalEntryRow {...defaultProps} />);
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+
+    const option = screen.getByText('Servicios Básicos');
+    fireEvent.mouseDown(option);
+
+    expect(defaultProps.onUpdate).toHaveBeenCalledWith(0, { accountId: 'acc-2' });
+  });
+
+  test('calls onQuickCreateAccount when explicit Crear Cuenta option is clicked', () => {
+    const onQuickCreate = jest.fn();
+    render(<JournalEntryRow {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
+
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+
+    const createBtn = screen.getByText('Crear Cuenta');
+    expect(createBtn).toBeInTheDocument();
+    fireEvent.mouseDown(createBtn);
+
+    expect(onQuickCreate).toHaveBeenCalledWith('');
+  });
+
+  test('shows dynamic search shortcut when search does not match existing accounts', () => {
+    const onQuickCreate = jest.fn();
+    render(<JournalEntryRow {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
+
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'Servicios Tigo' } });
+
+    const dynamicOption = screen.getByText('Crear cuenta "Servicios Tigo"');
+    expect(dynamicOption).toBeInTheDocument();
+
+    fireEvent.mouseDown(dynamicOption);
+    expect(onQuickCreate).toHaveBeenCalledWith('Servicios Tigo');
+  });
+});

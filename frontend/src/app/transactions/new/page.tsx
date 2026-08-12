@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
 import { api } from '../../../services/api';
 import JournalEntryRow from '../../../components/JournalEntryRow';
+import AccountModal from '../../../components/AccountModal';
 import { formatCurrency } from '../../../lib/utils';
 
 interface Account {
@@ -15,7 +16,6 @@ interface Account {
   parentId?: string | null;
   systemRole?: string | null;
 }
-
 
 interface Entry {
   accountId: string;
@@ -46,6 +46,10 @@ function TransactionForm() {
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
+  const [quickCreateState, setQuickCreateState] = useState<{
+    lineIndex: number;
+    initialName: string;
+  } | null>(null);
 
   // Set default datetime to local current date-time
   // Set default date to local current date
@@ -93,7 +97,7 @@ function TransactionForm() {
       const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar cuentas y monedas de respaldo.');
     }
   };
@@ -128,7 +132,7 @@ function TransactionForm() {
         );
         setIsDirty(false);
       }
-    } catch (err: any) {
+    } catch {
       setError('Error al recuperar los datos del asiento contable.');
     } finally {
       setFetchLoading(false);
@@ -397,6 +401,9 @@ function TransactionForm() {
                   onRemove={handleRemoveEntry}
                   canRemove={entries.length > 2}
                   baseCurrency={baseCurrency}
+                  onQuickCreateAccount={(initialName) =>
+                    setQuickCreateState({ lineIndex: index, initialName })
+                  }
                 />
               ))}
             </div>
@@ -465,6 +472,23 @@ function TransactionForm() {
           </div>
         </div>
       </footer>
+
+      {quickCreateState && (
+        <AccountModal
+          initialName={quickCreateState.initialName}
+          parentCandidates={accounts}
+          onClose={() => setQuickCreateState(null)}
+          onSuccess={(newAccount) => {
+            if (newAccount) {
+              setAccounts((prev) =>
+                prev.some((a) => a.id === newAccount.id) ? prev : [...prev, newAccount],
+              );
+              handleUpdateEntry(quickCreateState.lineIndex, { accountId: newAccount.id });
+            }
+            setQuickCreateState(null);
+          }}
+        />
+      )}
 
       {/* Accidental Navigation Cancel Confirmation Overlay Dialog */}
       {showCancelConfirm && (

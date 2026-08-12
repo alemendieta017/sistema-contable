@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
 import JournalEntryRow from './JournalEntryRow';
+import AccountModal from './AccountModal';
 import { formatCurrency } from '../lib/utils';
 
 interface Account {
@@ -14,7 +15,6 @@ interface Account {
   parentId?: string | null;
   systemRole?: string | null;
 }
-
 
 interface Entry {
   accountId: string;
@@ -30,6 +30,10 @@ interface TransactionModalProps {
 export default function TransactionModal({ onClose, onSaveSuccess }: TransactionModalProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
+  const [quickCreateState, setQuickCreateState] = useState<{
+    lineIndex: number;
+    initialName: string;
+  } | null>(null);
   const getLocalDateString = () => {
     const d = new Date();
     const y = d.getFullYear();
@@ -57,7 +61,7 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
       const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
       setAccounts(accData || []);
       setCurrencies(curData || []);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar cuentas y monedas.');
     }
   };
@@ -267,6 +271,9 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
                     onRemove={handleRemoveEntry}
                     canRemove={entries.length > 2}
                     baseCurrency={baseCurrency}
+                    onQuickCreateAccount={(initialName) =>
+                      setQuickCreateState({ lineIndex: index, initialName })
+                    }
                   />
                 );
               })}
@@ -339,6 +346,23 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
             </button>
           </div>
         </div>
+
+        {quickCreateState && (
+          <AccountModal
+            initialName={quickCreateState.initialName}
+            parentCandidates={accounts}
+            onClose={() => setQuickCreateState(null)}
+            onSuccess={(newAccount) => {
+              if (newAccount) {
+                setAccounts((prev) =>
+                  prev.some((a) => a.id === newAccount.id) ? prev : [...prev, newAccount],
+                );
+                handleUpdateEntry(quickCreateState.lineIndex, { accountId: newAccount.id });
+              }
+              setQuickCreateState(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, Search, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trash2, Search, ChevronDown, Plus } from 'lucide-react';
 import type { CurrencyInfo } from '../lib/utils';
 
 interface Account {
@@ -11,7 +11,6 @@ interface Account {
   parentId?: string | null;
   systemRole?: string | null;
 }
-
 
 interface Entry {
   accountId: string;
@@ -27,7 +26,12 @@ interface JournalEntryRowProps {
   onRemove: (index: number) => void;
   canRemove: boolean;
   baseCurrency?: string | CurrencyInfo | null;
+  onQuickCreateAccount?: (initialName: string) => void;
 }
+
+type DropdownOption =
+  | { kind: 'ACCOUNT'; account: Account }
+  | { kind: 'CREATE_ACCOUNT'; label: string; initialName: string };
 
 export default function JournalEntryRow({
   entry,
@@ -37,6 +41,7 @@ export default function JournalEntryRow({
   onRemove,
   canRemove,
   baseCurrency,
+  onQuickCreateAccount,
 }: JournalEntryRowProps) {
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -115,21 +120,44 @@ export default function JournalEntryRow({
     return matchesSearch && matchesTab && isOperable;
   });
 
-
   const groups = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
 
-  // Construct flat list of displayed accounts in the exact rendering order (by groups)
-  const displayAccounts: Account[] = [];
+  // Construct flat list of displayed options in the exact rendering order
+  const displayOptions: DropdownOption[] = [];
+
+  if (onQuickCreateAccount) {
+    const trimmedSearch = search.trim();
+    if (trimmedSearch.length > 0) {
+      const hasExactMatch = accounts.some(
+        (a) => a.name.toLowerCase() === trimmedSearch.toLowerCase(),
+      );
+      if (!hasExactMatch) {
+        displayOptions.push({
+          kind: 'CREATE_ACCOUNT',
+          label: `Crear cuenta "${trimmedSearch}"`,
+          initialName: trimmedSearch,
+        });
+      }
+    }
+    displayOptions.push({
+      kind: 'CREATE_ACCOUNT',
+      label: 'Crear Cuenta',
+      initialName: trimmedSearch,
+    });
+  }
+
   groups.forEach((groupType) => {
     if (activeTab === 'ALL' || activeTab === groupType) {
       const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
-      displayAccounts.push(...groupAccounts);
+      groupAccounts.forEach((account) => {
+        displayOptions.push({ kind: 'ACCOUNT', account });
+      });
     }
   });
 
   // Reset focused index when filtering criteria changes
   useEffect(() => {
-    setFocusedIndex(displayAccounts.length > 0 ? 0 : -1);
+    setFocusedIndex(displayOptions.length > 0 ? 0 : -1);
   }, [search, activeTab]);
 
   useEffect(() => {
@@ -176,7 +204,6 @@ export default function JournalEntryRow({
     ).length;
   };
 
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
@@ -189,19 +216,24 @@ export default function JournalEntryRow({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex((prev) => (prev + 1 < displayAccounts.length ? prev + 1 : 0));
+        setFocusedIndex((prev) => (prev + 1 < displayOptions.length ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : displayAccounts.length - 1));
+        setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : displayOptions.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
-        if (focusedIndex >= 0 && focusedIndex < displayAccounts.length) {
-          const selected = displayAccounts[focusedIndex];
-          onUpdate(index, { accountId: selected.id });
-          setSearch(formatAccountName(selected));
-          setIsOpen(false);
+        if (focusedIndex >= 0 && focusedIndex < displayOptions.length) {
+          const selected = displayOptions[focusedIndex];
+          if (selected.kind === 'ACCOUNT') {
+            onUpdate(index, { accountId: selected.account.id });
+            setSearch(formatAccountName(selected.account));
+            setIsOpen(false);
+          } else if (selected.kind === 'CREATE_ACCOUNT') {
+            setIsOpen(false);
+            onQuickCreateAccount?.(selected.initialName);
+          }
         }
         break;
       case 'Escape':
@@ -301,104 +333,141 @@ export default function JournalEntryRow({
 
             {/* List Body */}
             <div className="overflow-y-auto flex-1 max-h-44">
-              {displayAccounts.length === 0 ? (
+              {displayOptions.length === 0 ? (
                 <div className="px-3 py-3 text-slate-400 dark:text-slate-500 text-xs italic text-center">
                   No se encontraron rubros
                 </div>
               ) : (
                 (() => {
                   let globalIndex = 0;
-                  return groups.map((groupType) => {
-                    if (activeTab !== 'ALL' && activeTab !== groupType) return null;
-                    const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
-                    if (groupAccounts.length === 0) return null;
-                    return (
-                      <div
-                        key={groupType}
-                        className="border-b last:border-0 border-slate-100 dark:border-slate-700/30"
-                      >
-                        {activeTab === 'ALL' && (
-                          <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-900/40 sticky top-0 backdrop-blur-sm z-10">
-                            {groupType === 'ASSET'
-                              ? 'ACTIVOS'
-                              : groupType === 'LIABILITY'
-                                ? 'PASIVOS'
-                                : groupType === 'INCOME'
-                                  ? 'INGRESOS'
-                                  : groupType === 'EXPENSE'
-                                    ? 'EGRESOS'
-                                    : 'PATRIMONIO NETO'}
-                          </div>
-                        )}
-                        <div className="divide-y divide-slate-50 dark:divide-slate-800/30">
-                          {groupAccounts.map((a) => {
+                  const quickCreateItems = displayOptions.filter(
+                    (opt): opt is Extract<DropdownOption, { kind: 'CREATE_ACCOUNT' }> =>
+                      opt.kind === 'CREATE_ACCOUNT',
+                  );
+                  return (
+                    <>
+                      {quickCreateItems.length > 0 && (
+                        <div className="border-b border-slate-100 dark:border-slate-700/40 p-1 bg-indigo-50/30 dark:bg-indigo-950/10 space-y-1">
+                          {quickCreateItems.map((opt, i) => {
                             const itemIndex = globalIndex++;
                             const isFocused = itemIndex === focusedIndex;
                             return (
                               <button
-                                key={a.id}
+                                key={`qc-${i}`}
                                 id={`account-opt-${index}-${itemIndex}`}
                                 type="button"
-                                onMouseDown={() => {
-                                  onUpdate(index, { accountId: a.id });
-                                  setSearch(formatAccountName(a));
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
                                   setIsOpen(false);
+                                  onQuickCreateAccount?.(opt.initialName);
                                 }}
-                                className={`w-full text-left px-3 py-2 sm:py-2.5 transition text-xs font-semibold flex items-center justify-between outline-none ${
+                                className={`w-full text-left px-3 py-2 rounded-sm text-xs font-bold flex items-center gap-1.5 transition outline-none ${
                                   isFocused
-                                    ? 'bg-indigo-50/50 text-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200'
-                                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                    ? 'bg-indigo-100 text-indigo-950 dark:bg-indigo-900/60 dark:text-indigo-200'
+                                    : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30'
                                 }`}
                               >
-                                <div className="flex flex-col">
-                                  {a.parentId ? (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                                        {accounts.find((p) => p.id === a.parentId)?.name} ›
-                                      </span>
-                                      <span className="text-slate-800 dark:text-slate-200 font-medium">
-                                        {highlightMatch(a.name, search)}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-slate-800 dark:text-slate-200 font-medium">
-                                      {highlightMatch(a.name, search)}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {activeTab === 'ALL' && (
-                                  <span
-                                    className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                                      a.type === 'ASSET'
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                                        : a.type === 'LIABILITY'
-                                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
-                                          : a.type === 'EQUITY'
-                                            ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400'
-                                            : a.type === 'INCOME'
-                                              ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400'
-                                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
-                                    }`}
-                                  >
-                                    {a.type === 'ASSET'
-                                      ? 'Activo'
-                                      : a.type === 'LIABILITY'
-                                        ? 'Pasivo'
-                                        : a.type === 'EQUITY'
-                                          ? 'Patrimonio'
-                                          : a.type === 'INCOME'
-                                            ? 'Ingreso'
-                                            : 'Egreso'}
-                                  </span>
-                                )}
+                                <Plus className="w-3.5 h-3.5 shrink-0" />
+                                <span>{opt.label}</span>
                               </button>
                             );
                           })}
                         </div>
-                      </div>
-                    );
-                  });
+                      )}
+
+                      {groups.map((groupType) => {
+                        if (activeTab !== 'ALL' && activeTab !== groupType) return null;
+                        const groupAccounts = filteredAccounts.filter((a) => a.type === groupType);
+                        if (groupAccounts.length === 0) return null;
+                        return (
+                          <div
+                            key={groupType}
+                            className="border-b last:border-0 border-slate-100 dark:border-slate-700/30"
+                          >
+                            {activeTab === 'ALL' && (
+                              <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider bg-slate-50/70 dark:bg-slate-900/40 sticky top-0 backdrop-blur-sm z-10">
+                                {groupType === 'ASSET'
+                                  ? 'ACTIVOS'
+                                  : groupType === 'LIABILITY'
+                                    ? 'PASIVOS'
+                                    : groupType === 'INCOME'
+                                      ? 'INGRESOS'
+                                      : groupType === 'EXPENSE'
+                                        ? 'EGRESOS'
+                                        : 'PATRIMONIO NETO'}
+                              </div>
+                            )}
+                            <div className="divide-y divide-slate-50 dark:divide-slate-800/30">
+                              {groupAccounts.map((a) => {
+                                const itemIndex = globalIndex++;
+                                const isFocused = itemIndex === focusedIndex;
+                                return (
+                                  <button
+                                    key={a.id}
+                                    id={`account-opt-${index}-${itemIndex}`}
+                                    type="button"
+                                    onMouseDown={() => {
+                                      onUpdate(index, { accountId: a.id });
+                                      setSearch(formatAccountName(a));
+                                      setIsOpen(false);
+                                    }}
+                                    className={`w-full text-left px-3 py-2 sm:py-2.5 transition text-xs font-semibold flex items-center justify-between outline-none ${
+                                      isFocused
+                                        ? 'bg-indigo-50/50 text-indigo-900 dark:bg-indigo-950/20 dark:text-indigo-200'
+                                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                    }`}
+                                  >
+                                    <div className="flex flex-col">
+                                      {a.parentId ? (
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                                            {accounts.find((p) => p.id === a.parentId)?.name} ›
+                                          </span>
+                                          <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                            {highlightMatch(a.name, search)}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-slate-800 dark:text-slate-200 font-medium">
+                                          {highlightMatch(a.name, search)}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {activeTab === 'ALL' && (
+                                      <span
+                                        className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                          a.type === 'ASSET'
+                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                            : a.type === 'LIABILITY'
+                                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
+                                              : a.type === 'EQUITY'
+                                                ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400'
+                                                : a.type === 'INCOME'
+                                                  ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400'
+                                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                                        }`}
+                                      >
+                                        {a.type === 'ASSET'
+                                          ? 'Activo'
+                                          : a.type === 'LIABILITY'
+                                            ? 'Pasivo'
+                                            : a.type === 'EQUITY'
+                                              ? 'Patrimonio'
+                                              : a.type === 'INCOME'
+                                                ? 'Ingreso'
+                                                : 'Egreso'}
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
                 })()
               )}
             </div>
