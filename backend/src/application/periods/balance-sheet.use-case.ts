@@ -289,36 +289,12 @@ export class BalanceSheetUseCase {
       if (netIncomeAccDate) {
         const currentVal = balanceMap.get(netIncomeAccDate.id) ?? 0;
         balanceMap.set(netIncomeAccDate.id, currentVal + netIncomeFixed);
-      } else {
-        const fallbackId = 'virtual-net-income';
-        accounts.push({
-          id: fallbackId,
-          name: 'Resultado del Ejercicio',
-          type: 'EQUITY',
-          status: 'ACTIVE',
-          userId,
-          systemRole: 'NET_INCOME',
-        } as AccountEntity);
-        balanceMap.set(fallbackId, netIncomeFixed);
       }
 
       const retainedAccDate = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
-      if (retainedAccDate) {
-        if (priorNetIncomeFixed !== 0) {
-          const currentVal = balanceMap.get(retainedAccDate.id) ?? 0;
-          balanceMap.set(retainedAccDate.id, currentVal + priorNetIncomeFixed);
-        }
-      } else if (priorNetIncomeFixed !== 0) {
-        const fallbackId = 'virtual-accumulated-results';
-        accounts.push({
-          id: fallbackId,
-          name: 'Resultados Acumulados',
-          type: 'EQUITY',
-          status: 'ACTIVE',
-          userId,
-          systemRole: 'RETAINED_EARNINGS',
-        } as AccountEntity);
-        balanceMap.set(fallbackId, priorNetIncomeFixed);
+      if (retainedAccDate && priorNetIncomeFixed !== 0) {
+        const currentVal = balanceMap.get(retainedAccDate.id) ?? 0;
+        balanceMap.set(retainedAccDate.id, currentVal + priorNetIncomeFixed);
       }
 
       // 4. Apply depth collapse to ASSET, LIABILITY, EQUITY
@@ -341,9 +317,15 @@ export class BalanceSheetUseCase {
       collapsed.equity.sort((a, b) => a.name.localeCompare(b.name));
 
       // 5. Calculate totals
-      const totalAssets = collapsed.assets.reduce((sum, item) => sum + item.balance, 0);
-      const totalLiabilities = collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0);
-      const totalEquity = collapsed.equity.reduce((sum, item) => sum + item.balance, 0);
+      const totalAssets = Number(
+        collapsed.assets.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+      );
+      const totalLiabilities = Number(
+        collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+      );
+      const totalEquity = Number(
+        collapsed.equity.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+      );
 
       const balanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.0001;
 
@@ -519,36 +501,12 @@ export class BalanceSheetUseCase {
     if (netIncomeAcc) {
       const currentVal = balanceMap.get(netIncomeAcc.id) ?? 0;
       balanceMap.set(netIncomeAcc.id, currentVal + netIncome);
-    } else {
-      const fallbackId = 'virtual-net-income';
-      accounts.push({
-        id: fallbackId,
-        name: 'Resultado del Ejercicio',
-        type: 'EQUITY',
-        status: 'ACTIVE',
-        userId,
-        systemRole: 'NET_INCOME',
-      } as AccountEntity);
-      balanceMap.set(fallbackId, netIncome);
     }
 
     const retainedAcc = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
-    if (retainedAcc) {
-      if (priorNetIncomeFixed !== 0) {
-        const currentVal = balanceMap.get(retainedAcc.id) ?? 0;
-        balanceMap.set(retainedAcc.id, currentVal + priorNetIncomeFixed);
-      }
-    } else if (priorNetIncomeFixed !== 0) {
-      const fallbackId = 'virtual-accumulated-results';
-      accounts.push({
-        id: fallbackId,
-        name: 'Resultados Acumulados',
-        type: 'EQUITY',
-        status: 'ACTIVE',
-        userId,
-        systemRole: 'RETAINED_EARNINGS',
-      } as AccountEntity);
-      balanceMap.set(fallbackId, priorNetIncomeFixed);
+    if (retainedAcc && priorNetIncomeFixed !== 0) {
+      const currentVal = balanceMap.get(retainedAcc.id) ?? 0;
+      balanceMap.set(retainedAcc.id, currentVal + priorNetIncomeFixed);
     }
 
     // 4. Apply depth collapse to ASSET, LIABILITY, EQUITY
@@ -571,9 +529,15 @@ export class BalanceSheetUseCase {
     collapsed.equity.sort((a, b) => a.name.localeCompare(b.name));
 
     // 5. Calculate totals
-    const totalAssets = collapsed.assets.reduce((sum, item) => sum + item.balance, 0);
-    const totalLiabilities = collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0);
-    const totalEquity = collapsed.equity.reduce((sum, item) => sum + item.balance, 0);
+    const totalAssets = Number(
+      collapsed.assets.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+    );
+    const totalLiabilities = Number(
+      collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+    );
+    const totalEquity = Number(
+      collapsed.equity.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
+    );
 
     const balanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.0001;
 

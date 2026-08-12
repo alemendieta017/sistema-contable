@@ -476,6 +476,14 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
           status: 'ACTIVE',
           userId,
         } as AccountEntity,
+        {
+          id: 'acc-retained',
+          name: 'Resultados Acumulados',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'RETAINED_EARNINGS',
+        } as AccountEntity,
       ];
 
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
@@ -530,7 +538,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       ]);
       expect(result.equity).toEqual([
         {
-          accountId: 'virtual-accumulated-results',
+          accountId: 'acc-retained',
           name: 'Resultados Acumulados',
           balance: 11000.0,
         },
@@ -547,6 +555,14 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
           type: 'EQUITY',
           status: 'ACTIVE',
           userId,
+        } as AccountEntity,
+        {
+          id: 'acc-retained',
+          name: 'Resultados Acumulados',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'RETAINED_EARNINGS',
         } as AccountEntity,
       ];
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
@@ -591,7 +607,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.equity).toEqual([
         { accountId: 'acc-capital', name: 'Capital', balance: 120000 },
         {
-          accountId: 'virtual-accumulated-results',
+          accountId: 'acc-retained',
           name: 'Resultados Acumulados',
           balance: 11000,
         },
@@ -689,6 +705,14 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
           status: 'ACTIVE',
           userId,
         } as AccountEntity,
+        {
+          id: 'acc-retained',
+          name: 'Resultados Acumulados',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+          systemRole: 'RETAINED_EARNINGS',
+        } as AccountEntity,
       ];
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
@@ -728,7 +752,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       ]);
       expect(result.equity).toEqual([
         {
-          accountId: 'virtual-accumulated-results',
+          accountId: 'acc-retained',
           name: 'Resultados Acumulados',
           balance: 11000.0,
         },
