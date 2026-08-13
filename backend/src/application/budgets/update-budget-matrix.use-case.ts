@@ -82,13 +82,30 @@ export class UpdateBudgetMatrixUseCase {
         const existingItems = budget.items || [];
         const itemMap = new Map<string, BudgetItemEntity>();
         for (const item of existingItems) {
-          itemMap.set(item.accountId, item);
+          const subKey = item.subRowId || '__default__';
+          itemMap.set(`${item.accountId}_${subKey}`, item);
         }
 
         for (const cell of periodUpdates) {
-          let item = itemMap.get(cell.accountId);
+          const subKey = cell.subRowId || '__default__';
+          let item = itemMap.get(`${cell.accountId}_${subKey}`);
+          if (cell.isDeleted) {
+            if (item) {
+              await manager.remove(BudgetItemEntity, item);
+              itemMap.delete(`${cell.accountId}_${subKey}`);
+              updatedCount++;
+            }
+            continue;
+          }
+
           if (item) {
             item.amount = cell.amount;
+            if (cell.subRowLabel !== undefined) {
+              item.subRowLabel = cell.subRowLabel;
+            }
+            if (cell.cashFlowDirection !== undefined) {
+              item.cashFlowDirection = cell.cashFlowDirection;
+            }
             if (cell.flowIntention !== undefined) {
               item.flowIntention = cell.flowIntention;
             }
@@ -96,11 +113,15 @@ export class UpdateBudgetMatrixUseCase {
             item = manager.create(BudgetItemEntity, {
               budgetId: budget.id,
               accountId: cell.accountId,
+              subRowId: cell.subRowId ?? null,
+              subRowLabel: cell.subRowLabel ?? null,
               amount: cell.amount,
+              cashFlowDirection: cell.cashFlowDirection ?? null,
               flowIntention: cell.flowIntention ?? null,
             });
           }
           await manager.save(BudgetItemEntity, item);
+          itemMap.set(`${cell.accountId}_${subKey}`, item);
           updatedCount++;
         }
       }

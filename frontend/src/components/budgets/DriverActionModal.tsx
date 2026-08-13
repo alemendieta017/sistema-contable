@@ -50,6 +50,7 @@ export const DriverActionModal: React.FC<DriverActionModalProps> = ({
         await api.budgets.applyDriver({
           fiscalYearId,
           accountId: account.accountId,
+          subRowId: account.subRowId || undefined,
           driverType,
           annualTotal: annualTotal ? parseFloat(annualTotal) : undefined,
           growthPercentage: growthPercentage ? parseFloat(growthPercentage) : undefined,

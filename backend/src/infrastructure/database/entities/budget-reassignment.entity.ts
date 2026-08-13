@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { PeriodEntity } from './period.entity';
@@ -15,13 +16,14 @@ export class BudgetReassignmentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
-  userId: string;
+  @Column({ name: 'user_id', nullable: true })
+  userId: string | null;
 
-  @ManyToOne(() => UserEntity)
+  @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity | null;
 
+  @Index()
   @Column({ name: 'period_id' })
   periodId: string;
 
@@ -29,6 +31,7 @@ export class BudgetReassignmentEntity {
   @JoinColumn({ name: 'period_id' })
   period: PeriodEntity;
 
+  @Index()
   @Column({ name: 'source_account_id' })
   sourceAccountId: string;
 
@@ -36,6 +39,7 @@ export class BudgetReassignmentEntity {
   @JoinColumn({ name: 'source_account_id' })
   sourceAccount: AccountEntity;
 
+  @Index()
   @Column({ name: 'target_account_id' })
   targetAccountId: string;
 

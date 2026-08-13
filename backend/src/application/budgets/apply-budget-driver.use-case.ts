@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
+import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { IBudgetDriverApplyParams } from '../../domain/budgets/budget.model';
 
@@ -20,8 +21,15 @@ export class ApplyBudgetDriverUseCase {
     userId: string,
     params: IBudgetDriverApplyParams,
   ): Promise<{ success: boolean; accountId: string; monthlyAmounts: Record<string, number> }> {
-    const { fiscalYearId, accountId, driverType, annualTotal, growthPercentage, sourcePeriodId } =
-      params;
+    const {
+      fiscalYearId,
+      accountId,
+      subRowId,
+      driverType,
+      annualTotal,
+      growthPercentage,
+      sourcePeriodId,
+    } = params;
 
     return this.dataSource.transaction(async (manager) => {
       const fiscalYear = await manager.findOne(FiscalYearEntity, {
@@ -67,7 +75,10 @@ export class ApplyBudgetDriverUseCase {
           relations: ['items'],
         });
 
-        const sourceItem = (sourceBudget?.items || []).find((it) => it.accountId === accountId);
+        const sourceItem = (sourceBudget?.items || []).find(
+          (it) =>
+            it.accountId === accountId && (subRowId ? it.subRowId === subRowId : !it.subRowId),
+        );
         const fillAmount = sourceItem ? Number(sourceItem.amount) : 0;
 
         const sourceIdx = periods.findIndex((p) => p.id === sourcePeriodId);
@@ -92,7 +103,10 @@ export class ApplyBudgetDriverUseCase {
           relations: ['items'],
         });
 
-        const sourceItem = (sourceBudget?.items || []).find((it) => it.accountId === accountId);
+        const sourceItem = (sourceBudget?.items || []).find(
+          (it) =>
+            it.accountId === accountId && (subRowId ? it.subRowId === subRowId : !it.subRowId),
+        );
         const baseAmount = sourceItem ? Number(sourceItem.amount) : 0;
 
         const sourceIdx = periods.findIndex((p) => p.id === sourcePeriodId);
@@ -107,6 +121,7 @@ export class ApplyBudgetDriverUseCase {
           currentVal = currentVal * (1 + growthRate);
         }
       } else if (driverType === 'WEIGHTED_HISTORICAL' || driverType === 'PRIOR_YEAR_ACTUAL') {
+        const account = await manager.findOne(AccountEntity, { where: { id: accountId } });
         const priorYearStart = this.shiftYear(fiscalYear.startDate, -1);
         const priorYearEnd = this.shiftYear(fiscalYear.endDate, -1);
 
@@ -135,12 +150,14 @@ export class ApplyBudgetDriverUseCase {
 
           let net = 0;
           for (const entry of matchingEntries) {
-            const amt = entry.entryType === 'DEBIT' ? Number(entry.amount) : -Number(entry.amount);
-            net += amt;
+            const debit = entry.entryType === 'DEBIT' ? Number(entry.amount) : 0;
+            const credit = entry.entryType === 'CREDIT' ? Number(entry.amount) : 0;
+            net += account?.type === 'INCOME' ? credit - debit : debit - credit;
           }
 
-          periodActuals[p.id] = net;
-          totalPriorActual += net;
+          const nonNegNet = Math.max(0, net);
+          periodActuals[p.id] = nonNegNet;
+          totalPriorActual += nonNegNet;
         }
 
         if (driverType === 'WEIGHTED_HISTORICAL') {
@@ -182,13 +199,17 @@ export class ApplyBudgetDriverUseCase {
           budget = await manager.save(BudgetEntity, budget);
         }
 
-        let item = (budget.items || []).find((it) => it.accountId === accountId);
+        let item = (budget.items || []).find(
+          (it) =>
+            it.accountId === accountId && (subRowId ? it.subRowId === subRowId : !it.subRowId),
+        );
         if (item) {
           item.amount = amount;
         } else {
           item = manager.create(BudgetItemEntity, {
             budgetId: budget.id,
             accountId,
+            subRowId: subRowId || null,
             amount,
           });
         }

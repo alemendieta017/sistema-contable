@@ -279,31 +279,44 @@ export class CashFlowStatementForecastUseCase {
                 ingresosOperativos += amount;
               } else if (item.account.type === 'EXPENSE') {
                 egresosOperativos += amount;
-              } else if (item.account.type === 'ASSET') {
-                if (item.flowIntention === 'DIVEST') {
+              } else if (
+                item.account.type === 'ASSET' ||
+                item.account.type === 'LIABILITY' ||
+                item.account.type === 'EQUITY'
+              ) {
+                if (item.cashFlowDirection === 'INGRESO_EFECTIVO') {
                   entradasActivoPasivo += amount;
-                } else if (item.flowIntention === 'INVEST' || item.flowIntention === 'SAVE') {
+                } else if (item.cashFlowDirection === 'EGRESO_EFECTIVO') {
                   salidasActivoPasivo += amount;
-                } else if (amount > 0) {
-                  entradasActivoPasivo += amount;
-                } else {
-                  salidasActivoPasivo += Math.abs(amount);
-                }
-              } else if (item.account.type === 'LIABILITY') {
-                if (item.flowIntention === 'RECEIVE') {
-                  entradasActivoPasivo += amount;
-                } else if (item.flowIntention === 'PAY') {
-                  salidasActivoPasivo += amount;
-                } else if (amount > 0) {
-                  entradasActivoPasivo += amount;
-                } else {
-                  salidasActivoPasivo += Math.abs(amount);
+                } else if (item.account.type === 'ASSET') {
+                  if (item.flowIntention === 'DIVEST') {
+                    entradasActivoPasivo += amount;
+                  } else if (item.flowIntention === 'INVEST' || item.flowIntention === 'SAVE') {
+                    salidasActivoPasivo += amount;
+                  } else if (amount > 0) {
+                    entradasActivoPasivo += amount;
+                  } else {
+                    salidasActivoPasivo += Math.abs(amount);
+                  }
+                } else if (item.account.type === 'LIABILITY' || item.account.type === 'EQUITY') {
+                  if (item.flowIntention === 'RECEIVE') {
+                    entradasActivoPasivo += amount;
+                  } else if (item.flowIntention === 'PAY') {
+                    salidasActivoPasivo += amount;
+                  } else if (amount > 0) {
+                    entradasActivoPasivo += amount;
+                  } else {
+                    salidasActivoPasivo += Math.abs(amount);
+                  }
                 }
               }
 
               const accForecast = accountsMap.get(accId);
               if (accForecast) {
-                accForecast.values[period.id] = amount;
+                const currentVal = accForecast.values[period.id] || 0;
+                const valToAggregate =
+                  item.cashFlowDirection === 'EGRESO_EFECTIVO' ? -amount : amount;
+                accForecast.values[period.id] = currentVal + valToAggregate;
               }
             }
           }

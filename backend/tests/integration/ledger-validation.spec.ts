@@ -160,7 +160,9 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
 
     // Act & Assert
     await expect(useCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException('System account NET_INCOME is non-operable for manual journal entries'),
+      new BadRequestException(
+        'System account NET_INCOME is non-operable for manual journal entries',
+      ),
     );
   });
 
@@ -197,4 +199,3 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
     expect(result.id).toBe('saved-id');
   });
 });
-

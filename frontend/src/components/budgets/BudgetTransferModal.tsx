@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { BudgetControlCategory, BudgetControlItem } from '@sistema-contable/shared';
-import { ArrowLeftRight, X, AlertCircle } from 'lucide-react';
+import {
+  BudgetControlSection,
+  BudgetControlCategory,
+  BudgetControlItem,
+  CashFlowDirection,
+} from '@sistema-contable/shared';
+import { ArrowLeftRight, X, AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface BudgetTransferModalProps {
   periodId: string;
-  categories: BudgetControlCategory[];
+  sections?: BudgetControlSection[];
+  categories?: BudgetControlCategory[];
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -15,17 +21,29 @@ interface BudgetTransferModalProps {
 
 export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
   periodId,
+  sections,
   categories,
   isOpen,
   onClose,
   onSuccess,
 }) => {
-  const allItems: BudgetControlItem[] = categories.flatMap((c) => c.items);
-  const eligibleSourceItems = allItems.filter((i) => i.available > 0);
+  // Collect all items from sections or fallback categories
+  const allItems: BudgetControlItem[] = React.useMemo(() => {
+    if (sections && sections.length > 0) {
+      return sections.flatMap((s) => s.items);
+    }
+    if (categories && categories.length > 0) {
+      return categories.flatMap((c) => c.items);
+    }
+    return [];
+  }, [sections, categories]);
 
-  const [sourceAccountId, setSourceAccountId] = useState<string>(
-    eligibleSourceItems[0]?.accountId || '',
+  const eligibleSourceItems = React.useMemo(
+    () => allItems.filter((i) => i.available > 0),
+    [allItems],
   );
+
+  const [sourceAccountId, setSourceAccountId] = useState<string>('');
   const [targetAccountId, setTargetAccountId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [reason, setReason] = useState<string>('');
@@ -33,9 +51,33 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  // Initialize selected source account when opened or eligible items change
+  useEffect(() => {
+    if (isOpen && eligibleSourceItems.length > 0 && !sourceAccountId) {
+      setSourceAccountId(eligibleSourceItems[0].accountId);
+    }
+  }, [isOpen, eligibleSourceItems, sourceAccountId]);
 
   const selectedSourceItem = allItems.find((i) => i.accountId === sourceAccountId);
+
+  // Filter target accounts by matching cashFlowDirection
+  const eligibleTargetItems = React.useMemo(() => {
+    if (!selectedSourceItem) return [];
+    return allItems.filter(
+      (item) =>
+        item.accountId !== sourceAccountId &&
+        item.cashFlowDirection === selectedSourceItem.cashFlowDirection,
+    );
+  }, [allItems, sourceAccountId, selectedSourceItem]);
+
+  // Reset target account if not in eligible list
+  useEffect(() => {
+    if (targetAccountId && !eligibleTargetItems.some((i) => i.accountId === targetAccountId)) {
+      setTargetAccountId('');
+    }
+  }, [eligibleTargetItems, targetAccountId]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +98,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
     }
     if (selectedSourceItem && numAmount > selectedSourceItem.available) {
       setErrorMsg(
-        `El monto excede el disponible disponible de la cuenta origen (${selectedSourceItem.available}).`,
+        `El monto excede el saldo disponible de la cuenta origen (${formatCurrency(selectedSourceItem.available)}).`,
       );
       return;
     }
@@ -82,9 +124,12 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
     return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(val);
   };
 
+  const isSourceOutflow =
+    selectedSourceItem?.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80">
           <div className="flex items-center space-x-3">
@@ -94,13 +139,13 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
             <div>
               <h2 className="text-base font-bold text-slate-100">Reasignación de Presupuesto</h2>
               <p className="text-xs text-slate-400">
-                Transferencia entre cuentas en el periodo activo
+                Transferencia direccional entre cuentas en el periodo activo
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -115,10 +160,33 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
             </div>
           )}
 
+          {/* Direction Indicator Badge */}
+          {selectedSourceItem && (
+            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300">
+              {isSourceOutflow ? (
+                <>
+                  <TrendingDown className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>
+                    Flujo de <strong className="text-rose-400">Salida (-)</strong>: Solo se permite
+                    transferir a otras cuentas de salida (Gastos, Inversiones, Deudas).
+                  </span>
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Flujo de <strong className="text-emerald-400">Entrada (+)</strong>: Solo se
+                    permite transferir a otras cuentas de entrada (Ingresos, Rescates, Préstamos).
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Source Account */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Cuenta Origen (Cedente):
+              Cuenta Origen (Cedente con Disponible):
             </label>
             <select
               value={sourceAccountId}
@@ -128,13 +196,13 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               <option value="">Seleccione cuenta origen...</option>
               {eligibleSourceItems.map((item) => (
                 <option key={item.accountId} value={item.accountId}>
-                  {item.accountName} (Disponible: {formatCurrency(item.available)})
+                  {item.accountName} (Disponible: ${formatCurrency(item.available)})
                 </option>
               ))}
             </select>
             {selectedSourceItem && (
               <p className="text-[11px] text-indigo-400 mt-1 font-mono">
-                Saldo disponible para transferir: {formatCurrency(selectedSourceItem.available)}
+                Saldo disponible para transferir: ${formatCurrency(selectedSourceItem.available)}
               </p>
             )}
           </div>
@@ -142,21 +210,24 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
           {/* Target Account */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Cuenta Destino (Receptora):
+              Cuenta Destino (Misma dirección de flujo):
             </label>
             <select
               value={targetAccountId}
               onChange={(e) => setTargetAccountId(e.target.value)}
-              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none"
+              disabled={eligibleTargetItems.length === 0}
+              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none disabled:opacity-50"
             >
-              <option value="">Seleccione cuenta destino...</option>
-              {allItems
-                .filter((item) => item.accountId !== sourceAccountId)
-                .map((item) => (
-                  <option key={item.accountId} value={item.accountId}>
-                    {item.accountName} (Presupuestado actual: {formatCurrency(item.budgeted)})
-                  </option>
-                ))}
+              <option value="">
+                {eligibleTargetItems.length === 0
+                  ? 'No hay cuentas destino con la misma dirección'
+                  : 'Seleccione cuenta receptora...'}
+              </option>
+              {eligibleTargetItems.map((item) => (
+                <option key={item.accountId} value={item.accountId}>
+                  {item.accountName} (Presupuestado actual: ${formatCurrency(item.budgeted)})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -168,6 +239,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
             <input
               type="number"
               step="any"
+              min="0.01"
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -179,13 +251,13 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
           {/* Reason / Justification */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Justificación / Motivo:
+              Justificación / Motivo (Opcional):
             </label>
             <textarea
               rows={2}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Ej: Cobertura de desfase en gastos operativos..."
+              placeholder="Ej: Reasignación de sobrante de publicidad hacia aporte en fondo de inversión..."
               className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:border-indigo-500 outline-none resize-none"
             />
           </div>
@@ -201,8 +273,8 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+              disabled={isLoading || !sourceAccountId || !targetAccountId}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
               <span>{isLoading ? 'Procesando...' : 'Confirmar Transferencia'}</span>

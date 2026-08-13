@@ -167,6 +167,14 @@ export const ReplicateBudgetItemRequestSchema = z.object({
 
 export type ReplicateBudgetItemRequest = z.infer<typeof ReplicateBudgetItemRequestSchema>;
 
+// Cash Flow Direction Enum
+export enum CashFlowDirection {
+  INGRESO_EFECTIVO = 'INGRESO_EFECTIVO',
+  EGRESO_EFECTIVO = 'EGRESO_EFECTIVO',
+}
+
+export const CashFlowDirectionSchema = z.nativeEnum(CashFlowDirection);
+
 // Budget Planning Matrix & Execution Control
 export enum BudgetDriverType {
   FLAT_PRORATE = 'FLAT_PRORATE',
@@ -196,11 +204,30 @@ export enum BudgetGaugeStatus {
 
 export const BudgetGaugeStatusSchema = z.nativeEnum(BudgetGaugeStatus);
 
+export { BudgetGaugeStatus as GaugeStatus };
+export { BudgetGaugeStatusSchema as GaugeStatusSchema };
+
+export enum BudgetMatrixSectionKey {
+  INGRESOS = 'INGRESOS',
+  GASTOS_VIDA = 'GASTOS_VIDA',
+  AHORRO_INVERSIONES = 'AHORRO_INVERSIONES',
+  DEUDAS_FINANCIACION = 'DEUDAS_FINANCIACION',
+  // Deprecated legacy aliases for transitional compatibility
+  EGRESOS = 'EGRESOS',
+  FINANCIAMIENTO_AHORRO = 'FINANCIAMIENTO_AHORRO',
+}
+
+export const BudgetMatrixSectionKeySchema = z.nativeEnum(BudgetMatrixSectionKey);
+
 export const MatrixCellUpdateSchema = z.object({
   periodId: z.string().uuid(),
   accountId: z.string().uuid(),
+  subRowId: z.string().nullable().optional(),
+  subRowLabel: z.string().nullable().optional(),
   amount: z.number().min(0),
+  cashFlowDirection: CashFlowDirectionSchema.nullable().optional(),
   flowIntention: FlowIntentionSchema,
+  isDeleted: z.boolean().optional(),
 });
 
 export type MatrixCellUpdate = z.infer<typeof MatrixCellUpdateSchema>;
@@ -212,9 +239,15 @@ export const UpdateBudgetMatrixRequestSchema = z.object({
 
 export type UpdateBudgetMatrixRequest = z.infer<typeof UpdateBudgetMatrixRequestSchema>;
 
+export interface UpdateBudgetMatrixResponse {
+  success: boolean;
+  updatedCount: number;
+}
+
 export const ApplyBudgetDriverRequestSchema = z.object({
   fiscalYearId: z.string().uuid(),
   accountId: z.string().uuid(),
+  subRowId: z.string().nullable().optional(),
   driverType: BudgetDriverTypeSchema,
   annualTotal: z.number().optional().nullable(),
   growthPercentage: z.number().optional().nullable(),
@@ -223,6 +256,12 @@ export const ApplyBudgetDriverRequestSchema = z.object({
 
 export type ApplyBudgetDriverRequest = z.infer<typeof ApplyBudgetDriverRequestSchema>;
 
+export interface ApplyBudgetDriverResponse {
+  success: boolean;
+  accountId: string;
+  monthlyAmounts: Record<string, number>;
+}
+
 export const BaselineActualsRequestSchema = z.object({
   fiscalYearId: z.string().uuid(),
   adjustmentPercentage: z.number().default(0),
@@ -230,6 +269,14 @@ export const BaselineActualsRequestSchema = z.object({
 });
 
 export type BaselineActualsRequest = z.infer<typeof BaselineActualsRequestSchema>;
+
+export interface BaselineActualsResponse {
+  success: boolean;
+  matrix: Array<{
+    accountId: string;
+    amounts: Record<string, number>;
+  }>;
+}
 
 export const TransferBudgetFundsRequestSchema = z.object({
   periodId: z.string().uuid(),
@@ -240,6 +287,13 @@ export const TransferBudgetFundsRequestSchema = z.object({
 });
 
 export type TransferBudgetFundsRequest = z.infer<typeof TransferBudgetFundsRequestSchema>;
+
+export interface TransferBudgetFundsResponse {
+  success: boolean;
+  reassignmentId: string;
+  updatedSourceAvailable: number;
+  updatedTargetAvailable: number;
+}
 
 export interface BudgetMatrixPeriod {
   id: string;
@@ -253,29 +307,72 @@ export interface BudgetMatrixRow {
   accountCode: string;
   accountName: string;
   accountType: string;
-  parentId: string | null;
+  parentId?: string | null;
+  isParent?: boolean;
+  subRowId?: string | null;
+  subRowLabel?: string | null;
+  cashFlowDirection?: CashFlowDirection | null;
   amounts: Record<string, number>;
   flowIntentions?: Record<string, FlowIntention | null>;
   rowTotal: number;
+}
+
+export interface BudgetMatrixSection {
+  sectionKey: BudgetMatrixSectionKey | string;
+  sectionTitle: string;
+  rows: BudgetMatrixRow[];
+  sectionTotals: Record<string, number> & { total: number };
+}
+
+export const BudgetMatrixSummarySchema = z.object({
+  totalInflows: z.record(z.string(), z.number()),
+  totalOutflows: z.record(z.string(), z.number()),
+  netMonthlyFlow: z.record(z.string(), z.number()),
+  cumulativeNetFlow: z.record(z.string(), z.number()),
+});
+
+export interface BudgetMatrixSummary {
+  totalInflows: Record<string, number> & { total: number };
+  totalOutflows: Record<string, number> & { total: number };
+  netMonthlyFlow: Record<string, number> & { total: number };
+  cumulativeNetFlow: Record<string, number> & { total: number };
 }
 
 export interface BudgetMatrixResponse {
   fiscalYearId: string;
   fiscalYearName: string;
   periods: BudgetMatrixPeriod[];
-  rows: BudgetMatrixRow[];
-  categoryTotals: Record<string, Record<string, number> & { total: number }>;
+  sections?: BudgetMatrixSection[];
+  summary?: BudgetMatrixSummary;
+  rows?: BudgetMatrixRow[];
+  categoryTotals?: Record<string, Record<string, number> & { total: number }>;
 }
 
 export interface BudgetControlItem {
   accountId: string;
   accountName: string;
+  accountCode?: string;
+  subRowId?: string | null;
+  subRowLabel?: string | null;
+  cashFlowDirection?: CashFlowDirection | null;
   budgeted: number;
   executed: number;
   committed: number;
   available: number;
   consumptionPercentage: number;
   gaugeStatus: BudgetGaugeStatus;
+}
+
+export interface BudgetControlSection {
+  sectionKey: BudgetMatrixSectionKey | string;
+  sectionTitle: string;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+  items: BudgetControlItem[];
 }
 
 export interface BudgetControlCategory {
@@ -305,5 +402,6 @@ export interface BudgetControlResponse {
   friendlyName: string;
   isLocked: boolean;
   summary: BudgetControlSummary;
-  categories: BudgetControlCategory[];
+  sections?: BudgetControlSection[];
+  categories?: BudgetControlCategory[];
 }

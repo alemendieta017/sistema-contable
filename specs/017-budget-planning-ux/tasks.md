@@ -2,118 +2,139 @@
 
 **Input**: Design documents from `/specs/017-budget-planning-ux/`
 
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/budget-planning-api.md
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/budget-planning-api.md
+
+**Tests**: Unit & Integration tests included per TDD requirement (Constitution V) and quickstart.md.
+
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3, US4)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US4, US2, US3)
 - Includes exact file paths in descriptions
 
 ---
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Shared types, DTOs, and domain models for budget matrix, drivers, flow intentions, and control engine
+**Purpose**: Shared types, DTOs, and domain models for the 4-block budget matrix, distribution drivers, cash flow directions, and execution control engine
 
-- [x] T001 Define budget matrix DTOs, driver enums (`FLAT_PRORATE`, `WEIGHTED_HISTORICAL`, `PERCENTAGE_GROWTH`, `FORWARD_FILL`, `PRIOR_YEAR_ACTUAL`), flow intention enums (`PAY`, `RECEIVE`, `INVEST`, `SAVE`, `DIVEST`), execution control schemas, and transfer DTOs in `shared/src/index.ts`
-- [x] T002 [P] Define domain interfaces and models for budget matrix grid, drivers, execution summary, flow intentions, and reassignments in `backend/src/domain/budgets/budget.model.ts`
+- [x] T001 [P] Define 4-block section keys (`INGRESOS`, `GASTOS_VIDA`, `AHORRO_INVERSIONES`, `DEUDAS_FINANCIACION`), driver enums (`FLAT_PRORATE`, `WEIGHTED_HISTORICAL`, `PERCENTAGE_GROWTH`, `FORWARD_FILL`, `PRIOR_YEAR_ACTUAL`), cash flow directions (`INGRESO_EFECTIVO`, `EGRESO_EFECTIVO`), gauge statuses (`NORMAL`, `WARNING`, `OVERBUDGET`), matrix and control request/response schemas, and transfer DTOs in `shared/src/index.ts`
+- [x] T002 [P] Define domain interfaces and models for 4 executive blocks, category tree hierarchies, distribution drivers, execution metrics, and budget reassignments in `backend/src/domain/budgets/budget.model.ts`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Database entity and module registration required before user story implementation
+**Purpose**: Core database entity schemas and module registrations required before user story implementation
+
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [x] T003 Create database entity `BudgetReassignmentEntity` for inter-account budget transfer audit logging in `backend/src/infrastructure/database/entities/budget-reassignment.entity.ts`
-- [x] T004 [P] Register `BudgetReassignmentEntity` in database module in `backend/src/infrastructure/database/database.module.ts`
+- [x] T004 [P] Update database entity `BudgetItemEntity` in `backend/src/infrastructure/database/entities/budget-item.entity.ts` to support `subRowId`, `subRowLabel`, and `cashFlowDirection`
+- [x] T005 [P] Register `BudgetReassignmentEntity` in database module in `backend/src/infrastructure/database/database.module.ts`
+
+**Checkpoint**: Foundation ready - user story implementation can now begin
 
 ---
 
 ## Phase 3: User Story 1 - Annual Matrix Inline Planning & Direct Cell Editing (Priority: P1) 🎯 MVP
 
-**Goal**: Provide an interactive 12-month matrix view (`/budgets/matrix`) with responsive mobile sticky account name column layout, inline grid cell editing, spreadsheet keyboard navigation (`Tab`, `Enter`, `Esc`), multi-cell clipboard paste parsing, 100% Spanish labels, high-contrast theme styling, and real-time total recalculations.
+**Goal**: Provide an interactive 12-month matrix view (`/budgets/matrix`) with responsive mobile layout (fixed sticky account name column and horizontal touch scroll), inline grid cell editing, spreadsheet keyboard navigation (`Tab`, `Shift+Tab`, `Enter`, `Shift+Enter`, `Esc`), clipboard multi-cell paste parsing, 100% Spanish labels, high-contrast dark/light theme styling, dynamic parent subtotals, and atomic batch persistence with dirty state warning.
 
-**Independent Test**: A user can open `/budgets/matrix` on desktop or mobile, navigate through cells using `Tab` and `Enter`, update values directly inline, cancel edits with `Esc`, copy/paste tabular data, and save batch updates cleanly.
+**Independent Test**: A user can open `/budgets/matrix` on desktop or mobile, navigate through cells using keyboard shortcuts, edit values inline, cancel edits with `Esc`, copy/paste tabular data, view parent subtotal recalculations in real time, and save batch updates atomically via `[ 💾 Guardar Todo ]`.
+
+### Tests for User Story 1
+
+- [x] T006 [P] [US1] Create integration test suite for matrix endpoints and multi-period atomic batch update operations in `backend/tests/integration/budget-matrix.spec.ts`
 
 ### Implementation for User Story 1
 
-- [x] T005 [P] [US1] Create integration test suite for matrix endpoints and multi-period batch update operations in `backend/tests/integration/budget-matrix.spec.ts`
-- [x] T006 [P] [US1] Implement `GetBudgetMatrixUseCase` to aggregate 12 monthly periods, handle optional category filtering, and compute category totals in `backend/src/application/budgets/get-budget-matrix.use-case.ts`
-- [x] T007 [P] [US1] Implement `UpdateBudgetMatrixUseCase` for bulk multi-period cell updates in `backend/src/application/budgets/update-budget-matrix.use-case.ts`
-- [x] T008 [US1] Add `GET /api/budgets/matrix` (supporting optional `category` filter query param) and `PUT /api/budgets/matrix/batch-update` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
-- [x] T009 [P] [US1] Add API client methods for matrix data fetch and batch update in `frontend/src/services/api.ts`
-- [x] T010 [P] [US1] Create interactive matrix spreadsheet component `BudgetMatrixGrid.tsx` with category filter dropdown (FR-010), sticky account name column for mobile, inline cell editing, keyboard navigation (`Tab`, `Enter`, `Esc`), clipboard paste handler (`\n`/`\t` parsing), 100% Spanish labels ("Ingresos", "Egresos", "Activos", "Pasivos", "Patrimonio Neto", "Año"), and dynamic total calculations in `frontend/src/components/budgets/BudgetMatrixGrid.tsx`
-- [x] T011 [US1] Implement layout view switcher shell in `frontend/src/app/budgets/layout.tsx`, root redirect in `frontend/src/app/budgets/page.tsx`, and main matrix page in `frontend/src/app/budgets/matrix/page.tsx`
+- [x] T007 [P] [US1] Implement `GetBudgetMatrixUseCase` to aggregate 12 monthly periods, build hierarchical category trees with dynamic read-only parent subtotals, compute section/grand totals, and handle period lock statuses in `backend/src/application/budgets/get-budget-matrix.use-case.ts`
+- [x] T008 [P] [US1] Implement `UpdateBudgetMatrixUseCase` for atomic multi-period cell updates across all sections and periods in a single transaction in `backend/src/application/budgets/update-budget-matrix.use-case.ts`
+- [x] T009 [US1] Add `GET /api/budgets/matrix` (supporting optional `categoryId` query param) and `PUT /api/budgets/matrix/batch-update` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
+- [x] T010 [P] [US1] Add API client methods for matrix data fetch and atomic batch update in `frontend/src/services/api.ts`
+- [x] T011 [P] [US1] Create interactive matrix spreadsheet component `BudgetMatrixGrid.tsx` with fixed sticky account name column for mobile, horizontal touch-scrolling (`overflow-x: auto`), inline cell editing, locked period read-only indicators, keyboard navigation (`Tab`, `Shift+Tab`, `Enter`, `Shift+Enter`, `Esc`), clipboard paste handler (`\n`/`\t` parsing with numeric sanitization), 100% Spanish labels ("Ingresos", "Gastos de Vida", "Año"), high-contrast dark/light theme tokens, and sticky footer summary bar in `frontend/src/components/budgets/BudgetMatrixGrid.tsx`
+- [x] T012 [US1] Implement top view switcher layout (toggle between `/budgets/matrix` and `/budgets/control`) in `frontend/src/app/budgets/layout.tsx`, root redirect in `frontend/src/app/budgets/page.tsx`, and main matrix planning page with dirty state tracking and `[ 💾 Guardar Todo ]` atomic persistence in `frontend/src/app/budgets/matrix/page.tsx`
+
+**Checkpoint**: At this point, User Story 1 (MVP) is fully functional and testable independently.
 
 ---
 
-## Phase 4: User Story 2 - Smart Budget Distribution Drivers & Mass Loading (Priority: P2)
+## Phase 4: User Story 4 - 4 Executive Financial Blocks & On-Demand Balance Budgeting (Priority: P1)
 
-**Goal**: Provide smart distribution drivers (Prorrateo Anual, MoM %, Forward Fill, Traer Real del Año Anterior) to automate 12-month budget entry without manual per-cell calculations.
+**Goal**: Structure matrix into 4 distinct executive blocks (🟢 Ingresos, 🔴 Gastos de Vida, 🔵 Ahorro e Inversiones, 🟣 Deudas y Financiación). Auto-populate active P&L accounts, enable on-demand modal loading of Balance accounts (`+ Presupuestar Activo` and `+ Presupuestar Deuda`) with explicit flow intentions (`Aporte/Inversión` vs `Rescate/Desinversión`, `Pago/Amortización` vs `Nuevo Préstamo`), support independent dual rows per account, enable row deletion (`🗑️`), and compute net cash flow metrics in the sticky footer.
 
-**Independent Test**: A user can select an account row, apply "Prorrateo Anual" ($120,000 → $10,000/mo), "Fill Right" (`Ctrl+D`), or "Traer Real del Año Anterior" (+5%), and verify that monthly cells update automatically.
+**Independent Test**: A user can view pre-populated P&L accounts, click `+ Presupuestar Activo` to budget an investment contribution (`[-] Aporte`), click `+ Presupuestar Deuda` to budget a loan repayment (`[-] Pago`), delete an unneeded row with confirmation, and verify that the sticky footer calculates Total Entradas (+), Total Salidas (-), Flujo Neto del Mes, and Flujo Neto Acumulado.
 
-### Implementation for User Story 2
+### Tests for User Story 4
 
-- [x] T012 [P] [US2] Create unit test suite for distribution drivers math calculations in `backend/tests/unit/budget-drivers.spec.ts`
-- [x] T013 [P] [US2] Implement `ApplyBudgetDriverUseCase` for driver transformations (`FLAT_PRORATE`, `WEIGHTED_HISTORICAL`, `PERCENTAGE_GROWTH`, `FORWARD_FILL`) using deterministic ISO date shifting and SQL range querying in `backend/src/application/budgets/apply-budget-driver.use-case.ts`
-- [x] T014 [P] [US2] Implement `GetPriorYearActualsUseCase` for baseline pre-population from posted journal entries with percentage adjustment using deterministic ISO date shifting and SQL range querying in `backend/src/application/budgets/get-prior-year-actuals.use-case.ts`
-- [x] T015 [US2] Add `POST /api/budgets/matrix/apply-driver` and `POST /api/budgets/matrix/baseline-actuals` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
-- [x] T016 [P] [US2] Add API client methods for driver application and baseline actuals load in `frontend/src/services/api.ts`
-- [x] T017 [P] [US2] Create driver action modal component `DriverActionModal.tsx` for selecting rules, parameters, and baseline adjustments in `frontend/src/components/budgets/DriverActionModal.tsx`
-- [x] T018 [US2] Integrate distribution driver modal and driver actions into the matrix planning grid page in `frontend/src/app/budgets/matrix/page.tsx`
-
----
-
-## Phase 5: User Story 4 - Balance Sheet Cash Flow Intention Switches (Priority: P2)
-
-**Goal**: Support explicit flow intention switches (`PAGAR` vs `RECIBIR` for Liabilities, and `INVERTIR` vs `AHORRAR` vs `DESINVERTIR` for Assets) in the matrix grid view with visual cash flow direction badges (`+ Cash` / `- Cash`) and cash flow projection calculations.
-
-**Independent Test**: A user can toggle a Liability account between `PAGAR` and `RECIBIR` or an Asset account between `INVERTIR` and `AHORRAR`, and verify that the cash flow direction badge updates (`+ Cash Inflow` / `- Cash Outflow`) and affects cash flow calculations.
+- [x] T013 [P] [US4] Create unit test suite for cash flow statement and net flow rollup calculations (`totalInflows`, `totalOutflows`, `netMonthlyFlow`, `cumulativeNetFlow`) across the 4 executive blocks in `backend/tests/unit/cash-flow-direction.spec.ts`
 
 ### Implementation for User Story 4
 
-- [x] T019 [P] [US4] Update `BudgetItemEntity` in `backend/src/infrastructure/database/entities/budget-item.entity.ts` and shared DTOs in `shared/src/index.ts` to include `flowIntention` enum field and validation rules.
-- [x] T020 [P] [US4] Update `GetBudgetMatrixUseCase` and `UpdateBudgetMatrixUseCase` in `backend/src/application/budgets/` to query, calculate, and persist `flowIntention` for Balance Sheet items.
-- [x] T021 [P] [US4] Add Flow Intention toggle buttons (`PAGAR` | `RECIBIR` for Liabilities; `INVERTIR` | `AHORRAR` | `DESINVERTIR` for Assets) and real-time cash flow impact badges in `frontend/src/components/budgets/BudgetMatrixGrid.tsx`.
-- [x] T022 [US4] Update cash flow summary calculations in budget matrix and control engine to incorporate `flowIntention` signs in `backend/src/application/reports/cash-flow-statement.use-case.ts`.
+- [x] T014 [P] [US4] Update `GetBudgetMatrixUseCase` and `UpdateBudgetMatrixUseCase` in `backend/src/application/budgets/` to automatically pre-populate active P&L accounts (🟢 Ingresos and 🔴 Gastos de Vida) and structure on-demand balance accounts (🔵 Ahorro e Inversiones and 🟣 Deudas y Financiación) with `(accountId, subRowId, cashFlowDirection)` keys and row deletion handling
+- [x] T015 [P] [US4] Create modal component `AddBalanceBudgetModal.tsx` for on-demand budgeting of Asset accounts (`[-] Aporte/Inversión` [`EGRESO_EFECTIVO`] / `[+] Rescate/Desinversión` [`INGRESO_EFECTIVO`]) and Liability accounts (`[-] Pago/Amortización` [`EGRESO_EFECTIVO`] / `[+] Nuevo Préstamo/Financiación` [`INGRESO_EFECTIVO`]) in `frontend/src/components/budgets/AddBalanceBudgetModal.tsx`
+- [x] T016 [US4] Integrate on-demand balance addition modals (`+ Presupuestar Activo`, `+ Presupuestar Deuda`), row deletion actions (`🗑️` with confirmation), and cash flow badges (`(+) Entrada` / `(-) Salida`) into `BudgetMatrixGrid.tsx` in `frontend/src/components/budgets/BudgetMatrixGrid.tsx`
+- [x] T017 [US4] Update net cash flow impact calculations incorporating `INGRESO_EFECTIVO` (+ Cash) and `EGRESO_EFECTIVO` (- Cash) directions in `backend/src/application/reports/cash-flow-statement.use-case.ts`
+
+**Checkpoint**: 4 executive blocks, on-demand balance budgeting, and net cash flow rollup are functional and testable independently.
+
+---
+
+## Phase 5: User Story 2 - Smart Budget Distribution Drivers & Mass Loading (Priority: P2)
+
+**Goal**: Provide smart distribution drivers (Prorrateo Anual plano, MoM % growth trend, Forward Fill / Fill Right `Ctrl+D`, and deterministic Traer Real del Año Anterior baseline using 1-year ISO date shifting) to automate 12-month budget creation without manual cell calculations.
+
+**Independent Test**: A user can select an account row, enter an annual total of $120,000, apply "Prorrateo Plano" ($10,000/mo), press `Ctrl+D` to fill right from a given month, or click "Traer Real del Año Anterior (+10% ajuste)" to populate the grid from historical ledger records.
+
+### Tests for User Story 2
+
+- [x] T018 [P] [US2] Create unit test suite for distribution drivers math calculations (`FLAT_PRORATE`, `WEIGHTED_HISTORICAL`, `PERCENTAGE_GROWTH`, `FORWARD_FILL`) and ISO date-shifted baseline queries in `backend/tests/unit/budget-drivers.spec.ts`
+
+### Implementation for User Story 2
+
+- [x] T019 [P] [US2] Implement `ApplyBudgetDriverUseCase` for driver transformations (`FLAT_PRORATE`, `WEIGHTED_HISTORICAL`, `PERCENTAGE_GROWTH`, `FORWARD_FILL`) in `backend/src/application/budgets/apply-budget-driver.use-case.ts`
+- [x] T020 [P] [US2] Implement `GetPriorYearActualsUseCase` for baseline pre-population from posted ledger entries with percentage adjustment using deterministic 1-year ISO date shifting (`shiftYear(date, -1)`) in `backend/src/application/budgets/get-prior-year-actuals.use-case.ts`
+- [x] T021 [US2] Add `POST /api/budgets/matrix/apply-driver` and `POST /api/budgets/matrix/baseline-actuals` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
+- [x] T022 [P] [US2] Add API client methods for driver application and baseline actuals load in `frontend/src/services/api.ts`
+- [x] T023 [P] [US2] Create driver action modal component `DriverActionModal.tsx` for selecting distribution rules, parameters, and baseline adjustments in `frontend/src/components/budgets/DriverActionModal.tsx`
+- [x] T024 [US2] Integrate distribution driver modal, row actions menu, and keyboard shortcut (`Ctrl+D` / `Cmd+D` with browser preventDefault for forward fill) into matrix planning page in `frontend/src/app/budgets/matrix/page.tsx`
+
+**Checkpoint**: Smart distribution drivers and baseline pre-population from prior year actuals work independently.
 
 ---
 
 ## Phase 6: User Story 3 - Executive Monthly Budget Execution & Availability Dashboard (Priority: P3)
 
-**Goal**: Provide a dedicated active month execution dashboard (`/budgets/control`) displaying real-time available residual balance ($\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$), color-coded consumption gauge bars (Green <75%, Yellow 75-99%, Red >=100%), and inter-account budget re-allocation controls.
+**Goal**: Provide a dedicated active month execution dashboard (`/budgets/control`) displaying real-time available residual balance ($\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$), double-entry debit/credit ledger mappings per flow direction, visual color-coded consumption gauge bars (Green <75%, Yellow 75-99%, Red >=100%), and directional inter-account budget reallocations (Salida $\leftrightarrow$ Salida, Entrada $\leftrightarrow$ Entrada) with audit logging (`budget_reassignments`).
 
-**Independent Test**: A user can toggle to `/budgets/control` for August 2026, view visual gauge bars displaying consumption percentages, view calculated residual balances per account, and execute an inter-account budget re-allocation transfer.
+**Independent Test**: A user can toggle to `/budgets/control` for an active month, verify execution metrics and gauge bars per category, transfer available budget from an unspent expense to an investment contribution, and verify that cross-direction transfers (e.g. expense to income) are blocked.
+
+### Tests for User Story 3
+
+- [x] T025 [P] [US3] Create unit test suite for budget control execution metrics ($\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$, double-entry debits/credits mapping, consumption gauge status) and directional transfer validation in `backend/tests/unit/budget-control.spec.ts`
 
 ### Implementation for User Story 3
 
-- [x] T022a [P] [US3] Create unit test suite for budget control calculation math and fund transfer validation in `backend/tests/unit/budget-control.spec.ts`
-- [x] T023 [P] [US3] Implement `GetBudgetControlUseCase` for monthly execution summary and residual calculation ($\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$) in `backend/src/application/budgets/get-budget-control.use-case.ts`
-- [x] T024 [P] [US3] Implement `TransferBudgetFundsUseCase` for inter-account budget re-allocation with audit logging in `backend/src/application/budgets/transfer-budget-funds.use-case.ts`
-- [x] T025 [US3] Add `GET /api/budgets/control` and `POST /api/budgets/control/transfer` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
-- [x] T026 [P] [US3] Add API client methods for budget execution control dashboard and fund transfers in `frontend/src/services/api.ts`
-- [x] T027 [P] [US3] Create budget transfer modal component `BudgetTransferModal.tsx` with source account residual balance validation and justification in `frontend/src/components/budgets/BudgetTransferModal.tsx`
-- [x] T028 [US3] Implement executive control dashboard page with color-coded gauge bars and active period metrics in `frontend/src/app/budgets/control/page.tsx`
+- [x] T026 [P] [US3] Implement `GetBudgetControlUseCase` to aggregate budgeted amounts, compute actual ledger debits/credits per flow direction, calculate available residual balances, and evaluate consumption gauges across the 4 financial blocks in `backend/src/application/budgets/get-budget-control.use-case.ts`
+- [x] T027 [P] [US3] Implement `TransferBudgetFundsUseCase` for directional budget re-allocations (Salida $\leftrightarrow$ Salida, Entrada $\leftrightarrow$ Entrada) with source residual balance validation and audit logging in `backend/src/application/budgets/transfer-budget-funds.use-case.ts`
+- [x] T028 [US3] Add `GET /api/budgets/control` and `POST /api/budgets/control/transfer` HTTP endpoints in `backend/src/infrastructure/controllers/budget.controller.ts`
+- [x] T029 [P] [US3] Add API client methods for budget execution control dashboard and directional fund transfers in `frontend/src/services/api.ts`
+- [x] T030 [P] [US3] Create budget transfer modal component `BudgetTransferModal.tsx` with same-direction account filtering, source residual balance validation, and reason input in `frontend/src/components/budgets/BudgetTransferModal.tsx`
+- [x] T031 [US3] Implement executive control dashboard page (`/budgets/control`) with active period selector, 4-block executive summary, color-coded gauge bars (Green <75%, Yellow 75-99%, Red >=100%), and transfer action triggers in `frontend/src/app/budgets/control/page.tsx`
+
+**Checkpoint**: All user stories are now fully functional and testable independently.
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Static code quality verification, test suite execution, and walkthrough validation
+**Purpose**: Static code quality verification, test suite execution, performance benchmarking, WCAG AA contrast verification, and walkthrough validation
 
-- [x] T029 [P] Run static code quality analysis across shared, backend, and frontend monorepo packages to ensure 0 ESLint errors and 0 warnings (`npm run lint`)
-- [x] T030 Execute automated unit and integration test suites (`npm --prefix backend test`) and perform end-to-end walkthrough per `specs/017-budget-planning-ux/quickstart.md`
-
----
-
-## Phase 8: Convergence
-
-- [x] T031 Remediate ESLint warnings across budget feature files and monorepo to maintain zero warnings compliance per Constitution VII (CRITICAL) (contradicts)
-- [x] T032 Change year selector label in matrix page from "Año Fiscal:" to "Año" in frontend/src/app/budgets/matrix/page.tsx per FR-014 (partial)
-- [x] T033 Replace raw English category labels and totals with 100% Spanish text ("Gastos", "Ingresos", "Activos", "Pasivos", "Patrimonio Neto") in frontend/src/app/budgets/matrix/page.tsx and frontend/src/components/budgets/BudgetMatrixGrid.tsx per FR-015 (contradicts)
-- [x] T034 Remove redundant "Grid Interactivo 12 Meses" layout header badge from grid toolbar in frontend/src/components/budgets/BudgetMatrixGrid.tsx per FR-016 (contradicts)
+- [x] T032 [P] Run static code quality analysis across shared, backend, and frontend monorepo packages to ensure 0 ESLint errors and 0 warnings (`npm run lint`), and verify WCAG AA color contrast compliance across Light and Dark themes
+- [x] T033 Execute automated unit and integration test suites (`npm --prefix backend test`), verify cell update response performance (<100ms) and spreadsheet grid navigation (60fps), and perform end-to-end walkthrough per `specs/017-budget-planning-ux/quickstart.md`
 
 ---
 
@@ -121,23 +142,56 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: Can start immediately.
-- **Foundational (Phase 2)**: Depends on Phase 1 completion. Blocks all user stories.
-- **User Stories (Phase 3+)**: All depend on Phase 2 completion.
-  - User Story 1 (P1): Can start immediately after Phase 2.
-  - User Story 2 (P2): Depends on Phase 2; uses matrix update patterns from US1.
-  - User Story 4 (P2): Depends on Phase 2; enhances matrix grid items with flow intentions.
-  - User Story 3 (P3): Depends on Phase 2; operates on active periods in parallel with or after matrix planning.
-- **Polish (Phase 7)**: Depends on completion of all user story tasks.
+- **Setup (Phase 1)**: No dependencies - can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
+- **User Stories (Phase 3+)**: All depend on Foundational phase completion
+  - **User Story 1 (P1)**: Can start after Foundational (Phase 2)
+  - **User Story 4 (P1)**: Can start after Foundational (Phase 2); extends US1 matrix structure with 4 executive blocks and on-demand balance budgeting
+  - **User Story 2 (P2)**: Can start after Foundational (Phase 2); builds on matrix updates
+  - **User Story 3 (P3)**: Can start after Foundational (Phase 2); operates on active period control
+- **Polish (Phase 7)**: Depends on completion of all user story tasks
+
+### User Story Dependencies
+
+- **User Story 1 (P1)**: Independent after Phase 2 (Core 12-month spreadsheet grid & atomic persistence)
+- **User Story 4 (P1)**: Independent after Phase 2 (4 blocks, on-demand balance modals, net cash flow rollup)
+- **User Story 2 (P2)**: Independent after Phase 2 (Driver algorithms & prior year actuals baseline)
+- **User Story 3 (P3)**: Independent after Phase 2 (Executive monthly control dashboard & directional transfers)
 
 ### Parallel Opportunities
 
-- Within Phase 1: `T002` can run in parallel with `T001`.
-- Within Phase 3 (US1): `T005` (tests), `T006` (get matrix), `T007` (update matrix), `T009` (api client), `T010` (matrix grid UI) can run in parallel.
-- Within Phase 4 (US2): `T012` (unit tests), `T013` (apply driver use case), `T014` (prior year actuals use case), `T016` (api client), `T017` (driver modal UI) can run in parallel.
-- Within Phase 5 (US4): `T019` (entity/DTO update), `T020` (matrix use cases), `T021` (grid UI toggles) can run in parallel.
-- Within Phase 6 (US3): `T023` (get control use case), `T024` (transfer use case), `T026` (api client), `T027` (transfer modal UI) can run in parallel.
-- Within Phase 7: `T029` can run in parallel with `T030`.
+- **Phase 1**: `T001` and `T002` can run in parallel
+- **Phase 2**: `T004` and `T005` can run in parallel
+- **Phase 3 (US1)**: `T006` (tests), `T007` (get matrix), `T008` (update matrix), `T010` (API client), `T011` (matrix grid UI) can run in parallel
+- **Phase 4 (US4)**: `T013` (tests), `T014` (matrix 4-block use case), `T015` (balance modal UI) can run in parallel
+- **Phase 5 (US2)**: `T018` (unit tests), `T019` (apply driver use case), `T020` (prior year actuals use case), `T022` (API client), `T023` (driver modal UI) can run in parallel
+- **Phase 6 (US3)**: `T025` (unit tests), `T026` (get control use case), `T027` (transfer use case), `T029` (API client), `T030` (transfer modal UI) can run in parallel
+- **Phase 7**: `T032` can run in parallel with `T033`
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+# Launch test suite and backend use cases in parallel:
+Task: "Create integration test suite for matrix endpoints and multi-period atomic batch update operations in backend/tests/integration/budget-matrix.spec.ts"
+Task: "Implement GetBudgetMatrixUseCase to aggregate 12 monthly periods in backend/src/application/budgets/get-budget-matrix.use-case.ts"
+Task: "Implement UpdateBudgetMatrixUseCase for atomic multi-period cell updates in backend/src/application/budgets/update-budget-matrix.use-case.ts"
+
+# Launch UI grid component in parallel:
+Task: "Create interactive matrix spreadsheet component BudgetMatrixGrid.tsx in frontend/src/components/budgets/BudgetMatrixGrid.tsx"
+```
+
+---
+
+## Parallel Example: User Story 4
+
+```bash
+# Launch test suite, use case updates, and balance modal in parallel:
+Task: "Create unit test suite for cash flow statement and net flow rollup calculations in backend/tests/unit/cash-flow-direction.spec.ts"
+Task: "Update GetBudgetMatrixUseCase and UpdateBudgetMatrixUseCase to structure 4 executive blocks in backend/src/application/budgets/"
+Task: "Create modal component AddBalanceBudgetModal.tsx in frontend/src/components/budgets/AddBalanceBudgetModal.tsx"
+```
 
 ---
 
@@ -145,15 +199,24 @@
 
 ### MVP First (User Story 1 Only)
 
-1. Complete Phase 1 (Setup) and Phase 2 (Foundational).
-2. Complete Phase 3 (User Story 1 - Annual Matrix Inline Planning).
+1. Complete Phase 1 (Setup) and Phase 2 (Foundational - CRITICAL).
+2. Complete Phase 3 (User Story 1 - Annual Matrix Inline Planning & Direct Cell Editing).
 3. **STOP and VALIDATE**: Test `/budgets/matrix` inline grid editing, keyboard navigation, mobile sticky column layout, and total recalculations.
+4. Deploy/demo if ready.
 
 ### Incremental Delivery
 
-1. Foundation ready (Phase 1 + Phase 2).
-2. Add User Story 1 (MVP: Annual 12-month Matrix inline grid editing & paste support).
-3. Add User Story 2 (Smart Distribution Drivers & Baseline pre-population from prior year actuals).
-4. Add User Story 4 (Balance Sheet Cash Flow Intention Switches: PAGAR/RECIBIR, INVERTIR/AHORRAR/DESINVERTIR).
-5. Add User Story 3 (Executive Monthly Control Dashboard & Inter-account Budget Transfers).
-6. Run final polish (ESLint 0 errors/warnings & full test suite).
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
+3. Add User Story 4 → Test 4 executive blocks, on-demand balance budgeting & net cash flow rollup
+4. Add User Story 2 → Test smart distribution drivers & prior year actuals baseline
+5. Add User Story 3 → Test executive monthly control dashboard & directional transfers
+6. Complete Polish → Zero ESLint errors/warnings & full test suite passing
+
+---
+
+## Notes
+
+- All tasks follow strict `[ID] [P?] [Story] Description with exact file path` checklist format.
+- Every user story is independently completable and testable.
+- Zero magic strings, 100% Spanish UI labels, and WCAG AA contrast compliance strictly enforced.

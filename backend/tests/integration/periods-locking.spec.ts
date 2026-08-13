@@ -265,7 +265,9 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
     await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the transaction date is in planning status'),
+      new BadRequestException(
+        'The accounting period for the transaction date is in planning status',
+      ),
     );
   });
 
@@ -289,7 +291,9 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
     await expect(deleteUseCase.execute(userId, txId)).rejects.toThrow(
-      new BadRequestException('The accounting period for the transaction date is in planning status'),
+      new BadRequestException(
+        'The accounting period for the transaction date is in planning status',
+      ),
     );
   });
 
@@ -321,7 +325,9 @@ describe('Periods Locking Integration Tests', () => {
     mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
     await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the original transaction date is in planning status'),
+      new BadRequestException(
+        'The accounting period for the original transaction date is in planning status',
+      ),
     );
   });
 
@@ -362,7 +368,9 @@ describe('Periods Locking Integration Tests', () => {
       .mockReturnValueOnce(mockQueryBuilderPlanning);
 
     await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the new transaction date is in planning status'),
+      new BadRequestException(
+        'The accounting period for the new transaction date is in planning status',
+      ),
     );
   });
 

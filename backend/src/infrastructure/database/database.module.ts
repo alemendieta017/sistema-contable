@@ -63,6 +63,7 @@ import { BudgetItemEntity } from './entities/budget-item.entity';
       BudgetReassignmentEntity,
     ]),
   ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule implements OnApplicationBootstrap {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}

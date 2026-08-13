@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BudgetEntity } from '../database/entities/budget.entity';
@@ -13,6 +13,7 @@ import { GetBudgetExecutionUseCase } from '../../application/budgets/get-budget-
 import { CopyPreviousBudgetUseCase } from '../../application/budgets/copy-previous-budget.use-case';
 import { GetBudgetMatrixUseCase } from '../../application/budgets/get-budget-matrix.use-case';
 import { UpdateBudgetMatrixUseCase } from '../../application/budgets/update-budget-matrix.use-case';
+import { DeleteBudgetMatrixRowUseCase } from '../../application/budgets/delete-budget-matrix-row.use-case';
 import { ApplyBudgetDriverUseCase } from '../../application/budgets/apply-budget-driver.use-case';
 import { GetPriorYearActualsUseCase } from '../../application/budgets/get-prior-year-actuals.use-case';
 import { GetBudgetControlUseCase } from '../../application/budgets/get-budget-control.use-case';
@@ -39,6 +40,7 @@ export class BudgetController {
     private readonly copyPreviousBudgetUseCase: CopyPreviousBudgetUseCase,
     private readonly getBudgetMatrixUseCase: GetBudgetMatrixUseCase,
     private readonly updateBudgetMatrixUseCase: UpdateBudgetMatrixUseCase,
+    private readonly deleteBudgetMatrixRowUseCase: DeleteBudgetMatrixRowUseCase,
     private readonly applyBudgetDriverUseCase: ApplyBudgetDriverUseCase,
     private readonly getPriorYearActualsUseCase: GetPriorYearActualsUseCase,
     private readonly getBudgetControlUseCase: GetBudgetControlUseCase,
@@ -62,6 +64,16 @@ export class BudgetController {
     @Body() body: UpdateBudgetMatrixRequest,
   ) {
     return this.updateBudgetMatrixUseCase.execute(user.id, body.fiscalYearId, body.updates);
+  }
+
+  @Delete('matrix/row')
+  async deleteBudgetMatrixRow(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('accountId') accountId: string,
+    @Query('subRowId') subRowId?: string,
+  ) {
+    return this.deleteBudgetMatrixRowUseCase.execute(user.id, fiscalYearId, accountId, subRowId);
   }
 
   @Post('matrix/apply-driver')

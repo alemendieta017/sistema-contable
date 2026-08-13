@@ -294,9 +294,21 @@ export const api = {
       return handleResponse(res);
     },
 
+    async getBudgetMatrix(fiscalYearId: string, categoryId?: string) {
+      return this.getMatrix(fiscalYearId, categoryId);
+    },
+
     async updateMatrixBatch(data: {
       fiscalYearId: string;
-      updates: Array<{ periodId: string; accountId: string; amount: number }>;
+      updates: Array<{
+        periodId: string;
+        accountId: string;
+        subRowId?: string | null;
+        subRowLabel?: string | null;
+        amount: number;
+        cashFlowDirection?: any;
+        flowIntention?: any;
+      }>;
     }) {
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
         method: 'PUT',
@@ -304,6 +316,38 @@ export const api = {
         body: JSON.stringify(data),
       });
       return handleResponse(res);
+    },
+
+    async updateBudgetMatrix(data: {
+      fiscalYearId: string;
+      updates: Array<{
+        periodId: string;
+        accountId: string;
+        subRowId?: string | null;
+        subRowLabel?: string | null;
+        amount: number;
+        cashFlowDirection?: any;
+        flowIntention?: any;
+        isDeleted?: boolean;
+      }>;
+    }) {
+      return this.updateMatrixBatch(data);
+    },
+
+    async deleteMatrixRow(fiscalYearId: string, accountId: string, subRowId?: string | null) {
+      let url = `${API_BASE_URL}/budgets/matrix/row?fiscalYearId=${fiscalYearId}&accountId=${accountId}`;
+      if (subRowId) {
+        url += `&subRowId=${encodeURIComponent(subRowId)}`;
+      }
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async deleteBudgetMatrixRow(fiscalYearId: string, accountId: string, subRowId?: string | null) {
+      return this.deleteMatrixRow(fiscalYearId, accountId, subRowId);
     },
 
     async applyDriver(data: any) {
@@ -315,6 +359,10 @@ export const api = {
       return handleResponse(res);
     },
 
+    async applyBudgetDriver(data: any) {
+      return this.applyDriver(data);
+    },
+
     async baselineActuals(data: any) {
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/baseline-actuals`, {
         method: 'POST',
@@ -322,6 +370,10 @@ export const api = {
         body: JSON.stringify(data),
       });
       return handleResponse(res);
+    },
+
+    async getPriorYearActuals(data: any) {
+      return this.baselineActuals(data);
     },
 
     async getControl(periodId: string) {
@@ -332,6 +384,10 @@ export const api = {
       return handleResponse(res);
     },
 
+    async getBudgetControl(periodId: string) {
+      return this.getControl(periodId);
+    },
+
     async transferControl(data: any) {
       const res = await fetch(`${API_BASE_URL}/budgets/control/transfer`, {
         method: 'POST',
@@ -339,6 +395,10 @@ export const api = {
         body: JSON.stringify(data),
       });
       return handleResponse(res);
+    },
+
+    async transferBudgetFunds(data: any) {
+      return this.transferControl(data);
     },
   },
 
