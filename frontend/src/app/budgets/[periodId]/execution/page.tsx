@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '../../../../services/api';
+import { formatCurrency } from '../../../../lib/utils';
 import { ArrowLeft, Edit3, ShieldAlert, BadgeAlert, TrendingUp, TrendingDown } from 'lucide-react';
 
 type ExecutionItem = {
@@ -45,6 +46,7 @@ export default function BudgetExecutionPage() {
   const periodId = params.periodId as string;
 
   const [data, setData] = useState<ExecutionData | null>(null);
+  const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -56,8 +58,12 @@ export default function BudgetExecutionPage() {
     try {
       setLoading(true);
       setError('');
-      const report = await api.budgets.executionReport(periodId);
+      const [report, curList] = await Promise.all([
+        api.budgets.executionReport(periodId),
+        api.currencies.list(),
+      ]);
       setData(report);
+      setCurrencies(curList || []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar la ejecución presupuestaria.');
     } finally {
@@ -65,10 +71,14 @@ export default function BudgetExecutionPage() {
     }
   };
 
+  const baseCurrency = currencies.find((c) => c.isBase) || {
+    code: 'PYG',
+    symbol: '₲',
+    decimalPlaces: 0,
+  };
+
   const formatNum = (num: number) => {
-    return (
-      num.toLocaleString('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' ₲'
-    );
+    return formatCurrency(num, baseCurrency);
   };
 
   if (loading) {

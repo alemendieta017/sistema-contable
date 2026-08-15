@@ -14,20 +14,19 @@ import {
   Lock,
   Plus,
   Trash2,
-  ArrowUpRight,
-  ArrowDownRight,
+  Edit2,
+  MoreHorizontal,
   ChevronDown,
   ChevronRight,
-  X,
-  TrendingUp,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Scale,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
-import { AddBalanceBudgetModal } from './AddBalanceBudgetModal';
+import { formatCurrency } from '../../lib/utils';
+import { BudgetAccountModal } from './BudgetAccountModal';
 
-interface BudgetMatrixGridProps {
+export interface BudgetMatrixGridProps {
   matrixData: BudgetMatrixResponse;
+  baseCurrency?: any;
   onCellChange: (
     accountId: string,
     periodId: string,
@@ -44,6 +43,7 @@ interface BudgetMatrixGridProps {
   ) => void;
   onSave: () => void;
   onOpenDriverModal?: (row: BudgetMatrixRow) => void;
+  onOpenAutofill?: (row: BudgetMatrixRow) => void;
   onDirectionChange?: (
     accountId: string,
     subRowId: string | null,
@@ -55,6 +55,12 @@ interface BudgetMatrixGridProps {
     account: { id: string; name: string; code: string; type: string },
     label: string,
     direction: CashFlowDirection,
+  ) => void;
+  onEditBalanceRow?: (
+    account: { id: string; name: string; code: string; type: string },
+    label: string,
+    direction: CashFlowDirection,
+    subRowId?: string | null,
   ) => void;
   onDeleteRow?: (accountId: string, subRowId?: string | null) => void;
   isSaving?: boolean;
@@ -100,15 +106,17 @@ function parseNumericValue(valueStr: string): number {
 
 export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   matrixData,
+  baseCurrency,
   onCellChange,
   onPasteBatch,
   onSave,
   onOpenDriverModal,
+  onOpenAutofill,
   onDirectionChange,
-  onAddSubRow,
-  onDeleteSubRow,
   onAddBalanceRow,
+  onEditBalanceRow,
   onDeleteRow,
+  onDeleteSubRow,
   isSaving = false,
   dirtyCells,
 }) => {
@@ -129,24 +137,61 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     });
   };
 
-  // Modal state for adding on-demand balance accounts (Assets / Liabilities)
-  const [balanceModalTarget, setBalanceModalTarget] = useState<'ASSET' | 'LIABILITY' | null>(null);
+  // 3-dots dropdown menu state
+  const [openMenuRowKey, setOpenMenuRowKey] = useState<string | null>(null);
 
-  // Modal state for adding a sub-row
-  const [addSubRowTarget, setAddSubRowTarget] = useState<{
-    accountId: string;
-    accountName: string;
-  } | null>(null);
-  const [newSubRowLabel, setNewSubRowLabel] = useState<string>('');
-  const [newSubRowDirection, setNewSubRowDirection] = useState<CashFlowDirection>(
-    CashFlowDirection.INGRESO_EFECTIVO,
-  );
+  // Close 3-dots menu on click outside or Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.row-options-menu-container')) {
+        setOpenMenuRowKey(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenMenuRowKey(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Budget Account Modal state (Unified Modal for create and edit balance accounts)
+  const [accountModalState, setAccountModalState] = useState<{
+    isOpen: boolean;
+    targetSection?: 'ASSET' | 'LIABILITY' | null;
+    editRow?: BudgetMatrixRow | null;
+  }>({
+    isOpen: false,
+    targetSection: null,
+    editRow: null,
+  });
+
+  const openCreateAccountModal = (target: 'ASSET' | 'LIABILITY') => {
+    setAccountModalState({
+      isOpen: true,
+      targetSection: target,
+      editRow: null,
+    });
+  };
+
+  const openEditAccountModal = (row: BudgetMatrixRow) => {
+    setAccountModalState({
+      isOpen: true,
+      targetSection: null,
+      editRow: row,
+    });
+  };
 
   // Check if a row is visible based on parent collapse state
   const isRowVisible = useCallback(
     (row: BudgetMatrixRow) => {
       if (!row.parentId) return true;
-      // If immediate parent is collapsed, hide
       if (collapsedParentIds.has(row.parentId)) return false;
       return true;
     },
@@ -164,7 +209,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     return rawList.filter(isRowVisible);
   }, [sections, rows, isRowVisible]);
 
-  // Selected cell tracking: { rowIndex, colIndex } (colIndex 0..periods.length - 1)
+  // Selected cell tracking: { rowIndex, colIndex }
   const [selectedCell, setSelectedCell] = useState<{ rowIndex: number; colIndex: number } | null>(
     null,
   );
@@ -214,45 +259,73 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   );
 
   // Fill Right handler (Ctrl+D / Cmd+D)
-  const handleFillRight = useCallback(() => {
-    if (!selectedCell) return;
-    const { rowIndex, colIndex } = selectedCell;
-    if (colIndex >= periods.length - 1) return;
+  const handleFillRight = useCallback(
+    (customAmount?: number) => {
+      if (!selectedCell) return;
+      const { rowIndex, colIndex } = selectedCell;
+      if (colIndex >= periods.length - 1) return;
 
-    const row = allFlatRows[rowIndex];
-    if (!row || row.isParent) return;
-    const currentPeriod = periods[colIndex];
-    const sourceAmount = row.amounts[currentPeriod.id] ?? 0;
+      const row = allFlatRows[rowIndex];
+      if (!row || row.isParent) return;
+      const currentPeriod = periods[colIndex];
+      const sourceAmount =
+        customAmount !== undefined ? customAmount : (row.amounts[currentPeriod.id] ?? 0);
 
-    const updates: Array<{
-      accountId: string;
-      periodId: string;
-      amount: number;
-      subRowId?: string | null;
-    }> = [];
-    for (let c = colIndex + 1; c < periods.length; c++) {
-      const targetPeriod = periods[c];
-      if (targetPeriod.status !== 'CLOSED') {
+      const updates: Array<{
+        accountId: string;
+        periodId: string;
+        amount: number;
+        subRowId?: string | null;
+      }> = [];
+
+      // If a custom amount was provided (from active editing cell), also update current cell
+      if (customAmount !== undefined) {
         updates.push({
           accountId: row.accountId,
-          periodId: targetPeriod.id,
+          periodId: currentPeriod.id,
           amount: sourceAmount,
           subRowId: row.subRowId,
         });
       }
-    }
 
-    if (updates.length > 0) {
-      if (onPasteBatch) {
-        onPasteBatch(updates);
-      } else {
-        updates.forEach((u) => onCellChange(u.accountId, u.periodId, u.amount, u.subRowId));
+      for (let c = colIndex + 1; c < periods.length; c++) {
+        const targetPeriod = periods[c];
+        if (targetPeriod.status !== 'CLOSED') {
+          updates.push({
+            accountId: row.accountId,
+            periodId: targetPeriod.id,
+            amount: sourceAmount,
+            subRowId: row.subRowId,
+          });
+        }
       }
-    }
-  }, [selectedCell, periods, allFlatRows, onPasteBatch, onCellChange]);
 
-  // Keyboard navigation & Shortcuts (Tab, Enter, Esc, Shift+Tab, Shift+Enter, Arrows)
+      if (updates.length > 0) {
+        if (onPasteBatch) {
+          onPasteBatch(updates);
+        } else {
+          updates.forEach((u) => onCellChange(u.accountId, u.periodId, u.amount, u.subRowId));
+        }
+      }
+    },
+    [selectedCell, periods, allFlatRows, onPasteBatch, onCellChange],
+  );
+
+  // Keyboard navigation & Shortcuts (Tab, Enter, Esc, Shift+Tab, Shift+Enter, Arrows, Ctrl+D)
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Intercept Ctrl+D / Cmd+D (Fill Right / Forward Fill) globally on cell or input
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+      e.preventDefault();
+      if (editingCell) {
+        const numVal = Math.max(0, parseNumericValue(editValue));
+        setEditingCell(null);
+        handleFillRight(numVal);
+      } else {
+        handleFillRight();
+      }
+      return;
+    }
+
     if (editingCell) {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -312,12 +385,6 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     }
 
     if (!selectedCell) return;
-
-    if (e.ctrlKey && (e.key === 'd' || e.key === 'D')) {
-      e.preventDefault();
-      handleFillRight();
-      return;
-    }
 
     switch (e.key) {
       case 'ArrowUp':
@@ -426,91 +493,25 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount);
+  const formatValue = (amount: number) => {
+    return formatCurrency(amount, baseCurrency);
   };
-
-  const handleConfirmAddSubRow = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addSubRowTarget || !newSubRowLabel.trim()) return;
-    if (onAddSubRow) {
-      onAddSubRow(addSubRowTarget.accountId, newSubRowLabel.trim(), newSubRowDirection);
-    }
-    setAddSubRowTarget(null);
-    setNewSubRowLabel('');
-    setNewSubRowDirection(CashFlowDirection.INGRESO_EFECTIVO);
-  };
-
-  // Compute live sticky footer summary metrics from leaf rows
-  const summaryMetrics = useMemo(() => {
-    const allLeafRows = (rows || []).filter((r) => !r.isParent);
-    const totalInflows: Record<string, number> & { total: number } = { total: 0 };
-    const totalOutflows: Record<string, number> & { total: number } = { total: 0 };
-    const netMonthlyFlow: Record<string, number> & { total: number } = { total: 0 };
-    const cumulativeNetFlow: Record<string, number> & { total: number } = { total: 0 };
-
-    let runningCumulative = 0;
-
-    for (const period of periods) {
-      let periodInflows = 0;
-      let periodOutflows = 0;
-
-      for (const r of allLeafRows) {
-        const val = r.amounts[period.id] || 0;
-        if (
-          r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO ||
-          (r.accountType === 'INCOME' && !r.cashFlowDirection)
-        ) {
-          periodInflows += val;
-        } else if (
-          r.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ||
-          (r.accountType === 'EXPENSE' && !r.cashFlowDirection)
-        ) {
-          periodOutflows += val;
-        }
-      }
-
-      totalInflows[period.id] = periodInflows;
-      totalInflows.total += periodInflows;
-
-      totalOutflows[period.id] = periodOutflows;
-      totalOutflows.total += periodOutflows;
-
-      const periodNet = periodInflows - periodOutflows;
-      netMonthlyFlow[period.id] = periodNet;
-      netMonthlyFlow.total += periodNet;
-
-      runningCumulative += periodNet;
-      cumulativeNetFlow[period.id] = runningCumulative;
-    }
-    cumulativeNetFlow.total = runningCumulative;
-
-    return {
-      totalInflows,
-      totalOutflows,
-      netMonthlyFlow,
-      cumulativeNetFlow,
-    };
-  }, [rows, periods]);
 
   // Section badge color helper
   const getSectionBadge = (key: BudgetMatrixSectionKey | string) => {
     switch (key) {
       case BudgetMatrixSectionKey.INGRESOS:
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        return 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
       case BudgetMatrixSectionKey.GASTOS_VIDA:
       case BudgetMatrixSectionKey.EGRESOS:
-        return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+        return 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30';
       case BudgetMatrixSectionKey.AHORRO_INVERSIONES:
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        return 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
       case BudgetMatrixSectionKey.DEUDAS_FINANCIACION:
       case BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO:
-        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+        return 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30';
       default:
-        return 'bg-slate-800 text-slate-300 border-slate-700';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     }
   };
 
@@ -526,10 +527,10 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     return (
       <React.Fragment key={sec.sectionKey}>
         {/* Section Header Banner */}
-        <tr className="bg-slate-950/95 font-bold text-slate-100 uppercase tracking-wider text-xs border-t-2 border-b border-slate-800">
+        <tr className="bg-slate-100 dark:bg-slate-950 font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-xs border-t-2 border-b border-slate-200 dark:border-slate-800">
           <td
             colSpan={periods.length + 3}
-            className="p-3 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 text-slate-100 font-sans tracking-wide"
+            className="p-3 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 font-sans tracking-wide"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -538,32 +539,33 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                 >
                   {sec.sectionTitle}
                 </span>
-                <span className="text-[11px] text-slate-400 font-normal lowercase">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal lowercase">
                   ({sec.rows.filter((r) => !r.isParent).length} cuenta(s) activas)
                 </span>
               </div>
 
-              {/* On-Demand Budgeting Action Buttons */}
+              {/* On-Demand Budgeting Action Buttons in Section Headers (Without redundant '+') */}
               {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES && (
                 <button
                   type="button"
-                  onClick={() => setBalanceModalTarget('ASSET')}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                  onClick={() => openCreateAccountModal('ASSET')}
+                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/30 dark:hover:bg-blue-600/50 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/40 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Presupuestar Activo</span>
+                  <span>Presupuestar Activo</span>
                 </button>
               )}
 
               {(sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
+                sec.sectionKey === BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO ||
                 sec.sectionKey === 'FINANCIAMIENTO_AHORRO') && (
                 <button
                   type="button"
-                  onClick={() => setBalanceModalTarget('LIABILITY')}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                  onClick={() => openCreateAccountModal('LIABILITY')}
+                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-600/30 dark:hover:bg-purple-600/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Presupuestar Deuda</span>
+                  <span>Presupuestar Deuda</span>
                 </button>
               )}
             </div>
@@ -575,7 +577,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           <tr>
             <td
               colSpan={periods.length + 3}
-              className="p-6 text-center bg-slate-900/40 text-slate-400 font-sans text-xs border-b border-slate-800/60"
+              className="p-6 text-center bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-sans text-xs border-b border-slate-200 dark:border-slate-800/60"
             >
               <div className="flex flex-col items-center justify-center space-y-2">
                 <span>
@@ -590,19 +592,19 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                   <button
                     type="button"
                     onClick={() =>
-                      setBalanceModalTarget(
+                      openCreateAccountModal(
                         sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
                           ? 'ASSET'
                           : 'LIABILITY',
                       )
                     }
-                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>
                       {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
-                        ? '+ Presupuestar Activo'
-                        : '+ Presupuestar Deuda'}
+                        ? 'Presupuestar Activo'
+                        : 'Presupuestar Deuda'}
                     </span>
                   </button>
                 )}
@@ -613,6 +615,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
 
         {/* Section Rows */}
         {visibleSecRows.map((row) => {
+          const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
           const absoluteFlatIdx = allFlatRows.findIndex(
             (r) => r.accountId === row.accountId && r.subRowId === row.subRowId,
           );
@@ -621,22 +624,23 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           const isParent = row.isParent;
           const isChild = !!row.parentId;
           const isCollapsed = isParent && collapsedParentIds.has(row.accountId);
+          const isMenuOpen = openMenuRowKey === rowKey;
 
           return (
             <tr
-              key={`${row.accountId}_${row.subRowId || 'main'}`}
+              key={rowKey}
               className={`transition-colors group ${
                 isParent
-                  ? 'bg-slate-950/70 font-semibold text-slate-100 hover:bg-slate-900'
-                  : 'hover:bg-slate-800/30'
+                  ? 'bg-slate-100/80 dark:bg-slate-950/70 font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-900'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
               }`}
             >
-              {/* Account Label (Sticky left column for mobile) */}
+              {/* Account Label (Sticky left column for desktop & mobile) */}
               <td
-                className={`p-3 border-r border-slate-800 font-sans sticky left-0 z-10 min-w-[240px] max-w-[320px] ${
+                className={`p-3 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[240px] max-w-[320px] shadow-sm ${
                   isParent
-                    ? 'bg-slate-950 group-hover:bg-slate-900 font-bold text-slate-100'
-                    : 'bg-slate-900 group-hover:bg-slate-850 font-medium text-slate-200'
+                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-950 dark:group-hover:bg-slate-900 font-bold text-slate-900 dark:text-slate-100'
+                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850 font-medium text-slate-800 dark:text-slate-200'
                 } ${isChild ? 'pl-7' : 'pl-3'}`}
               >
                 <div className="flex flex-col space-y-1">
@@ -647,7 +651,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                         <button
                           type="button"
                           onClick={() => toggleParentCollapse(row.accountId)}
-                          className="p-0.5 rounded text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 transition-colors cursor-pointer"
+                          className="p-0.5 rounded text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors cursor-pointer"
                           title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
                         >
                           {isCollapsed ? (
@@ -661,10 +665,10 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                       <span
                         className={`truncate ${
                           isParent
-                            ? 'text-indigo-300 font-bold text-xs cursor-pointer'
+                            ? 'text-indigo-700 dark:text-indigo-300 font-bold text-xs cursor-pointer'
                             : isChild
-                              ? 'text-slate-300 text-xs'
-                              : 'text-slate-100 text-xs'
+                              ? 'text-slate-700 dark:text-slate-300 text-xs'
+                              : 'text-slate-800 dark:text-slate-100 text-xs'
                         }`}
                         title={row.accountName}
                         onClick={() => isParent && toggleParentCollapse(row.accountId)}
@@ -674,127 +678,138 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                           : row.accountName}
                       </span>
                     </div>
-
-                    {/* Balance Row or Dynamic Sub-Row Deletion button (FR-018) */}
-                    {(isAssetOrLiability || row.subRowId) && !isParent && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const rowTitle = row.subRowLabel
-                            ? `${row.accountName} (${row.subRowLabel})`
-                            : row.accountName;
-                          if (
-                            confirm(
-                              `¿Está seguro de que desea eliminar la fila presupuestaria de "${rowTitle}"? Se borrarán sus valores para este ejercicio fiscal.`,
-                            )
-                          ) {
-                            if (onDeleteRow) {
-                              onDeleteRow(row.accountId, row.subRowId || null);
-                            } else if (onDeleteSubRow && row.subRowId) {
-                              onDeleteSubRow(row.accountId, row.subRowId);
-                            }
-                          }
-                        }}
-                        title="Eliminar fila presupuestaria"
-                        className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center space-x-2">
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                         {row.accountCode}
                       </span>
                       {isParent && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
                           Subtotal Grupo
                         </span>
                       )}
                     </div>
 
-                    {/* Cash Flow Direction Switch Toggle & Badges for Asset/Liability */}
-                    {!isParent && isAssetOrLiability && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newDir =
-                            row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO
-                              ? CashFlowDirection.EGRESO_EFECTIVO
-                              : CashFlowDirection.INGRESO_EFECTIVO;
-                          if (onDirectionChange) {
-                            onDirectionChange(row.accountId, row.subRowId || null, newDir);
-                          }
-                        }}
-                        title="Haga clic para cambiar la dirección del flujo de caja"
-                        className={`flex items-center space-x-1 text-[9px] font-semibold px-2 py-0.5 rounded cursor-pointer transition-all border ${
+                    {/* Discrete Cash Flow Direction Badge for Balance Accounts */}
+                    {!isParent && isAssetOrLiability && row.cashFlowDirection && (
+                      <span
+                        className={`inline-flex items-center space-x-1 text-[10px] font-medium px-2 py-0.5 rounded border ${
                           row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                            : row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
-                              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                         }`}
                       >
                         {row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO ? (
                           <>
-                            <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-                            <span>+ INGRESO EFECTIVO</span>
-                          </>
-                        ) : row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
-                          <>
-                            <ArrowDownRight className="w-3 h-3 text-rose-400" />
-                            <span>- EGRESO EFECTIVO</span>
+                            <ArrowUpRight className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                            <span>Entrada</span>
                           </>
                         ) : (
-                          <span>Dirección Flujo</span>
+                          <>
+                            <ArrowDownRight className="w-3 h-3 text-rose-500 dark:text-rose-400" />
+                            <span>Salida</span>
+                          </>
                         )}
-                      </button>
+                      </span>
                     )}
                   </div>
-
-                  {/* Add Sub-Row button for Asset/Liability accounts */}
-                  {!isParent && isAssetOrLiability && (
-                    <div className="pt-0.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAddSubRowTarget({
-                            accountId: row.accountId,
-                            accountName: row.accountName,
-                          });
-                          setNewSubRowLabel('');
-                          setNewSubRowDirection(CashFlowDirection.INGRESO_EFECTIVO);
-                        }}
-                        title="Agregar sub-línea de movimiento a esta cuenta"
-                        className="inline-flex items-center space-x-1 text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold px-1.5 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>+ Agregar sub-línea</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </td>
 
-              {/* Driver Action Button */}
+              {/* 3-Dots Options Menu Column (•••) */}
               <td
-                className={`p-2 text-center border-r border-slate-800 w-12 ${isParent ? 'bg-slate-950' : 'bg-slate-900 group-hover:bg-slate-850'}`}
+                className={`p-2 text-center border-r border-slate-200 dark:border-slate-800 w-12 relative row-options-menu-container ${
+                  isParent
+                    ? 'bg-slate-100 dark:bg-slate-950'
+                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850'
+                }`}
               >
                 {!isParent ? (
-                  <button
-                    onClick={() => onOpenDriverModal && onOpenDriverModal(row)}
-                    title="Aplicar Motor de Distribución Inteligente"
-                    className="p-1.5 rounded-md hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
-                  >
-                    <Wand2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="relative inline-block">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuRowKey(isMenuOpen ? null : rowKey);
+                      }}
+                      title="Opciones de fila"
+                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {isMenuOpen && (
+                      <div className="absolute left-full top-0 ml-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100">
+                        {/* Option 1: Rellenar (Driver / Autofill) */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuRowKey(null);
+                            if (onOpenAutofill) {
+                              onOpenAutofill(row);
+                            } else if (onOpenDriverModal) {
+                              onOpenDriverModal(row);
+                            }
+                          }}
+                          className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                        >
+                          <Wand2 className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                          <span>Rellenar</span>
+                        </button>
+
+                        {/* Option 2: Editar (for Balance / Sub-Rows) */}
+                        {(isAssetOrLiability || row.subRowId) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuRowKey(null);
+                              openEditAccountModal(row);
+                            }}
+                            className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                            <span>Editar</span>
+                          </button>
+                        )}
+
+                        {/* Option 3: Eliminar (for Balance / Sub-Rows) */}
+                        {(isAssetOrLiability || row.subRowId) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuRowKey(null);
+                              const rowTitle = row.subRowLabel
+                                ? `${row.accountName} (${row.subRowLabel})`
+                                : row.accountName;
+                              if (
+                                confirm(
+                                  `¿Está seguro de que desea eliminar la fila presupuestaria de "${rowTitle}"? Se borrarán sus valores para este ejercicio fiscal.`,
+                                )
+                              ) {
+                                if (onDeleteRow) {
+                                  onDeleteRow(row.accountId, row.subRowId || null);
+                                } else if (onDeleteSubRow && row.subRowId) {
+                                  onDeleteSubRow(row.accountId, row.subRowId);
+                                }
+                              }
+                            }}
+                            className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400 shrink-0" />
+                            <span>Eliminar</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <span className="text-[10px] text-slate-600">—</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-600">—</span>
                 )}
               </td>
 
@@ -826,15 +841,17 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                         startEditing(absoluteFlatIdx, cIdx);
                       }
                     }}
-                    className={`p-2.5 text-right border-r border-slate-800/50 select-none transition-all ${
+                    className={`p-2.5 text-right border-r border-slate-200/60 dark:border-slate-800/50 select-none transition-all ${
                       isClosed
-                        ? 'bg-slate-950/60 text-slate-500 cursor-not-allowed'
+                        ? 'bg-slate-100/60 dark:bg-slate-950/60 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                         : isParent
-                          ? 'bg-slate-950/40 text-indigo-300 font-bold cursor-default'
+                          ? 'bg-slate-100/40 dark:bg-slate-950/40 text-indigo-700 dark:text-indigo-300 font-bold cursor-default'
                           : 'cursor-pointer'
                     } ${
-                      isSelected ? 'ring-2 ring-indigo-500 bg-indigo-500/10 z-10' : ''
-                    } ${isDirty ? 'bg-amber-500/15 font-bold text-amber-300' : ''}`}
+                      isSelected
+                        ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 z-10'
+                        : ''
+                    } ${isDirty ? 'bg-amber-500/15 font-bold text-amber-700 dark:text-amber-300' : ''}`}
                   >
                     {isEditing ? (
                       <input
@@ -842,22 +859,25 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         onBlur={commitEdit}
-                        className="w-full bg-slate-950 text-right font-mono text-xs text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
+                        className="w-full bg-white dark:bg-slate-950 text-right font-mono text-xs text-slate-900 dark:text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
                       />
                     ) : (
                       <div className="flex items-center justify-end space-x-1">
-                        {isClosed && <Lock className="w-3 h-3 text-slate-600 inline mr-1" />}
+                        {isClosed && (
+                          <Lock className="w-3 h-3 text-slate-400 dark:text-slate-600 inline mr-1" />
+                        )}
                         <span
                           className={
                             isParent
-                              ? 'text-indigo-300 font-bold'
+                              ? 'text-indigo-700 dark:text-indigo-300 font-bold'
                               : amount === 0
-                                ? 'text-slate-600'
-                                : 'text-slate-200'
+                                ? 'text-slate-400 dark:text-slate-600'
+                                : 'text-slate-800 dark:text-slate-200'
                           }
                         >
-                          {formatCurrency(amount)}
+                          {formatValue(amount)}
                         </span>
                       </div>
                     )}
@@ -868,31 +888,33 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
               {/* Row Total */}
               <td
                 className={`p-3 text-right font-bold ${
-                  isParent ? 'text-indigo-300 bg-slate-950' : 'text-slate-100 bg-slate-900/80'
+                  isParent
+                    ? 'text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-950'
+                    : 'text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80'
                 }`}
               >
-                {formatCurrency(row.rowTotal)}
+                {formatValue(row.rowTotal)}
               </td>
             </tr>
           );
         })}
 
         {/* Section Total Row */}
-        <tr className="bg-slate-950 font-bold border-t border-b-2 border-slate-800">
-          <td className="p-3 border-r border-slate-800 font-sans text-indigo-400 sticky left-0 z-10 bg-slate-950">
+        <tr className="bg-slate-100 dark:bg-slate-950 font-bold border-t border-b-2 border-slate-200 dark:border-slate-800">
+          <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans text-indigo-700 dark:text-indigo-400 sticky left-0 z-10 bg-slate-100 dark:bg-slate-950 shadow-sm">
             Total {sec.sectionTitle}
           </td>
-          <td className="p-3 border-r border-slate-800 bg-slate-950"></td>
+          <td className="p-3 border-r border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950"></td>
           {periods.map((period) => (
             <td
               key={period.id}
-              className="p-3 text-right border-r border-slate-800 text-indigo-300"
+              className="p-3 text-right border-r border-slate-200 dark:border-slate-800 text-indigo-700 dark:text-indigo-300"
             >
-              {formatCurrency(sec.sectionTotals[period.id] || 0)}
+              {formatValue(sec.sectionTotals[period.id] || 0)}
             </td>
           ))}
-          <td className="p-3 text-right text-indigo-200 bg-slate-950">
-            {formatCurrency(sec.sectionTotals.total || 0)}
+          <td className="p-3 text-right text-indigo-800 dark:text-indigo-200 bg-slate-100 dark:bg-slate-950">
+            {formatValue(sec.sectionTotals.total || 0)}
           </td>
         </tr>
       </React.Fragment>
@@ -900,24 +922,34 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl relative">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-2xl relative">
       {/* Grid Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-900/80 backdrop-blur border-b border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-50/90 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center space-x-3">
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Navegación por teclado (
-            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">Tab</kbd>,{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">Enter</kbd>,{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">Esc</kbd>),
-            Copiar/Pegar Excel &{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300">Ctrl+D</kbd>{' '}
+            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+              Tab
+            </kbd>
+            ,{' '}
+            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+              Enter
+            </kbd>
+            ,{' '}
+            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+              Esc
+            </kbd>
+            ), Copiar/Pegar Excel &{' '}
+            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+              Ctrl+D
+            </kbd>{' '}
             (Rellenar Derecha)
           </span>
         </div>
 
         <div className="flex items-center space-x-4">
           {dirtyCells.size > 0 && (
-            <span className="text-xs text-amber-400 font-medium animate-pulse">
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium animate-pulse">
               ● {dirtyCells.size} celda(s) con cambios sin guardar
             </span>
           )}
@@ -927,7 +959,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               dirtyCells.size > 0
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 cursor-pointer'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
             }`}
           >
             <Save className="w-4 h-4" />
@@ -936,318 +968,188 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
         </div>
       </div>
 
-      {/* Spreadsheet Table with Horizontal Touch Scroll & Sticky Account Column */}
+      {/* Spreadsheet Table with Horizontal Touch Scroll & Sticky Account Column (No bottom cash flow footer) */}
       <div
         ref={gridRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
-        className="flex-1 overflow-auto outline-none"
+        className="flex-1 w-full overflow-auto outline-none"
       >
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
+          <thead className="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
             <tr>
-              <th className="p-3 min-w-[240px] max-w-[320px] border-r border-slate-800 sticky left-0 z-30 bg-slate-950">
+              <th className="p-3 min-w-[240px] max-w-[320px] border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 bg-slate-50 dark:bg-slate-950">
                 Cuenta Contable / Sub-línea
               </th>
-              <th className="p-3 w-12 text-center border-r border-slate-800 bg-slate-950">Motor</th>
+              <th className="p-3 w-12 text-center border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                •••
+              </th>
               {periods.map((period) => (
                 <th
                   key={period.id}
-                  className={`p-3 min-w-[110px] text-right border-r border-slate-800 ${
-                    period.status === 'CLOSED' ? 'bg-slate-900/50 text-slate-500' : ''
+                  className={`p-3 min-w-[110px] text-right border-r border-slate-200 dark:border-slate-800 ${
+                    period.status === 'CLOSED'
+                      ? 'bg-slate-100/60 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500'
+                      : ''
                   }`}
                 >
                   <div className="flex flex-col items-end">
                     <span className="flex items-center gap-1">
                       {period.friendlyName || period.name}
-                      {period.status === 'CLOSED' && <Lock className="w-3 h-3 text-rose-400" />}
+                      {period.status === 'CLOSED' && (
+                        <Lock className="w-3 h-3 text-rose-500 dark:text-rose-400" />
+                      )}
                     </span>
                     {period.status === 'CLOSED' && (
-                      <span className="text-[10px] text-rose-400/80 lowercase">cerrado</span>
+                      <span className="text-[10px] text-rose-500 dark:text-rose-400/80 lowercase">
+                        cerrado
+                      </span>
                     )}
                   </div>
                 </th>
               ))}
-              <th className="p-3 min-w-[120px] text-right font-bold text-slate-200 bg-slate-950">
+              <th className="p-3 min-w-[120px] text-right font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950">
                 Total Anual
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 font-mono">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
             {sections && sections.length > 0
               ? sections.map((sec) => renderSection(sec))
-              : // Fallback if sections empty
-                (rows || []).map((row, rIdx) => (
-                  <tr key={row.accountId} className="hover:bg-slate-800/30 transition-colors group">
-                    <td className="p-3 border-r border-slate-800 font-sans font-medium text-slate-200 sticky left-0 z-10 bg-slate-900 group-hover:bg-slate-850">
-                      <div className="flex flex-col">
-                        <span className="text-slate-100 font-medium">{row.accountName}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          {row.accountCode}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-2 text-center border-r border-slate-800 bg-slate-900">
-                      <button
-                        onClick={() => onOpenDriverModal && onOpenDriverModal(row)}
-                        title="Aplicar Motor de Distribución Inteligente"
-                        className="p-1.5 rounded-md hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
-                      >
-                        <Wand2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                    {periods.map((period, cIdx) => {
-                      const isSelected =
-                        selectedCell?.rowIndex === rIdx && selectedCell?.colIndex === cIdx;
-                      const isEditing =
-                        editingCell?.rowIndex === rIdx && editingCell?.colIndex === cIdx;
-                      const isClosed = period.status === 'CLOSED';
-                      const amount = row.amounts[period.id] ?? 0;
-                      return (
-                        <td
-                          key={period.id}
-                          onClick={() => setSelectedCell({ rowIndex: rIdx, colIndex: cIdx })}
-                          onDoubleClick={() => startEditing(rIdx, cIdx)}
-                          className={`p-2.5 text-right border-r border-slate-800/50 cursor-pointer select-none ${
-                            isClosed ? 'bg-slate-950/60 text-slate-500 cursor-not-allowed' : ''
-                          } ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-500/10 z-10' : ''}`}
-                        >
-                          {isEditing ? (
-                            <input
-                              ref={inputRef}
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={commitEdit}
-                              className="w-full bg-slate-950 text-right font-mono text-xs text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-end">
-                              {isClosed && <Lock className="w-3 h-3 text-slate-600 inline mr-1" />}
-                              <span className={amount === 0 ? 'text-slate-600' : 'text-slate-200'}>
-                                {formatCurrency(amount)}
-                              </span>
+              : (rows || []).map((row, rIdx) => {
+                  const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
+                  const isMenuOpen = openMenuRowKey === rowKey;
+                  return (
+                    <tr
+                      key={rowKey}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group"
+                    >
+                      <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans font-medium text-slate-800 dark:text-slate-200 sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850 shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="text-slate-900 dark:text-slate-100 font-medium">
+                            {row.accountName}
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                            {row.accountCode}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative row-options-menu-container">
+                        <div className="relative inline-block">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuRowKey(isMenuOpen ? null : rowKey);
+                            }}
+                            title="Opciones de fila"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <div className="absolute left-full top-0 ml-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuRowKey(null);
+                                  if (onOpenAutofill) {
+                                    onOpenAutofill(row);
+                                  } else if (onOpenDriverModal) {
+                                    onOpenDriverModal(row);
+                                  }
+                                }}
+                                className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                              >
+                                <Wand2 className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                                <span>Rellenar</span>
+                              </button>
                             </div>
                           )}
-                        </td>
-                      );
-                    })}
-                    <td className="p-3 text-right font-bold text-slate-100 bg-slate-900/80">
-                      {formatCurrency(row.rowTotal)}
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                      {periods.map((period, cIdx) => {
+                        const isSelected =
+                          selectedCell?.rowIndex === rIdx && selectedCell?.colIndex === cIdx;
+                        const isEditing =
+                          editingCell?.rowIndex === rIdx && editingCell?.colIndex === cIdx;
+                        const isClosed = period.status === 'CLOSED';
+                        const amount = row.amounts[period.id] ?? 0;
+                        return (
+                          <td
+                            key={period.id}
+                            onClick={() => setSelectedCell({ rowIndex: rIdx, colIndex: cIdx })}
+                            onDoubleClick={() => startEditing(rIdx, cIdx)}
+                            className={`p-2.5 text-right border-r border-slate-200/60 dark:border-slate-800/50 cursor-pointer select-none ${
+                              isClosed
+                                ? 'bg-slate-100/60 dark:bg-slate-950/60 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                : ''
+                            } ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 z-10' : ''}`}
+                          >
+                            {isEditing ? (
+                              <input
+                                ref={inputRef}
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onBlur={commitEdit}
+                                className="w-full bg-white dark:bg-slate-950 text-right font-mono text-xs text-slate-900 dark:text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-end">
+                                {isClosed && (
+                                  <Lock className="w-3 h-3 text-slate-400 dark:text-slate-600 inline mr-1" />
+                                )}
+                                <span
+                                  className={
+                                    amount === 0
+                                      ? 'text-slate-400 dark:text-slate-600'
+                                      : 'text-slate-800 dark:text-slate-200'
+                                  }
+                                >
+                                  {formatValue(amount)}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="p-3 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80">
+                        {formatValue(row.rowTotal)}
+                      </td>
+                    </tr>
+                  );
+                })}
           </tbody>
-
-          {/* Sticky Footer Summary Bar (FR-013: Total Entradas, Total Salidas, Flujo Neto del Mes, Flujo Neto Acumulado) */}
-          <tfoot className="sticky bottom-0 z-20 bg-slate-950/98 backdrop-blur border-t-2 border-indigo-500/40 shadow-2xl font-mono">
-            {/* Total Entradas (+) */}
-            <tr className="border-b border-slate-800/60 bg-slate-950 text-emerald-400">
-              <td className="p-3 border-r border-slate-800 font-sans font-bold sticky left-0 z-30 bg-slate-950 flex items-center space-x-2">
-                <ArrowUpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Total Entradas de Caja (+)</span>
-              </td>
-              <td className="p-3 border-r border-slate-800 bg-slate-950"></td>
-              {periods.map((period) => (
-                <td
-                  key={period.id}
-                  className="p-3 text-right border-r border-slate-800 font-bold text-emerald-300"
-                >
-                  {formatCurrency(summaryMetrics.totalInflows[period.id] || 0)}
-                </td>
-              ))}
-              <td className="p-3 text-right font-bold text-emerald-200 bg-slate-950">
-                {formatCurrency(summaryMetrics.totalInflows.total || 0)}
-              </td>
-            </tr>
-
-            {/* Total Salidas (-) */}
-            <tr className="border-b border-slate-800/60 bg-slate-950 text-rose-400">
-              <td className="p-3 border-r border-slate-800 font-sans font-bold sticky left-0 z-30 bg-slate-950 flex items-center space-x-2">
-                <ArrowDownCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                <span>Total Salidas de Caja (-)</span>
-              </td>
-              <td className="p-3 border-r border-slate-800 bg-slate-950"></td>
-              {periods.map((period) => (
-                <td
-                  key={period.id}
-                  className="p-3 text-right border-r border-slate-800 font-bold text-rose-300"
-                >
-                  {formatCurrency(summaryMetrics.totalOutflows[period.id] || 0)}
-                </td>
-              ))}
-              <td className="p-3 text-right font-bold text-rose-200 bg-slate-950">
-                {formatCurrency(summaryMetrics.totalOutflows.total || 0)}
-              </td>
-            </tr>
-
-            {/* Flujo Neto del Mes */}
-            <tr className="border-b border-slate-800/60 bg-slate-950/90 text-slate-100">
-              <td className="p-3 border-r border-slate-800 font-sans font-bold sticky left-0 z-30 bg-slate-950 flex items-center space-x-2">
-                <Scale className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>Flujo Neto del Mes (Δ)</span>
-              </td>
-              <td className="p-3 border-r border-slate-800 bg-slate-950"></td>
-              {periods.map((period) => {
-                const net = summaryMetrics.netMonthlyFlow[period.id] || 0;
-                return (
-                  <td
-                    key={period.id}
-                    className={`p-3 text-right border-r border-slate-800 font-bold ${
-                      net >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {formatCurrency(net)}
-                  </td>
-                );
-              })}
-              <td
-                className={`p-3 text-right font-bold bg-slate-950 ${
-                  summaryMetrics.netMonthlyFlow.total >= 0 ? 'text-emerald-300' : 'text-rose-300'
-                }`}
-              >
-                {formatCurrency(summaryMetrics.netMonthlyFlow.total || 0)}
-              </td>
-            </tr>
-
-            {/* Flujo Neto Acumulado */}
-            <tr className="bg-slate-950 text-indigo-300">
-              <td className="p-3 border-r border-slate-800 font-sans font-bold sticky left-0 z-30 bg-slate-950 flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>Flujo Neto Acumulado (12M)</span>
-              </td>
-              <td className="p-3 border-r border-slate-800 bg-slate-950"></td>
-              {periods.map((period) => {
-                const cum = summaryMetrics.cumulativeNetFlow[period.id] || 0;
-                return (
-                  <td
-                    key={period.id}
-                    className={`p-3 text-right border-r border-slate-800 font-bold ${
-                      cum >= 0 ? 'text-indigo-300' : 'text-amber-400'
-                    }`}
-                  >
-                    {formatCurrency(cum)}
-                  </td>
-                );
-              })}
-              <td
-                className={`p-3 text-right font-bold bg-slate-950 ${
-                  summaryMetrics.cumulativeNetFlow.total >= 0 ? 'text-indigo-200' : 'text-amber-300'
-                }`}
-              >
-                {formatCurrency(summaryMetrics.cumulativeNetFlow.total || 0)}
-              </td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
-      {/* Add Sub-Row Modal Dialog */}
-      {addSubRowTarget && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 font-sans">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-indigo-400" />
-                <span>Agregar Sub-línea de Movimiento</span>
-              </h3>
-              <button
-                onClick={() => setAddSubRowTarget(null)}
-                className="text-slate-400 hover:text-slate-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmAddSubRow} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">
-                  Cuenta Base:
-                </label>
-                <span className="block text-xs font-bold text-indigo-300 bg-slate-950 p-2 rounded border border-slate-800">
-                  {addSubRowTarget.accountName}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Nombre / Etiqueta de la Sub-línea:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Compras Financiadas, Pago de Tarjeta..."
-                  value={newSubRowLabel}
-                  onChange={(e) => setNewSubRowLabel(e.target.value)}
-                  className="w-full bg-slate-950 text-xs text-slate-100 border border-slate-700 rounded-lg p-2.5 outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Dirección de Flujo de Caja:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewSubRowDirection(CashFlowDirection.INGRESO_EFECTIVO)}
-                    className={`flex items-center justify-center space-x-1.5 p-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                      newSubRowDirection === CashFlowDirection.INGRESO_EFECTIVO
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-850'
-                    }`}
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>+ INGRESO EFECTIVO</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setNewSubRowDirection(CashFlowDirection.EGRESO_EFECTIVO)}
-                    className={`flex items-center justify-center space-x-1.5 p-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                      newSubRowDirection === CashFlowDirection.EGRESO_EFECTIVO
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500'
-                        : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-850'
-                    }`}
-                  >
-                    <ArrowDownRight className="w-3.5 h-3.5 text-rose-400" />
-                    <span>- EGRESO EFECTIVO</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAddSubRowTarget(null)}
-                  className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-colors cursor-pointer"
-                >
-                  Crear Sub-línea
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Balance Budget Modal (Assets / Liabilities on-demand) */}
-      {balanceModalTarget && (
-        <AddBalanceBudgetModal
-          isOpen={!!balanceModalTarget}
-          targetBlock={balanceModalTarget}
-          onClose={() => setBalanceModalTarget(null)}
-          onAdd={(account, label, direction) => {
-            if (onAddBalanceRow) {
-              onAddBalanceRow(account, label, direction);
+      {/* Unified Budget Account Modal for Create & Edit */}
+      {accountModalState.isOpen && (
+        <BudgetAccountModal
+          isOpen={accountModalState.isOpen}
+          targetSection={accountModalState.targetSection}
+          editRow={accountModalState.editRow}
+          onClose={() =>
+            setAccountModalState({ isOpen: false, targetSection: null, editRow: null })
+          }
+          onSave={({ account, label, direction, subRowId }) => {
+            if (accountModalState.editRow) {
+              if (onEditBalanceRow) {
+                onEditBalanceRow(account, label, direction, subRowId);
+              } else if (onDirectionChange) {
+                onDirectionChange(account.id, subRowId || null, direction);
+              }
+            } else {
+              if (onAddBalanceRow) {
+                onAddBalanceRow(account, label, direction);
+              }
             }
-            setBalanceModalTarget(null);
+            setAccountModalState({ isOpen: false, targetSection: null, editRow: null });
           }}
         />
       )}

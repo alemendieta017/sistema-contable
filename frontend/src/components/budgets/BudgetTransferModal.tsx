@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { formatCurrency } from '../../lib/utils';
 import {
   BudgetControlSection,
   BudgetControlCategory,
@@ -17,6 +18,8 @@ interface BudgetTransferModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialSourceAccountId?: string;
+  baseCurrency?: any;
 }
 
 export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
@@ -26,6 +29,8 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialSourceAccountId,
+  baseCurrency,
 }) => {
   // Collect all items from sections or fallback categories
   const allItems: BudgetControlItem[] = React.useMemo(() => {
@@ -53,10 +58,20 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
 
   // Initialize selected source account when opened or eligible items change
   useEffect(() => {
-    if (isOpen && eligibleSourceItems.length > 0 && !sourceAccountId) {
-      setSourceAccountId(eligibleSourceItems[0].accountId);
+    if (isOpen && eligibleSourceItems.length > 0) {
+      if (
+        initialSourceAccountId &&
+        eligibleSourceItems.some((i) => i.accountId === initialSourceAccountId)
+      ) {
+        setSourceAccountId(initialSourceAccountId);
+      } else if (
+        !sourceAccountId ||
+        !eligibleSourceItems.some((i) => i.accountId === sourceAccountId)
+      ) {
+        setSourceAccountId(eligibleSourceItems[0].accountId);
+      }
     }
-  }, [isOpen, eligibleSourceItems, sourceAccountId]);
+  }, [isOpen, eligibleSourceItems, initialSourceAccountId, sourceAccountId]);
 
   const selectedSourceItem = allItems.find((i) => i.accountId === sourceAccountId);
 
@@ -98,7 +113,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
     }
     if (selectedSourceItem && numAmount > selectedSourceItem.available) {
       setErrorMsg(
-        `El monto excede el saldo disponible de la cuenta origen (${formatCurrency(selectedSourceItem.available)}).`,
+        `El monto excede el saldo disponible de la cuenta origen (${formatCurrency(selectedSourceItem.available, baseCurrency)}).`,
       );
       return;
     }
@@ -120,32 +135,30 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 2 }).format(val);
-  };
-
   const isSourceOutflow =
     selectedSourceItem?.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               <ArrowLeftRight className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">Reasignación de Presupuesto</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Reasignación de Presupuesto
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Transferencia direccional entre cuentas en el periodo activo
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -154,7 +167,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMsg && (
-            <div className="flex items-center space-x-2.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            <div className="flex items-center space-x-2.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -162,21 +175,24 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
 
           {/* Direction Indicator Badge */}
           {selectedSourceItem && (
-            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300">
+            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
               {isSourceOutflow ? (
                 <>
-                  <TrendingDown className="w-4 h-4 text-rose-400 shrink-0" />
+                  <TrendingDown className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
                   <span>
-                    Flujo de <strong className="text-rose-400">Salida (-)</strong>: Solo se permite
-                    transferir a otras cuentas de salida (Gastos, Inversiones, Deudas).
+                    Flujo de{' '}
+                    <strong className="text-rose-600 dark:text-rose-400">Salida (-)</strong>: Solo
+                    se permite transferir a otras cuentas de salida (Gastos, Inversiones, Deudas).
                   </span>
                 </>
               ) : (
                 <>
-                  <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <TrendingUp className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                   <span>
-                    Flujo de <strong className="text-emerald-400">Entrada (+)</strong>: Solo se
-                    permite transferir a otras cuentas de entrada (Ingresos, Rescates, Préstamos).
+                    Flujo de{' '}
+                    <strong className="text-emerald-600 dark:text-emerald-400">Entrada (+)</strong>:
+                    Solo se permite transferir a otras cuentas de entrada (Ingresos, Rescates,
+                    Préstamos).
                   </span>
                 </>
               )}
@@ -185,38 +201,39 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
 
           {/* Source Account */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Cuenta Origen (Cedente con Disponible):
             </label>
             <select
               value={sourceAccountId}
               onChange={(e) => setSourceAccountId(e.target.value)}
-              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none"
             >
               <option value="">Seleccione cuenta origen...</option>
               {eligibleSourceItems.map((item) => (
                 <option key={item.accountId} value={item.accountId}>
-                  {item.accountName} (Disponible: ${formatCurrency(item.available)})
+                  {item.accountName} (Disponible: {formatCurrency(item.available, baseCurrency)})
                 </option>
               ))}
             </select>
             {selectedSourceItem && (
-              <p className="text-[11px] text-indigo-400 mt-1 font-mono">
-                Saldo disponible para transferir: ${formatCurrency(selectedSourceItem.available)}
+              <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1 font-mono">
+                Saldo disponible para transferir:{' '}
+                {formatCurrency(selectedSourceItem.available, baseCurrency)}
               </p>
             )}
           </div>
 
           {/* Target Account */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Cuenta Destino (Misma dirección de flujo):
             </label>
             <select
               value={targetAccountId}
               onChange={(e) => setTargetAccountId(e.target.value)}
               disabled={eligibleTargetItems.length === 0}
-              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none disabled:opacity-50"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-medium focus:border-indigo-500 outline-none disabled:opacity-50"
             >
               <option value="">
                 {eligibleTargetItems.length === 0
@@ -225,7 +242,8 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               </option>
               {eligibleTargetItems.map((item) => (
                 <option key={item.accountId} value={item.accountId}>
-                  {item.accountName} (Presupuestado actual: ${formatCurrency(item.budgeted)})
+                  {item.accountName} (Presupuestado actual:{' '}
+                  {formatCurrency(item.budgeted, baseCurrency)})
                 </option>
               ))}
             </select>
@@ -233,7 +251,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
 
           {/* Amount */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Monto a Transferir:
             </label>
             <input
@@ -244,13 +262,13 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Ej: 5000"
-              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono focus:border-indigo-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono focus:border-indigo-500 outline-none"
             />
           </div>
 
           {/* Reason / Justification */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Justificación / Motivo (Opcional):
             </label>
             <textarea
@@ -258,16 +276,16 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ej: Reasignación de sobrante de publicidad hacia aporte en fondo de inversión..."
-              className="w-full bg-slate-950 text-slate-100 border border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:border-indigo-500 outline-none resize-none"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs focus:border-indigo-500 outline-none resize-none"
             />
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
             >
               Cancelar
             </button>

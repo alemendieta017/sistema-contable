@@ -1,20 +1,27 @@
 # Implementation Plan: Budget Planning Matrix & Execution Control UX
 
-**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-13 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
+**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-14 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
 
 **Input**: Feature specification from `/specs/017-budget-planning-ux/spec.md`
 
 ## Summary
 
-This plan defines the technical implementation for redesigning the Budgeting Module into a unified 12-month Annual Matrix view (`/budgets/matrix`) and an Executive Monthly Control Dashboard (`/budgets/control`).
+This plan defines the technical implementation for the redesigned Budgeting Module, consisting of a dedicated 12-month Annual Matrix view (`/budgets/matrix`) and a separate Executive Monthly Control Dashboard (`/budgets/control`).
 
 Key architectural highlights include:
 
 1. **4 Executive Financial Blocks**: 🟢 Ingresos (P&L auto-loaded), 🔴 Gastos de Vida (P&L auto-loaded with collapsible category tree and dynamic read-only parent subtotals), 🔵 Ahorro e Inversiones (Balance Assets on-demand via `+ Presupuestar Activo`), and 🟣 Deudas y Financiación (Balance Liabilities on-demand via `+ Presupuestar Deuda`).
-2. **Interactive Spreadsheet Grid**: Inline cell editing, keyboard navigation (`Tab`, `Enter`, `Esc`), clipboard multi-cell paste parsing, and mobile-first responsive design with sticky account column and horizontal touch scroll.
-3. **Smart Distribution Drivers**: Prorrateo Anual plano, MoM % growth, Forward Fill (`Ctrl+D`), and deterministic baseline pre-population from prior year actuals using 1-year ISO date shifts (`shiftYear(date, -1)`).
-4. **Execution Control & Available Residual Engine**: $\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$, mapped to double-entry debits/credits per flow direction, visual color-coded consumption gauge bars (Green <75%, Yellow 75-99%, Red >=100%), and directional inter-account budget transfers (Salida $\leftrightarrow$ Salida, Entrada $\leftrightarrow$ Entrada) with audit logging.
-5. **Sticky Footer & Atomic Persistence**: Live calculation of Total Entradas (+), Total Salidas (-), Flujo Neto del Mes, and Flujo Neto Acumulado, persisted atomically via `[ 💾 Guardar Todo ]` with dirty state protection.
+2. **100% Screen Width Interactive Spreadsheet Grid**: Inline cell editing, keyboard navigation (`Tab`, `Enter`, `Esc`), clipboard multi-cell paste parsing, 100% screen-width responsive layout without restrictive bounds, fixed sticky account column on mobile, and elimination of the sticky cash flow summary bar (which belongs exclusively to the Cash Flow module).
+3. **3-Dots Options Menu (`•••`)**: Contextual menu per row replacing the "MOTOR" column, offering:
+   - **Rellenar**: Opens simplified Auto-fill modal.
+   - **Editar**: Opens unified modal for balance accounts to edit direction or concept.
+   - **Eliminar**: Deletes on-demand balance row with confirmation.
+4. **Unified & Streamlined Balance Modal ("Presupuestar Cuenta")**: A single, clean modal replacing separate verbose modals, with 3 core inputs: Account selector, Flow Direction buttons (`[Salida de efectivo]` / `[Entrada de efectivo]`), and Concept. Elimination of nested "+ Agregar sub-línea" buttons inside rows and inline toggle buttons.
+5. **Simplified Auto-Fill ("Autorellenar Presupuesto")**: Clean modal replacing complex driver jargon with straightforward options (Distribuir monto anual parejo, Replicar adelante `Ctrl+D`, Incremento porcentual mensual, Ponderación histórica, and Traer real del año anterior con ajuste %).
+6. **Separated Screen Navigation**: Distinct menu items in the main sidebar for "Planificación Presupuestaria" (`/budgets/matrix`) and "Control de Ejecución" (`/budgets/control`), removing hybrid layout toggles.
+7. **Fiscal Year Select Bugfix**: Proper binding of fiscal year name (`fy.name`) and closed status indicator (`(Cerrado)` when `fy.status === 'CLOSED'`).
+8. **Execution Control & Available Residual Engine**: $\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$, mapped to double-entry debits/credits per flow direction, visual color-coded consumption gauge bars (Green <75%, Yellow 75-99%, Red >=100%), and directional inter-account budget transfers (Salida $\leftrightarrow$ Salida, Entrada $\leftrightarrow$ Entrada) with audit logging.
+9. **Atomic Persistence**: Batch update persisted atomically via `[ 💾 Guardar Todo ]` with dirty state protection and unsaved changes confirmation.
 
 ## Technical Context
 
@@ -23,7 +30,7 @@ Key architectural highlights include:
 **Storage**: PostgreSQL (TypeORM)  
 **Testing**: Jest (Unit & Integration)  
 **Target Platform**: Web application (Monorepo with NestJS backend + Next.js frontend + `@sistema-contable/shared` package)  
-**Performance Goals**: <100ms cell update response time, 60fps spreadsheet grid keyboard navigation  
+**Performance Goals**: <100ms cell update response time, 60fps spreadsheet grid keyboard navigation across 100% viewport width  
 **Constraints**: Double-entry ledger integrity, clean architecture, zero magic strings, strict ESLint compliance (0 errors, 0 warnings), 100% Spanish UI labels, WCAG AA contrast compliance  
 **Scale/Scope**: Multi-user financial management with 12 monthly periods per fiscal year across active chart of accounts
 
@@ -94,18 +101,18 @@ backend/
 frontend/
 └── src/
     ├── app/
-    │   └── budgets/
-    │       ├── layout.tsx                       # Shared layout with Top View Switcher (Matrix vs Control)
-    │       ├── page.tsx                         # Redirect to /budgets/matrix
-    │       ├── matrix/
-    │       │   └── page.tsx                     # 12-month Annual Matrix Grid & Driver UI
-    │       └── control/
-    │           └── page.tsx                     # Executive Monthly Control Dashboard & Gauges
+    │   ├── budgets/
+    │   │   ├── matrix/
+    │   │   │   └── page.tsx                     # 100% Full-Width 12-Month Matrix Planning Grid
+    │   │   └── control/
+    │   │       └── page.tsx                     # Executive Monthly Control Dashboard & Gauges
+    │   └── ...
     ├── components/
+    │   ├── Sidebar.tsx                          # Main navigation with separate entries for Matrix & Control
     │   └── budgets/
-    │       ├── BudgetMatrixGrid.tsx             # Interactive 4-block matrix grid with keyboard, paste & sticky columns
-    │       ├── AddBalanceBudgetModal.tsx        # Modal for on-demand Asset/Liability movement budgeting
-    │       ├── DriverActionModal.tsx            # Smart distribution driver modal dialog
+    │       ├── BudgetMatrixGrid.tsx             # 100% full-width grid, 3-dots row menu, no sticky footer
+    │       ├── BudgetAccountModal.tsx           # Single unified modal for on-demand Balance accounts (Asset/Liability)
+    │       ├── AutofillModal.tsx                # Simplified auto-fill modal dialog
     │       └── BudgetTransferModal.tsx          # Directional re-allocation transfer modal
     └── services/
         └── api.ts                               # API client methods for budget matrix & control
