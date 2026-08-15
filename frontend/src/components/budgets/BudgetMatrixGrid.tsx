@@ -532,8 +532,8 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
             colSpan={periods.length + 3}
             className="p-3 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 font-sans tracking-wide"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between w-full">
+              <div className="sticky left-3 flex items-center space-x-2">
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getSectionBadge(sec.sectionKey)}`}
                 >
@@ -544,42 +544,46 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                 </span>
               </div>
 
-              {/* On-Demand Budgeting Action Buttons in Section Headers (Without redundant '+') */}
+              {/* On-Demand Budgeting Action Buttons in Section Headers (Right-Aligned) */}
               {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES && (
-                <button
-                  type="button"
-                  onClick={() => openCreateAccountModal('ASSET')}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/30 dark:hover:bg-blue-600/50 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/40 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Presupuestar Activo</span>
-                </button>
+                <div className="sticky right-3 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => openCreateAccountModal('ASSET')}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/30 dark:hover:bg-blue-600/50 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Presupuestar Activo</span>
+                  </button>
+                </div>
               )}
 
               {(sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
                 sec.sectionKey === BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO ||
                 sec.sectionKey === 'FINANCIAMIENTO_AHORRO') && (
-                <button
-                  type="button"
-                  onClick={() => openCreateAccountModal('LIABILITY')}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-600/30 dark:hover:bg-purple-600/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Presupuestar Deuda</span>
-                </button>
+                <div className="sticky right-3 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => openCreateAccountModal('LIABILITY')}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-600/30 dark:hover:bg-purple-600/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Presupuestar Deuda</span>
+                  </button>
+                </div>
               )}
             </div>
           </td>
         </tr>
 
-        {/* Empty State for Section */}
+        {/* Empty State for Section (Sticky pinned 100cqw to remain completely immobile in the viewport center) */}
         {visibleSecRows.length === 0 && (
           <tr>
             <td
               colSpan={periods.length + 3}
-              className="p-6 text-center bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-sans text-xs border-b border-slate-200 dark:border-slate-800/60"
+              className="p-0 bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-sans text-xs border-b border-slate-200 dark:border-slate-800/60"
             >
-              <div className="flex flex-col items-center justify-center space-y-2">
+              <div className="sticky left-0 w-[100cqw] max-w-full py-8 flex flex-col items-center justify-center space-y-2.5 pointer-events-auto">
                 <span>
                   {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
                     ? 'No hay cuentas de activo presupuestadas para este ejercicio.'
@@ -598,7 +602,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                           : 'LIABILITY',
                       )
                     }
-                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>
@@ -631,16 +635,16 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
               key={rowKey}
               className={`transition-colors group ${
                 isParent
-                  ? 'bg-slate-100/80 dark:bg-slate-950/70 font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-900'
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                  ? 'bg-slate-100/80 dark:bg-slate-900/80 font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-200/70 dark:hover:bg-slate-800/60'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
               }`}
             >
               {/* Account Label (Sticky left column for desktop & mobile) */}
               <td
                 className={`p-3 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[240px] max-w-[320px] shadow-sm ${
                   isParent
-                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-950 dark:group-hover:bg-slate-900 font-bold text-slate-900 dark:text-slate-100'
-                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850 font-medium text-slate-800 dark:text-slate-200'
+                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-bold text-slate-900 dark:text-slate-100'
+                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-medium text-slate-800 dark:text-slate-200'
                 } ${isChild ? 'pl-7' : 'pl-3'}`}
               >
                 <div className="flex flex-col space-y-1">
@@ -722,8 +726,8 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
               <td
                 className={`p-2 text-center border-r border-slate-200 dark:border-slate-800 w-12 relative row-options-menu-container ${
                   isParent
-                    ? 'bg-slate-100 dark:bg-slate-950'
-                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850'
+                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800'
+                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800'
                 }`}
               >
                 {!isParent ? (
@@ -889,8 +893,8 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
               <td
                 className={`p-3 text-right font-bold ${
                   isParent
-                    ? 'text-indigo-700 dark:text-indigo-300 bg-slate-100 dark:bg-slate-950'
-                    : 'text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80'
+                    ? 'text-indigo-700 dark:text-indigo-300 bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800'
+                    : 'text-slate-900 dark:text-slate-100 bg-slate-50 group-hover:bg-slate-100 dark:bg-slate-900/80 dark:group-hover:bg-slate-800'
                 }`}
               >
                 {formatValue(row.rowTotal)}
@@ -974,17 +978,15 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
-        className="flex-1 w-full overflow-auto outline-none"
+        className="flex-1 w-full overflow-auto outline-none [container-type:inline-size]"
       >
         <table className="w-full text-left border-collapse text-xs">
           <thead className="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
             <tr>
               <th className="p-3 min-w-[240px] max-w-[320px] border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 bg-slate-50 dark:bg-slate-950">
-                Cuenta Contable / Sub-línea
+                Cuenta
               </th>
-              <th className="p-3 w-12 text-center border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
-                •••
-              </th>
+              <th className="p-3 w-12 text-center border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950"></th>
               {periods.map((period) => (
                 <th
                   key={period.id}
@@ -1023,9 +1025,9 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                   return (
                     <tr
                       key={rowKey}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
                     >
-                      <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans font-medium text-slate-800 dark:text-slate-200 sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-850 shadow-sm">
+                      <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans font-medium text-slate-800 dark:text-slate-200 sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 shadow-sm">
                         <div className="flex flex-col">
                           <span className="text-slate-900 dark:text-slate-100 font-medium">
                             {row.accountName}
@@ -1035,7 +1037,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                           </span>
                         </div>
                       </td>
-                      <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 relative row-options-menu-container">
+                      <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 relative row-options-menu-container">
                         <div className="relative inline-block">
                           <button
                             type="button"
@@ -1118,7 +1120,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                           </td>
                         );
                       })}
-                      <td className="p-3 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80">
+                      <td className="p-3 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-50 group-hover:bg-slate-100 dark:bg-slate-900/80 dark:group-hover:bg-slate-800">
                         {formatValue(row.rowTotal)}
                       </td>
                     </tr>

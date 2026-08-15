@@ -327,7 +327,7 @@ export class GetBudgetControlUseCase {
 
       const sections: BudgetControlSection[] = [
         buildSection(BudgetMatrixSectionKey.INGRESOS, 'Ingresos', incomeItems, true),
-        buildSection(BudgetMatrixSectionKey.GASTOS_VIDA, 'Gastos de Vida', expenseItems, false),
+        buildSection(BudgetMatrixSectionKey.GASTOS_VIDA, 'Egresos', expenseItems, false),
         buildSection(
           BudgetMatrixSectionKey.AHORRO_INVERSIONES,
           'Ahorro e Inversiones',

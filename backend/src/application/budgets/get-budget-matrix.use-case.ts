@@ -418,7 +418,7 @@ export class GetBudgetMatrixUseCase {
         },
         {
           sectionKey: BudgetMatrixSectionKey.GASTOS_VIDA,
-          sectionTitle: 'Gastos de Vida',
+          sectionTitle: 'Egresos',
           rows: egresosRows,
           sectionTotals: buildSectionTotals(egresosRows),
         },

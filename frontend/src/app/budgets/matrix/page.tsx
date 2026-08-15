@@ -528,9 +528,9 @@ export default function BudgetMatrixPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] w-full space-y-3 font-sans">
+    <div className="flex flex-col h-full w-full p-2 sm:p-3 space-y-2 font-sans overflow-hidden">
       {/* Controls Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm dark:shadow-lg w-full">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl shadow-sm dark:shadow-lg w-full shrink-0">
         <div className="flex flex-wrap items-center gap-4">
           {/* Fiscal Year Selector */}
           <div className="flex items-center space-x-2">
@@ -566,7 +566,7 @@ export default function BudgetMatrixPage() {
             >
               <option value="">Todas las categorías</option>
               <option value="INGRESOS">Ingresos</option>
-              <option value="GASTOS_VIDA">Gastos de Vida</option>
+              <option value="GASTOS_VIDA">Egresos</option>
               <option value="AHORRO_INVERSIONES">Ahorro e Inversiones</option>
               <option value="DEUDAS_FINANCIACION">Deudas y Financiación</option>
             </select>

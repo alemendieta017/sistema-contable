@@ -368,6 +368,11 @@ export default function BudgetControlPage() {
           <div className="space-y-6">
             {activeSections.map((section) => {
               const isIncome = section.sectionKey === BudgetMatrixSectionKey.INGRESOS;
+              const isBalanceSection =
+                section.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
+                section.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
+                section.sectionKey === BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO ||
+                section.sectionKey === 'FINANCIAMIENTO_AHORRO';
               return (
                 <div
                   key={section.sectionKey}
@@ -423,7 +428,9 @@ export default function BudgetControlPage() {
                       <thead className="bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                         <tr>
                           <th className="p-3.5">Cuenta / Concepto</th>
-                          <th className="p-3.5 text-center">Dirección Flujo</th>
+                          {isBalanceSection && (
+                            <th className="p-3.5 text-center">Dirección Flujo</th>
+                          )}
                           <th className="p-3.5 text-right">Presupuestado</th>
                           <th className="p-3.5 text-right">Ejecutado</th>
                           <th className="p-3.5 text-right">Disponible</th>
@@ -435,7 +442,7 @@ export default function BudgetControlPage() {
                         {section.items.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={isBalanceSection ? 7 : 6}
                               className="p-6 text-center text-slate-400 dark:text-slate-500 font-sans"
                             >
                               No hay cuentas presupuestadas en esta sección para este periodo.
@@ -455,19 +462,21 @@ export default function BudgetControlPage() {
                                 <td className="p-3.5 font-sans font-medium text-slate-800 dark:text-slate-200">
                                   {item.accountName}
                                 </td>
-                                <td className="p-3.5 text-center font-sans">
-                                  {isItemOutflow ? (
-                                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                                      <TrendingDown className="w-3 h-3" />
-                                      <span>(-) Salida</span>
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                      <TrendingUp className="w-3 h-3" />
-                                      <span>(+) Entrada</span>
-                                    </span>
-                                  )}
-                                </td>
+                                {isBalanceSection && (
+                                  <td className="p-3.5 text-center font-sans">
+                                    {isItemOutflow ? (
+                                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                        <TrendingDown className="w-3 h-3" />
+                                        <span>(-) Salida</span>
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                        <TrendingUp className="w-3 h-3" />
+                                        <span>(+) Entrada</span>
+                                      </span>
+                                    )}
+                                  </td>
+                                )}
                                 <td className="p-3.5 text-right text-slate-700 dark:text-slate-300">
                                   {formatCurrency(item.budgeted, baseCurrency)}
                                 </td>
