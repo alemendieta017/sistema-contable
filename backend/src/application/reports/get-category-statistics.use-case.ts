@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
-import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 
 @Injectable()
 export class GetCategoryStatisticsUseCase {
@@ -16,7 +15,7 @@ export class GetCategoryStatisticsUseCase {
     userId: string,
     period: string,
     type: 'INCOME' | 'EXPENSE',
-    timezoneOffset?: number,
+    _timezoneOffset?: number,
   ) {
     return this.dataSource.transaction('READ UNCOMMITTED', async (entityManager) => {
       // Parse period boundaries

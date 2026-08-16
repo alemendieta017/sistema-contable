@@ -15,8 +15,8 @@ export function formatCurrency(
   amount: number | string | null | undefined,
   currency?: CurrencyInfo | string | null,
 ) {
-  let symbol = '$';
-  let decimals = 2;
+  let symbol = '₲';
+  let decimals = 0;
 
   if (typeof currency === 'string') {
     if (currency === 'PYG') {
@@ -25,14 +25,17 @@ export function formatCurrency(
     } else if (currency === 'USD') {
       symbol = 'u$s';
       decimals = 2;
+    } else {
+      symbol = currency;
+      decimals = 2;
     }
   } else if (currency) {
     if (currency.code === 'PYG') {
       symbol = '₲';
-      decimals = 0;
+      decimals = currency.decimalPlaces !== undefined ? currency.decimalPlaces : 0;
     } else if (currency.code === 'USD') {
       symbol = 'u$s';
-      decimals = 2;
+      decimals = currency.decimalPlaces !== undefined ? currency.decimalPlaces : 2;
     } else {
       symbol = currency.symbol || '$';
       decimals = currency.decimalPlaces !== undefined ? currency.decimalPlaces : 2;

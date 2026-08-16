@@ -31,6 +31,7 @@ services:
       PORT: 3001
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: 'true'
+      TSC_WATCHFILE: 'PriorityPollingInterval'
     volumes:
       - .:/app
       - /app/node_modules
@@ -58,7 +59,7 @@ services:
       - /app/shared/node_modules
       - /app/frontend/node_modules
       - /app/frontend/.next
-    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && npm run dev"
+    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && npm run dev -- --webpack"
     depends_on:
       - backend
 

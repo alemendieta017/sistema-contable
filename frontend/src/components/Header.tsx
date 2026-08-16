@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Search, User, Sun, Moon } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Search, Sun, Moon } from 'lucide-react';
 import { useSearch } from '../lib/search-context';
 import { useTheme } from '../lib/theme-context';
 import { usePathname } from 'next/navigation';

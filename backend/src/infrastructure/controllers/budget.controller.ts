@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BudgetEntity } from '../database/entities/budget.entity';
@@ -11,9 +11,22 @@ import { UpdateBudgetItemsUseCase } from '../../application/budgets/update-budge
 import { ReplicateBudgetItemUseCase } from '../../application/budgets/replicate-budget-item.use-case';
 import { GetBudgetExecutionUseCase } from '../../application/budgets/get-budget-execution.use-case';
 import { CopyPreviousBudgetUseCase } from '../../application/budgets/copy-previous-budget.use-case';
+import { GetBudgetMatrixUseCase } from '../../application/budgets/get-budget-matrix.use-case';
+import { UpdateBudgetMatrixUseCase } from '../../application/budgets/update-budget-matrix.use-case';
+import { DeleteBudgetMatrixRowUseCase } from '../../application/budgets/delete-budget-matrix-row.use-case';
+import { ApplyBudgetDriverUseCase } from '../../application/budgets/apply-budget-driver.use-case';
+import { GetPriorYearActualsUseCase } from '../../application/budgets/get-prior-year-actuals.use-case';
+import { GetBudgetControlUseCase } from '../../application/budgets/get-budget-control.use-case';
+import { TransferBudgetFundsUseCase } from '../../application/budgets/transfer-budget-funds.use-case';
 import { SetBudgetDto } from './dto/set-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { ReplicateBudgetItemDto } from './dto/replicate-budget-item.dto';
+import {
+  UpdateBudgetMatrixRequest,
+  ApplyBudgetDriverRequest,
+  BaselineActualsRequest,
+  TransferBudgetFundsRequest,
+} from '@sistema-contable/shared';
 
 @Controller('api/budgets')
 @UseGuards(JwtAuthGuard)
@@ -25,9 +38,66 @@ export class BudgetController {
     private readonly replicateBudgetItemUseCase: ReplicateBudgetItemUseCase,
     private readonly getBudgetExecutionUseCase: GetBudgetExecutionUseCase,
     private readonly copyPreviousBudgetUseCase: CopyPreviousBudgetUseCase,
+    private readonly getBudgetMatrixUseCase: GetBudgetMatrixUseCase,
+    private readonly updateBudgetMatrixUseCase: UpdateBudgetMatrixUseCase,
+    private readonly deleteBudgetMatrixRowUseCase: DeleteBudgetMatrixRowUseCase,
+    private readonly applyBudgetDriverUseCase: ApplyBudgetDriverUseCase,
+    private readonly getPriorYearActualsUseCase: GetPriorYearActualsUseCase,
+    private readonly getBudgetControlUseCase: GetBudgetControlUseCase,
+    private readonly transferBudgetFundsUseCase: TransferBudgetFundsUseCase,
     @InjectRepository(BudgetEntity)
     private readonly budgetRepository: Repository<BudgetEntity>,
   ) {}
+
+  @Get('matrix')
+  async getBudgetMatrix(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('categoryId') categoryId?: string,
+  ) {
+    return this.getBudgetMatrixUseCase.execute(user.id, fiscalYearId, categoryId);
+  }
+
+  @Put('matrix/batch-update')
+  async updateBudgetMatrix(
+    @CurrentUser() user: UserEntity,
+    @Body() body: UpdateBudgetMatrixRequest,
+  ) {
+    return this.updateBudgetMatrixUseCase.execute(user.id, body.fiscalYearId, body.updates);
+  }
+
+  @Delete('matrix/row')
+  async deleteBudgetMatrixRow(
+    @CurrentUser() user: UserEntity,
+    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('accountId') accountId: string,
+    @Query('subRowId') subRowId?: string,
+  ) {
+    return this.deleteBudgetMatrixRowUseCase.execute(user.id, fiscalYearId, accountId, subRowId);
+  }
+
+  @Post('matrix/apply-driver')
+  async applyBudgetDriver(@CurrentUser() user: UserEntity, @Body() body: ApplyBudgetDriverRequest) {
+    return this.applyBudgetDriverUseCase.execute(user.id, body);
+  }
+
+  @Post('matrix/baseline-actuals')
+  async getPriorYearActuals(@CurrentUser() user: UserEntity, @Body() body: BaselineActualsRequest) {
+    return this.getPriorYearActualsUseCase.execute(user.id, body);
+  }
+
+  @Get('control')
+  async getBudgetControl(@CurrentUser() user: UserEntity, @Query('periodId') periodId: string) {
+    return this.getBudgetControlUseCase.execute(user.id, periodId);
+  }
+
+  @Post('control/transfer')
+  async transferBudgetFunds(
+    @CurrentUser() user: UserEntity,
+    @Body() body: TransferBudgetFundsRequest,
+  ) {
+    return this.transferBudgetFundsUseCase.execute(user.id, body);
+  }
 
   @Get('summary')
   async summary(@CurrentUser() user: UserEntity, @Query('period') period: string) {

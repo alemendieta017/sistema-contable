@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, Sector } from 'recharts';
-import { useTheme } from '../lib/theme-context';
 
 interface StatItem {
   accountId: string;
@@ -28,7 +27,6 @@ const colors = [
 ];
 
 export default function PieChart({ data, type }: PieChartProps) {
-  const { theme } = useTheme();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const total = data.reduce((sum, item) => sum + item.amount, 0);

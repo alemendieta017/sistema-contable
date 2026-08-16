@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import AccountModal from '../../../components/AccountModal';
-import { ArrowLeft, Plus, ToggleLeft, ToggleRight, Check, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Check, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '../../../lib/utils';
 import { useSearch } from '../../../lib/search-context';
@@ -128,7 +128,9 @@ export default function AccountsManagePage() {
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 font-medium">
             {filteredAccounts.map((a) => {
               const isInactive = a.status === 'INACTIVE';
-              const parentName = a.parentId ? accountMap.get(a.parentId) || a.parentId.substring(0, 8) : null;
+              const parentName = a.parentId
+                ? accountMap.get(a.parentId) || a.parentId.substring(0, 8)
+                : null;
               return (
                 <tr
                   key={a.id}

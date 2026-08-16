@@ -31,16 +31,9 @@ type FiscalYear = {
   periods?: Period[];
 };
 
-type Account = {
-  id: string;
-  name: string;
-  type: string;
-};
-
 export default function PeriodsPage() {
   const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,15 +74,10 @@ export default function PeriodsPage() {
       if (isInitial) setLoading(true);
       setError('');
 
-      const [fyData, periodData, accountData] = await Promise.all([
-        api.fiscalYears.list(),
-        api.periods.list(),
-        api.accounts.list(),
-      ]);
+      const [fyData, periodData] = await Promise.all([api.fiscalYears.list(), api.periods.list()]);
 
       setFiscalYears(fyData || []);
       setPeriods(periodData || []);
-      setAccounts(accountData || []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar la información de períodos.');
     } finally {
@@ -208,8 +196,6 @@ export default function PeriodsPage() {
       setError(err.message || 'Error al actualizar el estado del período.');
     }
   };
-
-  const equityAccounts = accounts.filter((acc) => acc.type === 'EQUITY');
 
   if (loading) {
     return (

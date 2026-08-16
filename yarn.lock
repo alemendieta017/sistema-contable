@@ -1187,7 +1187,7 @@
   dependencies:
     "@sinonjs/commons" "^3.0.1"
 
-"@sistema-contable/backend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\add_account_journal_entry\\backend":
+"@sistema-contable/backend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\redesign_budget_planning_ux\\backend":
   version "1.0.0"
   resolved "file:backend"
   dependencies:
@@ -1211,7 +1211,7 @@
     typeorm "^0.3.20"
     zod "^3.23.8"
 
-"@sistema-contable/frontend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\add_account_journal_entry\\frontend":
+"@sistema-contable/frontend@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\redesign_budget_planning_ux\\frontend":
   version "1.0.0"
   resolved "file:frontend"
   dependencies:
@@ -1228,7 +1228,7 @@
     tailwind-merge "^2.3.0"
     zod "^3.23.8"
 
-"@sistema-contable/shared@*", "@sistema-contable/shared@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\add_account_journal_entry\\shared":
+"@sistema-contable/shared@*", "@sistema-contable/shared@file:C:\\Users\\amend\\.gemini\\antigravity\\worktrees\\sistema-contable\\redesign_budget_planning_ux\\shared":
   version "1.0.0"
   resolved "file:shared"
   dependencies:

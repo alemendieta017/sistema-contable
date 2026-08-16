@@ -21,10 +21,7 @@ import {
   CreateFiscalYearDto,
 } from '../../application/periods/create-fiscal-year.use-case';
 import { UpdatePeriodUseCase } from '../../application/periods/update-period.use-case';
-import {
-  CloseFiscalYearUseCase,
-  CloseFiscalYearDto,
-} from '../../application/periods/close-fiscal-year.use-case';
+import { CloseFiscalYearUseCase } from '../../application/periods/close-fiscal-year.use-case';
 import { UpdatePeriodRequestSchema, CloseFiscalYearRequestSchema } from '@sistema-contable/shared';
 
 @Controller('api')

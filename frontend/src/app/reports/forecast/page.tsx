@@ -3,19 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../services/api';
-import {
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  ArrowRight,
-  ShieldAlert,
-  ArrowLeft,
-  ChevronRight,
-  ChevronDown,
-  Folder,
-  File,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowLeft, ChevronRight, ChevronDown, File, Sparkles } from 'lucide-react';
 
 type FiscalYear = {
   id: string;
@@ -23,32 +11,6 @@ type FiscalYear = {
   startDate: string;
   endDate: string;
   status: 'OPEN' | 'CLOSED' | 'PLANNING';
-};
-
-type CashFlowMonthForecast = {
-  periodId: string;
-  periodName: string;
-  status: 'OPEN' | 'CLOSED' | 'PLANNING';
-  initialCash: number;
-  ingresosOperativos: number;
-  entradasActivoPasivo: number;
-  totalEntradas: number;
-  egresosOperativos: number;
-  salidasActivoPasivo: number;
-  totalSalidas: number;
-  netFlow: number;
-  finalCash: number;
-  isReal: boolean;
-};
-
-type IncomeStatementMonthForecast = {
-  periodId: string;
-  periodName: string;
-  status: 'OPEN' | 'CLOSED' | 'PLANNING';
-  income: number;
-  expense: number;
-  netProfit: number;
-  isReal: boolean;
 };
 
 type AccountForecastItem = {
@@ -110,7 +72,7 @@ export default function ForecastReportPage() {
       } else {
         setLoading(false);
       }
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar los ejercicios fiscales.');
       setLoading(false);
     }
@@ -133,7 +95,10 @@ export default function ForecastReportPage() {
         setAccounts(res.accounts || []);
         setFiscalYearName(res.fiscalYearName || '');
       } else {
-        const res = await api.reports.realVsProjectedIncomeStatement(selectedFiscalYearId, isRolling);
+        const res = await api.reports.realVsProjectedIncomeStatement(
+          selectedFiscalYearId,
+          isRolling,
+        );
         setMonths(res.months || []);
         setAccounts(res.accounts || []);
         setFiscalYearName(res.fiscalYearName || '');
@@ -152,17 +117,31 @@ export default function ForecastReportPage() {
   };
 
   const getMonthLabel = (periodName: string) => {
-    const [_, m] = periodName.split('-');
+    const [, m] = periodName.split('-');
     const monthsNames = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return monthsNames[parseInt(m, 10) - 1] || periodName;
   };
 
   // Precompute rolled-up values recursively
-  const getSubtreeValue = (accId: string, periodId: string, type: 'CASH_IN' | 'CASH_OUT' | 'DEFAULT'): number => {
-    const acc = accounts.find(a => a.accountId === accId);
+  const getSubtreeValue = (
+    accId: string,
+    periodId: string,
+    type: 'CASH_IN' | 'CASH_OUT' | 'DEFAULT',
+  ): number => {
+    const acc = accounts.find((a) => a.accountId === accId);
     if (!acc) return 0;
 
     let val = acc.values[periodId] || 0;
@@ -178,9 +157,9 @@ export default function ForecastReportPage() {
       }
     }
 
-    const children = accounts.filter(a => a.parentId === accId);
+    const children = accounts.filter((a) => a.parentId === accId);
     let childrenSum = 0;
-    children.forEach(child => {
+    children.forEach((child) => {
       childrenSum += getSubtreeValue(child.accountId, periodId, type);
     });
 
@@ -188,7 +167,7 @@ export default function ForecastReportPage() {
   };
 
   const hasChildren = (accId: string) => {
-    return accounts.some(a => a.parentId === accId);
+    return accounts.some((a) => a.parentId === accId);
   };
 
   const isAccountVisible = (acc: AccountForecastItem) => {
@@ -197,7 +176,7 @@ export default function ForecastReportPage() {
       if (!expandedAccounts[parentId]) {
         return false;
       }
-      const parent = accounts.find(a => a.accountId === parentId);
+      const parent = accounts.find((a) => a.accountId === parentId);
       parentId = parent ? parent.parentId : null;
     }
     return true;
@@ -208,16 +187,16 @@ export default function ForecastReportPage() {
     let parentId = acc.parentId;
     while (parentId) {
       depth++;
-      const parent = accounts.find(a => a.accountId === parentId);
+      const parent = accounts.find((a) => a.accountId === parentId);
       parentId = parent ? parent.parentId : null;
     }
     return depth;
   };
 
   const toggleAccount = (accId: string) => {
-    setExpandedAccounts(prev => ({
+    setExpandedAccounts((prev) => ({
       ...prev,
-      [accId]: !prev[accId]
+      [accId]: !prev[accId],
     }));
   };
 
@@ -230,7 +209,10 @@ export default function ForecastReportPage() {
     const isExpanded = expandedAccounts[acc.accountId];
 
     return (
-      <tr key={acc.accountId} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition">
+      <tr
+        key={acc.accountId}
+        className="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition"
+      >
         {/* Sticky left label */}
         <td
           className="p-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300"
@@ -258,7 +240,7 @@ export default function ForecastReportPage() {
         </td>
 
         {/* Monthly columns */}
-        {months.map(m => {
+        {months.map((m) => {
           const val = getSubtreeValue(acc.accountId, m.periodId, type);
           return (
             <td
@@ -465,7 +447,10 @@ export default function ForecastReportPage() {
                         (+) Saldo Inicial de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
                           {formatVal(m.initialCash)}
                         </td>
                       ))}
@@ -478,19 +463,29 @@ export default function ForecastReportPage() {
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showIncomeTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showIncomeTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>(+) Ingresos Operativos</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap"
+                        >
                           {formatVal(m.ingresosOperativos)}
                         </td>
                       ))}
                     </tr>
 
                     {/* INCOME accounts tree */}
-                    {showIncomeTree && accounts.filter(a => a.accountType === 'INCOME' && a.parentId === null).map(acc => renderAccountRow(acc, 'DEFAULT'))}
+                    {showIncomeTree &&
+                      accounts
+                        .filter((a) => a.accountType === 'INCOME' && a.parentId === null)
+                        .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
                     {/* Entradas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
@@ -499,19 +494,33 @@ export default function ForecastReportPage() {
                           onClick={() => setShowAssetsInflowTree(!showAssetsInflowTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showAssetsInflowTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showAssetsInflowTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>(+) Entradas de Activo/Pasivo</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
                           {formatVal(m.entradasActivoPasivo)}
                         </td>
                       ))}
                     </tr>
 
                     {/* ASSET/LIABILITY inflow tree */}
-                    {showAssetsInflowTree && accounts.filter(a => (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') && a.parentId === null).map(acc => renderAccountRow(acc, 'CASH_IN'))}
+                    {showAssetsInflowTree &&
+                      accounts
+                        .filter(
+                          (a) =>
+                            (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') &&
+                            a.parentId === null,
+                        )
+                        .map((acc) => renderAccountRow(acc, 'CASH_IN'))}
 
                     {/* Total Entradas */}
                     <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
@@ -519,7 +528,10 @@ export default function ForecastReportPage() {
                         (=) Total Entradas de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap"
+                        >
                           {formatVal(m.totalEntradas)}
                         </td>
                       ))}
@@ -532,19 +544,29 @@ export default function ForecastReportPage() {
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showExpenseTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showExpenseTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>(-) Egresos Operativos</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap"
+                        >
                           {formatVal(m.egresosOperativos)}
                         </td>
                       ))}
                     </tr>
 
                     {/* EXPENSE accounts tree */}
-                    {showExpenseTree && accounts.filter(a => a.accountType === 'EXPENSE' && a.parentId === null).map(acc => renderAccountRow(acc, 'DEFAULT'))}
+                    {showExpenseTree &&
+                      accounts
+                        .filter((a) => a.accountType === 'EXPENSE' && a.parentId === null)
+                        .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
                     {/* Salidas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800">
@@ -553,19 +575,33 @@ export default function ForecastReportPage() {
                           onClick={() => setShowAssetsOutflowTree(!showAssetsOutflowTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showAssetsOutflowTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showAssetsOutflowTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>(-) Salidas de Activo/Pasivo</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
                           {formatVal(m.salidasActivoPasivo)}
                         </td>
                       ))}
                     </tr>
 
                     {/* ASSET/LIABILITY outflow tree */}
-                    {showAssetsOutflowTree && accounts.filter(a => (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') && a.parentId === null).map(acc => renderAccountRow(acc, 'CASH_OUT'))}
+                    {showAssetsOutflowTree &&
+                      accounts
+                        .filter(
+                          (a) =>
+                            (a.accountType === 'ASSET' || a.accountType === 'LIABILITY') &&
+                            a.parentId === null,
+                        )
+                        .map((acc) => renderAccountRow(acc, 'CASH_OUT'))}
 
                     {/* Total Salidas */}
                     <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
@@ -573,7 +609,10 @@ export default function ForecastReportPage() {
                         (=) Total Salidas de Caja
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-extrabold text-red-600 dark:text-red-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-extrabold text-red-600 dark:text-red-400 whitespace-nowrap"
+                        >
                           {formatVal(m.totalSalidas)}
                         </td>
                       ))}
@@ -627,19 +666,29 @@ export default function ForecastReportPage() {
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showIncomeTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showIncomeTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>Ingresos Devengados (+)</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap"
+                        >
                           {formatVal(m.income)}
                         </td>
                       ))}
                     </tr>
 
                     {/* INCOME accounts tree */}
-                    {showIncomeTree && accounts.filter(a => a.accountType === 'INCOME' && a.parentId === null).map(acc => renderAccountRow(acc, 'DEFAULT'))}
+                    {showIncomeTree &&
+                      accounts
+                        .filter((a) => a.accountType === 'INCOME' && a.parentId === null)
+                        .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
                     {/* Gastos Devengados Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
@@ -648,19 +697,29 @@ export default function ForecastReportPage() {
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
                         >
-                          {showExpenseTree ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {showExpenseTree ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span>Gastos Devengados (-)</span>
                       </td>
                       {months.map((m) => (
-                        <td key={m.periodId} className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap">
+                        <td
+                          key={m.periodId}
+                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap"
+                        >
                           {formatVal(m.expense)}
                         </td>
                       ))}
                     </tr>
 
                     {/* EXPENSE accounts tree */}
-                    {showExpenseTree && accounts.filter(a => a.accountType === 'EXPENSE' && a.parentId === null).map(acc => renderAccountRow(acc, 'DEFAULT'))}
+                    {showExpenseTree &&
+                      accounts
+                        .filter((a) => a.accountType === 'EXPENSE' && a.parentId === null)
+                        .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
                     {/* Resultado Neto */}
                     <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 font-black border-t-2 border-indigo-100 dark:border-indigo-900">

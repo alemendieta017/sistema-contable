@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { DollarSign, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 interface Currency {
   id: string;
@@ -33,7 +33,7 @@ export default function CurrencySettings() {
         initialRates[c.id] = Number(c.rateToBase).toString();
       }
       setRates(initialRates);
-    } catch (err: any) {
+    } catch {
       setError('Error al cargar divisas.');
     }
   };

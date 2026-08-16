@@ -15,6 +15,8 @@ import {
   X,
   Calendar,
   FileText,
+  Table,
+  ShieldAlert,
 } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
 import { api } from '../services/api';
@@ -30,6 +32,8 @@ export default function BottomNav() {
   };
 
   const menuItems = [
+    { name: 'Planificación Presupuestaria', href: '/budgets/matrix', icon: Table },
+    { name: 'Control de Ejecución', href: '/budgets/control', icon: ShieldAlert },
     { name: 'Períodos', href: '/periods', icon: Calendar },
     { name: 'Balance General', href: '/reports/balance-sheet', icon: FileText },
     { name: 'Estado de Resultados', href: '/reports/income-statement', icon: FileText },

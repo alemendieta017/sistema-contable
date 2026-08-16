@@ -23,15 +23,15 @@ describe('Budget Replication Integration Tests', () => {
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
-      save: jest
-        .fn()
-        .mockImplementation((cls, entity) => {
-          const target = entity || cls;
-          if (Array.isArray(target)) {
-            return Promise.resolve(target.map((item) => ({ id: item.id || 'mock-saved-id', ...item })));
-          }
-          return Promise.resolve({ ...target, id: target.id || 'mock-saved-id' });
-        }),
+      save: jest.fn().mockImplementation((cls, entity) => {
+        const target = entity || cls;
+        if (Array.isArray(target)) {
+          return Promise.resolve(
+            target.map((item) => ({ id: item.id || 'mock-saved-id', ...item })),
+          );
+        }
+        return Promise.resolve({ ...target, id: target.id || 'mock-saved-id' });
+      }),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
     };
 
@@ -97,7 +97,9 @@ describe('Budget Replication Integration Tests', () => {
     mockEntityManager.find
       .mockResolvedValueOnce(periods) // 1. find all periods
       .mockResolvedValueOnce([{ id: 'budget-1', userId, periodId: 'period-1' }]) // 2. batch find existing budgets
-      .mockResolvedValueOnce([{ id: 'item-1', budgetId: 'budget-1', accountId, amount: 2000000.0 }]); // 3. batch find existing items
+      .mockResolvedValueOnce([
+        { id: 'item-1', budgetId: 'budget-1', accountId, amount: 2000000.0 },
+      ]); // 3. batch find existing items
 
     const result = await replicateUseCase.execute(userId, { periodId, accountId, amount });
 

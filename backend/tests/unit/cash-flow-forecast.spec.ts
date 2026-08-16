@@ -36,9 +36,27 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
         if (cls === AccountEntity) {
           return [
             { id: 'acc-inc', name: 'Salario', type: 'INCOME', parentId: null, isCashOrBank: false },
-            { id: 'acc-exp', name: 'Alquiler', type: 'EXPENSE', parentId: null, isCashOrBank: false },
-            { id: 'acc-ast', name: 'Ahorro Bolsa', type: 'ASSET', parentId: null, isCashOrBank: false },
-            { id: 'acc-liab', name: 'Deuda Vehículo', type: 'LIABILITY', parentId: null, isCashOrBank: false },
+            {
+              id: 'acc-exp',
+              name: 'Alquiler',
+              type: 'EXPENSE',
+              parentId: null,
+              isCashOrBank: false,
+            },
+            {
+              id: 'acc-ast',
+              name: 'Ahorro Bolsa',
+              type: 'ASSET',
+              parentId: null,
+              isCashOrBank: false,
+            },
+            {
+              id: 'acc-liab',
+              name: 'Deuda Vehículo',
+              type: 'LIABILITY',
+              parentId: null,
+              isCashOrBank: false,
+            },
           ];
         }
         return [];
@@ -348,10 +366,32 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
           return {
             id: 'b-mar',
             items: [
-              { amount: 15000, account: { id: 'acc-inc', type: 'INCOME', name: 'Salario', isCashOrBank: false } },
-              { amount: 4000, account: { id: 'acc-exp', type: 'EXPENSE', name: 'Alquiler', isCashOrBank: false } },
-              { amount: -1500, account: { id: 'acc-ast', type: 'ASSET', name: 'Ahorro Bolsa', isCashOrBank: false } },
-              { amount: -500, account: { id: 'acc-liab', type: 'LIABILITY', name: 'Deuda Vehículo', isCashOrBank: false } },
+              {
+                amount: 15000,
+                account: { id: 'acc-inc', type: 'INCOME', name: 'Salario', isCashOrBank: false },
+              },
+              {
+                amount: 4000,
+                account: { id: 'acc-exp', type: 'EXPENSE', name: 'Alquiler', isCashOrBank: false },
+              },
+              {
+                amount: -1500,
+                account: {
+                  id: 'acc-ast',
+                  type: 'ASSET',
+                  name: 'Ahorro Bolsa',
+                  isCashOrBank: false,
+                },
+              },
+              {
+                amount: -500,
+                account: {
+                  id: 'acc-liab',
+                  type: 'LIABILITY',
+                  name: 'Deuda Vehículo',
+                  isCashOrBank: false,
+                },
+              },
             ],
           };
         }
@@ -474,7 +514,7 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
       });
 
       // Mock findOne for pre-opening next year checks (returns null so it creates it)
-      mockEntityManager.findOne.mockImplementation((cls, options) => {
+      mockEntityManager.findOne.mockImplementation((_cls, _options) => {
         return Promise.resolve(null);
       });
 
@@ -530,9 +570,18 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
       queryBuilder.getOne.mockImplementation(() => {
         queryCallCount++;
         const months = [
-          '2026-01', '2026-02', '2026-03', '2026-04',
-          '2026-05', '2026-06', '2026-07', '2026-08',
-          '2026-09', '2026-10', '2026-11', '2026-12',
+          '2026-01',
+          '2026-02',
+          '2026-03',
+          '2026-04',
+          '2026-05',
+          '2026-06',
+          '2026-07',
+          '2026-08',
+          '2026-09',
+          '2026-10',
+          '2026-11',
+          '2026-12',
         ];
         const currentMonthName = months[queryCallCount - 1];
         if (!currentMonthName) return Promise.resolve(null);

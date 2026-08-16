@@ -1,12 +1,15 @@
 module.exports = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },
-  allowedDevOrigins: ['wsl.localhost', 'localhost:3001', 'localhost:3000', '192.168.100.24', '192.168.100.25']
-}
-
-
+  allowedDevOrigins: [
+    'localhost:3000',
+    'localhost:3001',
+    '127.0.0.1:3000',
+    '127.0.0.1:3001',
+    'wsl.localhost',
+    '192.168.100.24',
+    '192.168.100.25',
+  ],
+};

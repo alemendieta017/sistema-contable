@@ -128,7 +128,8 @@ export class CashFlowStatementForecastUseCase {
 
           if (!period) {
             const nextYearPeriods = await this.preOpenFiscalYear(entityManager, userId, y);
-            period = nextYearPeriods.find((p) => p.startDate === pStart || p.name === pName) || null;
+            period =
+              nextYearPeriods.find((p) => p.startDate === pStart || p.name === pName) || null;
           }
 
           if (period) {
@@ -162,13 +163,16 @@ export class CashFlowStatementForecastUseCase {
         (acc) => acc.type !== 'EQUITY' && !(acc.type === 'ASSET' && acc.isCashOrBank),
       );
 
-      const accountsMap = new Map<string, {
-        accountId: string;
-        accountName: string;
-        accountType: 'INCOME' | 'EXPENSE' | 'ASSET' | 'LIABILITY' | 'EQUITY';
-        parentId: string | null;
-        values: { [periodId: string]: number };
-      }>();
+      const accountsMap = new Map<
+        string,
+        {
+          accountId: string;
+          accountName: string;
+          accountType: 'INCOME' | 'EXPENSE' | 'ASSET' | 'LIABILITY' | 'EQUITY';
+          parentId: string | null;
+          values: { [periodId: string]: number };
+        }
+      >();
 
       for (const acc of eligibleAccounts) {
         accountsMap.set(acc.id, {
@@ -275,37 +279,59 @@ export class CashFlowStatementForecastUseCase {
                 ingresosOperativos += amount;
               } else if (item.account.type === 'EXPENSE') {
                 egresosOperativos += amount;
-              } else if (item.account.type === 'ASSET') {
-                if (amount > 0) {
+              } else if (
+                item.account.type === 'ASSET' ||
+                item.account.type === 'LIABILITY' ||
+                item.account.type === 'EQUITY'
+              ) {
+                if (item.cashFlowDirection === 'INGRESO_EFECTIVO') {
                   entradasActivoPasivo += amount;
-                } else {
-                  salidasActivoPasivo += Math.abs(amount);
-                }
-              } else if (item.account.type === 'LIABILITY') {
-                if (amount > 0) {
-                  entradasActivoPasivo += amount;
-                } else {
-                  salidasActivoPasivo += Math.abs(amount);
+                } else if (item.cashFlowDirection === 'EGRESO_EFECTIVO') {
+                  salidasActivoPasivo += amount;
+                } else if (item.account.type === 'ASSET') {
+                  if (item.flowIntention === 'DIVEST') {
+                    entradasActivoPasivo += amount;
+                  } else if (item.flowIntention === 'INVEST' || item.flowIntention === 'SAVE') {
+                    salidasActivoPasivo += amount;
+                  } else if (amount > 0) {
+                    entradasActivoPasivo += amount;
+                  } else {
+                    salidasActivoPasivo += Math.abs(amount);
+                  }
+                } else if (item.account.type === 'LIABILITY' || item.account.type === 'EQUITY') {
+                  if (item.flowIntention === 'RECEIVE') {
+                    entradasActivoPasivo += amount;
+                  } else if (item.flowIntention === 'PAY') {
+                    salidasActivoPasivo += amount;
+                  } else if (amount > 0) {
+                    entradasActivoPasivo += amount;
+                  } else {
+                    salidasActivoPasivo += Math.abs(amount);
+                  }
                 }
               }
 
               const accForecast = accountsMap.get(accId);
               if (accForecast) {
-                accForecast.values[period.id] = amount;
+                const currentVal = accForecast.values[period.id] || 0;
+                const valToAggregate =
+                  item.cashFlowDirection === 'EGRESO_EFECTIVO' ? -amount : amount;
+                accForecast.values[period.id] = currentVal + valToAggregate;
               }
             }
           }
         }
 
         // Fill remaining eligible accounts with 0 for this period
-        for (const [_, accForecast] of accountsMap) {
+        for (const accForecast of accountsMap.values()) {
           if (accForecast.values[period.id] === undefined) {
             accForecast.values[period.id] = 0;
           }
         }
 
         if (!isReal) {
-          netFlow = ingresosOperativos + entradasActivoPasivo - egresosOperativos - salidasActivoPasivo;
+          netFlow =
+            ingresosOperativos + entradasActivoPasivo - egresosOperativos - salidasActivoPasivo;
         }
         const finalCash = initialCash + netFlow;
         runningCash = finalCash;

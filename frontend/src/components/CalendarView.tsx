@@ -34,21 +34,6 @@ export default function CalendarView({
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
 
-  const months = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
-  ];
-
   const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   // Helper calendar functions
@@ -88,7 +73,7 @@ export default function CalendarView({
   }
 
   // Preceding empty slots
-  const blankSlots = Array.from({ length: startDayOfWeek }, (_, i) => null);
+  const blankSlots = Array.from({ length: startDayOfWeek }, () => null);
   // Month days slots
   const daySlots = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const totalSlots = [...blankSlots, ...daySlots];

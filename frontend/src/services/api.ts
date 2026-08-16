@@ -2,6 +2,17 @@ import {
   CreateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
+  BudgetMatrixResponse,
+  UpdateBudgetMatrixRequest,
+  UpdateBudgetMatrixResponse,
+  MatrixCellUpdate,
+  ApplyBudgetDriverRequest,
+  ApplyBudgetDriverResponse,
+  BaselineActualsRequest,
+  BaselineActualsResponse,
+  BudgetControlResponse,
+  TransferBudgetFundsRequest,
+  TransferBudgetFundsResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -280,6 +291,136 @@ export const api = {
         headers: getHeaders(),
       });
       return handleResponse(res);
+    },
+
+    async getMatrix(fiscalYearId: string, categoryId?: string): Promise<BudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${encodeURIComponent(fiscalYearId)}`;
+      if (categoryId) {
+        url += `&categoryId=${encodeURIComponent(categoryId)}`;
+      }
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async getBudgetMatrix(
+      fiscalYearId: string,
+      categoryId?: string,
+    ): Promise<BudgetMatrixResponse> {
+      return this.getMatrix(fiscalYearId, categoryId);
+    },
+
+    async updateMatrixBatch(
+      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      updates?: MatrixCellUpdate[],
+    ): Promise<UpdateBudgetMatrixResponse> {
+      const body =
+        typeof fiscalYearIdOrData === 'string'
+          ? { fiscalYearId: fiscalYearIdOrData, updates: updates || [] }
+          : fiscalYearIdOrData;
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(body),
+      });
+      return handleResponse(res);
+    },
+
+    async updateBudgetMatrix(
+      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      updates?: MatrixCellUpdate[],
+    ): Promise<UpdateBudgetMatrixResponse> {
+      return this.updateMatrixBatch(fiscalYearIdOrData, updates);
+    },
+
+    async deleteMatrixRow(
+      fiscalYearId: string,
+      accountId: string,
+      subRowId?: string | null,
+    ): Promise<{ success: boolean }> {
+      let url = `${API_BASE_URL}/budgets/matrix/row?fiscalYearId=${encodeURIComponent(fiscalYearId)}&accountId=${encodeURIComponent(accountId)}`;
+      if (subRowId) {
+        url += `&subRowId=${encodeURIComponent(subRowId)}`;
+      }
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async deleteBudgetMatrixRow(
+      fiscalYearId: string,
+      accountId: string,
+      subRowId?: string | null,
+    ): Promise<{ success: boolean }> {
+      return this.deleteMatrixRow(fiscalYearId, accountId, subRowId);
+    },
+
+    async applyDriver(data: ApplyBudgetDriverRequest): Promise<ApplyBudgetDriverResponse> {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/apply-driver`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async applyBudgetDriver(data: ApplyBudgetDriverRequest): Promise<ApplyBudgetDriverResponse> {
+      return this.applyDriver(data);
+    },
+
+    async getBaselineActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/baseline-actuals`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async baselineActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
+      return this.getBaselineActuals(data);
+    },
+
+    async getPriorYearActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
+      return this.getBaselineActuals(data);
+    },
+
+    async getControl(periodId: string): Promise<BudgetControlResponse> {
+      const res = await fetch(
+        `${API_BASE_URL}/budgets/control?periodId=${encodeURIComponent(periodId)}`,
+        {
+          method: 'GET',
+          headers: getHeaders(),
+        },
+      );
+      return handleResponse(res);
+    },
+
+    async getBudgetControl(periodId: string): Promise<BudgetControlResponse> {
+      return this.getControl(periodId);
+    },
+
+    async transferFunds(data: TransferBudgetFundsRequest): Promise<TransferBudgetFundsResponse> {
+      const res = await fetch(`${API_BASE_URL}/budgets/control/transfer`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async transferControl(data: TransferBudgetFundsRequest): Promise<TransferBudgetFundsResponse> {
+      return this.transferFunds(data);
+    },
+
+    async transferBudgetFunds(
+      data: TransferBudgetFundsRequest,
+    ): Promise<TransferBudgetFundsResponse> {
+      return this.transferFunds(data);
     },
   },
 

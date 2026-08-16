@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
   ReceiptText,
   BarChart3,
   Wallet,
@@ -15,6 +14,8 @@ import {
   Plus,
   Calendar,
   FileText,
+  Table,
+  ShieldAlert,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -49,13 +50,14 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Transacciones', href: '/transactions', icon: ReceiptText },
     { name: 'Cuentas', href: '/accounts', icon: Wallet },
+    { name: 'Planificación Presupuestaria', href: '/budgets/matrix', icon: Table },
+    { name: 'Control de Ejecución', href: '/budgets/control', icon: ShieldAlert },
     { name: 'Balance General', href: '/reports/balance-sheet', icon: FileText },
-    { name: 'Estadísticas', href: '/stats', icon: BarChart3 },
-    { name: 'Períodos', href: '/periods', icon: Calendar },
-    { name: 'Presupuestos', href: '/budgets', icon: LayoutDashboard },
     { name: 'Estado de Resultados', href: '/reports/income-statement', icon: FileText },
     { name: 'Resultados Proyectados', href: '/reports/income-statement/forecast', icon: FileText },
     { name: 'Caja Proyectada', href: '/reports/cash-flow', icon: FileText },
+    { name: 'Estadísticas', href: '/stats', icon: BarChart3 },
+    { name: 'Períodos', href: '/periods', icon: Calendar },
     { name: 'Ajustes', href: '/settings', icon: Settings },
   ];
 
@@ -100,7 +102,11 @@ export default function Sidebar() {
             title={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
           >
-            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            {isCollapsed ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
           </button>
         </div>
 
@@ -122,7 +128,10 @@ export default function Sidebar() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname.startsWith(item.href);
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + '/') ||
+              (item.href === '/budgets/matrix' && pathname === '/budgets');
             return (
               <Link
                 key={item.href}
@@ -180,4 +189,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

@@ -166,3 +166,258 @@ export const ReplicateBudgetItemRequestSchema = z.object({
 });
 
 export type ReplicateBudgetItemRequest = z.infer<typeof ReplicateBudgetItemRequestSchema>;
+
+// Cash Flow Direction Enum
+export enum CashFlowDirection {
+  INGRESO_EFECTIVO = 'INGRESO_EFECTIVO',
+  EGRESO_EFECTIVO = 'EGRESO_EFECTIVO',
+}
+
+export const CashFlowDirectionSchema = z.nativeEnum(CashFlowDirection);
+
+// Budget Planning Matrix & Execution Control
+export enum BudgetDriverType {
+  FLAT_PRORATE = 'FLAT_PRORATE',
+  WEIGHTED_HISTORICAL = 'WEIGHTED_HISTORICAL',
+  PERCENTAGE_GROWTH = 'PERCENTAGE_GROWTH',
+  FORWARD_FILL = 'FORWARD_FILL',
+  PRIOR_YEAR_ACTUAL = 'PRIOR_YEAR_ACTUAL',
+}
+
+export const BudgetDriverTypeSchema = z.nativeEnum(BudgetDriverType);
+
+export enum FlowIntention {
+  PAY = 'PAY',
+  RECEIVE = 'RECEIVE',
+  INVEST = 'INVEST',
+  SAVE = 'SAVE',
+  DIVEST = 'DIVEST',
+}
+
+export const FlowIntentionSchema = z.nativeEnum(FlowIntention).nullable().optional();
+
+export enum BudgetGaugeStatus {
+  NORMAL = 'NORMAL',
+  WARNING = 'WARNING',
+  OVERBUDGET = 'OVERBUDGET',
+}
+
+export const BudgetGaugeStatusSchema = z.nativeEnum(BudgetGaugeStatus);
+
+export { BudgetGaugeStatus as GaugeStatus };
+export { BudgetGaugeStatusSchema as GaugeStatusSchema };
+
+export enum BudgetMatrixSectionKey {
+  INGRESOS = 'INGRESOS',
+  GASTOS_VIDA = 'GASTOS_VIDA',
+  AHORRO_INVERSIONES = 'AHORRO_INVERSIONES',
+  DEUDAS_FINANCIACION = 'DEUDAS_FINANCIACION',
+  // Deprecated legacy aliases for transitional compatibility
+  EGRESOS = 'EGRESOS',
+  FINANCIAMIENTO_AHORRO = 'FINANCIAMIENTO_AHORRO',
+}
+
+export const BudgetMatrixSectionKeySchema = z.nativeEnum(BudgetMatrixSectionKey);
+
+export const MatrixCellUpdateSchema = z.object({
+  periodId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  subRowId: z.string().nullable().optional(),
+  subRowLabel: z.string().nullable().optional(),
+  amount: z.number().min(0),
+  cashFlowDirection: CashFlowDirectionSchema.nullable().optional(),
+  flowIntention: FlowIntentionSchema,
+  isDeleted: z.boolean().optional(),
+});
+
+export type MatrixCellUpdate = z.infer<typeof MatrixCellUpdateSchema>;
+
+export const UpdateBudgetMatrixRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  updates: z.array(MatrixCellUpdateSchema),
+});
+
+export type UpdateBudgetMatrixRequest = z.infer<typeof UpdateBudgetMatrixRequestSchema>;
+
+export interface UpdateBudgetMatrixResponse {
+  success: boolean;
+  updatedCount: number;
+}
+
+export const ApplyBudgetDriverRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  accountId: z.string().uuid(),
+  subRowId: z.string().nullable().optional(),
+  driverType: BudgetDriverTypeSchema,
+  annualTotal: z.number().optional().nullable(),
+  growthPercentage: z.number().optional().nullable(),
+  sourcePeriodId: z.string().uuid().optional().nullable(),
+});
+
+export type ApplyBudgetDriverRequest = z.infer<typeof ApplyBudgetDriverRequestSchema>;
+
+export interface ApplyBudgetDriverResponse {
+  success: boolean;
+  accountId: string;
+  monthlyAmounts: Record<string, number>;
+}
+
+export const BaselineActualsRequestSchema = z.object({
+  fiscalYearId: z.string().uuid(),
+  adjustmentPercentage: z.number().default(0),
+  accountIds: z.array(z.string().uuid()).optional(),
+});
+
+export type BaselineActualsRequest = z.infer<typeof BaselineActualsRequestSchema>;
+
+export interface BaselineActualsResponse {
+  success: boolean;
+  matrix: Array<{
+    accountId: string;
+    amounts: Record<string, number>;
+  }>;
+}
+
+export const TransferBudgetFundsRequestSchema = z.object({
+  periodId: z.string().uuid(),
+  sourceAccountId: z.string().uuid(),
+  targetAccountId: z.string().uuid(),
+  amount: z.number().positive(),
+  reason: z.string().optional().nullable(),
+});
+
+export type TransferBudgetFundsRequest = z.infer<typeof TransferBudgetFundsRequestSchema>;
+
+export interface TransferBudgetFundsResponse {
+  success: boolean;
+  reassignmentId: string;
+  updatedSourceAvailable: number;
+  updatedTargetAvailable: number;
+}
+
+export interface BudgetMatrixPeriod {
+  id: string;
+  name: string;
+  friendlyName: string;
+  status: string;
+}
+
+export interface BudgetMatrixRow {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  parentId?: string | null;
+  isParent?: boolean;
+  subRowId?: string | null;
+  subRowLabel?: string | null;
+  cashFlowDirection?: CashFlowDirection | null;
+  amounts: Record<string, number>;
+  flowIntentions?: Record<string, FlowIntention | null>;
+  rowTotal: number;
+}
+
+export interface BudgetMatrixSection {
+  sectionKey: BudgetMatrixSectionKey | string;
+  sectionTitle: string;
+  rows: BudgetMatrixRow[];
+  sectionTotals: Record<string, number> & { total: number };
+}
+
+export const BudgetMatrixSummarySchema = z.object({
+  totalInflows: z.record(z.string(), z.number()),
+  totalOutflows: z.record(z.string(), z.number()),
+  netMonthlyFlow: z.record(z.string(), z.number()),
+  cumulativeNetFlow: z.record(z.string(), z.number()),
+});
+
+export interface BudgetMatrixSummary {
+  totalInflows: Record<string, number> & { total: number };
+  totalOutflows: Record<string, number> & { total: number };
+  netMonthlyFlow: Record<string, number> & { total: number };
+  cumulativeNetFlow: Record<string, number> & { total: number };
+}
+
+export interface BudgetMatrixResponse {
+  fiscalYearId: string;
+  fiscalYearName: string;
+  periods: BudgetMatrixPeriod[];
+  sections?: BudgetMatrixSection[];
+  summary?: BudgetMatrixSummary;
+  rows?: BudgetMatrixRow[];
+  categoryTotals?: Record<string, Record<string, number> & { total: number }>;
+}
+
+export interface BudgetControlItem {
+  accountId: string;
+  accountName: string;
+  accountCode?: string;
+  subRowId?: string | null;
+  subRowLabel?: string | null;
+  cashFlowDirection?: CashFlowDirection | null;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+}
+
+export interface BudgetControlSection {
+  sectionKey: BudgetMatrixSectionKey | string;
+  sectionTitle: string;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+  items: BudgetControlItem[];
+}
+
+export interface BudgetControlCategory {
+  categoryName: string;
+  accountType: string;
+  budgeted: number;
+  executed: number;
+  committed: number;
+  available: number;
+  consumptionPercentage: number;
+  gaugeStatus: BudgetGaugeStatus;
+  items: BudgetControlItem[];
+}
+
+export interface BudgetControlSummary {
+  totalBudgeted: number;
+  totalExecuted: number;
+  totalCommitted: number;
+  totalAvailable: number;
+  overallConsumptionPercentage: number;
+  overallGaugeStatus: BudgetGaugeStatus;
+}
+
+export interface BudgetControlResponse {
+  periodId: string;
+  periodName: string;
+  friendlyName: string;
+  isLocked: boolean;
+  summary: BudgetControlSummary;
+  sections?: BudgetControlSection[];
+  categories?: BudgetControlCategory[];
+}
+
+export interface MobilePlanningState {
+  activePeriodId: string;
+  activePeriodIndex: number;
+  expandedAccordionSections: Set<BudgetMatrixSectionKey>;
+  deepDiveRow: BudgetMatrixRow | null;
+  isDeepDiveOpen: boolean;
+  isOptionsMenuOpen: boolean;
+  activeMenuRow: BudgetMatrixRow | null;
+}
+
+export interface DeepDiveDistributionParams {
+  type: 'FLAT' | 'COPY_JAN' | 'PRIOR_YEAR';
+  annualTotal?: number;
+  percentageAdjustment?: number;
+}
