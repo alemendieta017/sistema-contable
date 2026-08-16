@@ -2,6 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalEntryRow from '../components/JournalEntryRow';
+import { AccountOption } from '../types/account';
 
 // Mock Lucide React icons
 jest.mock('lucide-react', () => ({
@@ -12,7 +13,7 @@ jest.mock('lucide-react', () => ({
 }));
 
 describe('JournalEntryRow Component', () => {
-  const mockAccounts = [
+  const mockAccounts: AccountOption[] = [
     { id: 'acc-1', name: 'Caja Chica', type: 'ASSET' },
     { id: 'acc-2', name: 'Servicios Básicos', type: 'EXPENSE' },
   ];
@@ -88,7 +89,7 @@ describe('JournalEntryRow Component', () => {
   });
 
   test('excludes inactive accounts from combobox options unless currently assigned to row', () => {
-    const accountsWithInactive = [
+    const accountsWithInactive: AccountOption[] = [
       { id: 'acc-1', name: 'Caja Activa', type: 'ASSET', status: 'ACTIVE' },
       { id: 'acc-2', name: 'Caja Inactiva', type: 'ASSET', status: 'INACTIVE' },
       { id: 'acc-3', name: 'Banco Inactivo Asignado', type: 'ASSET', status: 'INACTIVE' },
@@ -122,7 +123,7 @@ describe('JournalEntryRow Component', () => {
   });
 
   test('displays available balance for ASSET and LIABILITY accounts but not for EXPENSE/INCOME', () => {
-    const accountsWithBalances = [
+    const accountsWithBalances: AccountOption[] = [
       { id: 'acc-1', name: 'Caja Chica', type: 'ASSET', balance: 1500 },
       { id: 'acc-2', name: 'Tarjeta Crédito', type: 'LIABILITY', balance: -500 },
       { id: 'acc-3', name: 'Supermercado', type: 'EXPENSE', balance: 800 },

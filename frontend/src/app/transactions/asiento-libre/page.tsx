@@ -5,18 +5,7 @@ import { api } from '../../../services/api';
 import { Trash2 } from 'lucide-react';
 import { formatCurrency } from '../../../lib/utils';
 
-type Account = {
-  id: string;
-  name: string;
-  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
-  currencyId?: string;
-  currencyCode?: string;
-  currencySymbol?: string;
-  decimalPlaces?: number;
-  systemRole?: string | null;
-  status?: 'ACTIVE' | 'INACTIVE';
-  balance?: number;
-};
+import { AccountOption as Account } from '../../../types/account';
 
 type EntryLine = {
   accountId: string;
@@ -90,6 +79,17 @@ export default function AsientoLibrePage() {
   const amountPlaceholder = (0).toFixed(
     baseCurrency.decimalPlaces !== undefined ? baseCurrency.decimalPlaces : 2,
   );
+
+  const formatAccBalance = (a: Account) => {
+    const curInfo = a.currencySymbol
+      ? {
+          code: a.currencyCode,
+          symbol: a.currencySymbol,
+          decimalPlaces: a.decimalPlaces,
+        }
+      : baseCurrency;
+    return formatCurrency(a.balance, curInfo);
+  };
 
   // Calculation of live sums
   const totalDebits = entries
@@ -252,7 +252,7 @@ export default function AsientoLibrePage() {
                                     : 'text-slate-600 dark:text-slate-300'
                               }`}
                             >
-                              {formatCurrency(selectedAccount.balance, baseCurrency)}
+                              {formatAccBalance(selectedAccount)}
                             </span>
                           </span>
                         );
@@ -273,8 +273,7 @@ export default function AsientoLibrePage() {
                           (a.type === 'ASSET' || a.type === 'LIABILITY') && a.balance !== undefined;
                         return (
                           <option key={a.id} value={a.id}>
-                            {a.name} ({a.type})
-                            {showBal ? ` • Saldo: ${formatCurrency(a.balance, baseCurrency)}` : ''}
+                            {a.name} ({a.type}){showBal ? ` • Saldo: ${formatAccBalance(a)}` : ''}
                           </option>
                         );
                       })}

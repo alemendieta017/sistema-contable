@@ -7,20 +7,7 @@ import { api } from '../../../services/api';
 import JournalEntryRow from '../../../components/JournalEntryRow';
 import AccountModal from '../../../components/AccountModal';
 import { formatCurrency } from '../../../lib/utils';
-
-interface Account {
-  id: string;
-  name: string;
-  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
-  currencyId: string;
-  currencyCode?: string;
-  currencySymbol?: string;
-  decimalPlaces?: number;
-  parentId?: string | null;
-  systemRole?: string | null;
-  status?: 'ACTIVE' | 'INACTIVE';
-  balance?: number;
-}
+import { AccountOption as Account } from '../../../types/account';
 
 interface Entry {
   accountId: string;

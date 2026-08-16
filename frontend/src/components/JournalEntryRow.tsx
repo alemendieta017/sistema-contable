@@ -3,20 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Search, ChevronDown, Plus } from 'lucide-react';
 import { formatCurrency, type CurrencyInfo } from '../lib/utils';
-
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-  currencyId?: string;
-  currencyCode?: string;
-  currencySymbol?: string;
-  decimalPlaces?: number;
-  parentId?: string | null;
-  systemRole?: string | null;
-  status?: string;
-  balance?: number;
-}
+import { AccountOption as Account } from '../types/account';
 
 interface Entry {
   accountId: string;
