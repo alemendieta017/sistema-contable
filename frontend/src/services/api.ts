@@ -14,6 +14,9 @@ import {
   BudgetControlResponse,
   TransferBudgetFundsRequest,
   TransferBudgetFundsResponse,
+  FactoryResetRequest,
+  DeleteAccountRequest,
+  DangerZoneResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -598,6 +601,26 @@ export const api = {
 
     async import(data: any) {
       const res = await fetch(`${API_BASE_URL}/backup/import`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+  },
+
+  dangerZone: {
+    async resetData(data: FactoryResetRequest): Promise<DangerZoneResponse> {
+      const res = await fetch(`${API_BASE_URL}/v1/danger-zone/reset-data`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async deleteAccount(data: DeleteAccountRequest): Promise<DangerZoneResponse> {
+      const res = await fetch(`${API_BASE_URL}/v1/danger-zone/delete-account`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),

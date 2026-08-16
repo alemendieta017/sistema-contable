@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import ThemeToggle from '../../components/ThemeToggle';
 import SecuritySettings from '../../components/SecuritySettings';
 import CurrencySettings from '../../components/CurrencySettings';
+import DangerZoneSection from '../../components/settings/DangerZoneSection';
 import { Download, Upload, FileSpreadsheet, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -235,6 +236,18 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Danger Zone Section */}
+      <DangerZoneSection
+        onSuccess={(msg) => {
+          setSuccess(msg);
+          setError('');
+        }}
+        onError={(msg) => {
+          setError(msg);
+          setSuccess('');
+        }}
+      />
     </div>
   );
 }

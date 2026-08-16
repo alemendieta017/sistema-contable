@@ -106,9 +106,12 @@ export default function BudgetMatrixPage() {
             list[0];
 
           setSelectedFiscalYearId(activeFy.id);
+        } else {
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('Error al cargar datos iniciales:', err);
+        setIsLoading(false);
       }
     }
     loadInitialData();
@@ -586,17 +589,22 @@ export default function BudgetMatrixPage() {
             <select
               value={selectedFiscalYearId}
               onChange={(e) => setSelectedFiscalYearId(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-semibold focus:border-indigo-500 outline-none cursor-pointer max-w-[130px] sm:max-w-none truncate"
+              disabled={fiscalYears.length === 0}
+              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-semibold focus:border-indigo-500 outline-none cursor-pointer max-w-[130px] sm:max-w-none truncate disabled:opacity-50"
             >
-              {fiscalYears.map((fy) => {
-                const isClosed = fy.status === 'CLOSED' || fy.isClosed;
-                const displayName = fy.name || fy.year || 'Año Fiscal';
-                return (
-                  <option key={fy.id} value={fy.id}>
-                    {displayName} {isClosed ? '(Cerrado)' : ''}
-                  </option>
-                );
-              })}
+              {fiscalYears.length === 0 ? (
+                <option value="">Sin Ejercicios</option>
+              ) : (
+                fiscalYears.map((fy) => {
+                  const isClosed = fy.status === 'CLOSED' || fy.isClosed;
+                  const displayName = fy.name || fy.year || 'Año Fiscal';
+                  return (
+                    <option key={fy.id} value={fy.id}>
+                      {displayName} {isClosed ? '(Cerrado)' : ''}
+                    </option>
+                  );
+                })
+              )}
             </select>
           </div>
 
@@ -789,6 +797,27 @@ export default function BudgetMatrixPage() {
               dirtyCells={dirtyCells}
             />
           )
+        ) : fiscalYears.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-8 text-center space-y-4">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl text-indigo-500">
+              <Calendar className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                No hay ejercicios fiscales activos
+              </h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mt-1 leading-relaxed">
+                Para planificar presupuestos en la matriz, primero debes registrar un ejercicio
+                fiscal con sus períodos mensuales.
+              </p>
+            </div>
+            <a
+              href="/periods"
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              <span>Ir a Períodos Contables</span>
+            </a>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
             <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">

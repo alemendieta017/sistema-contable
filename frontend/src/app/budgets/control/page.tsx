@@ -86,9 +86,12 @@ export default function BudgetControlPage() {
             list.find((p: any) => p.status === 'OPEN') ||
             list[0];
           setSelectedPeriodId(activeP.id);
+        } else {
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('Error al cargar datos iniciales:', err);
+        setIsLoading(false);
       }
     }
     loadData();
@@ -231,14 +234,19 @@ export default function BudgetControlPage() {
             <select
               value={selectedPeriodId}
               onChange={(e) => setSelectedPeriodId(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:border-indigo-500 outline-none min-h-[40px]"
+              disabled={periods.length === 0}
+              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:border-indigo-500 outline-none min-h-[40px] disabled:opacity-50"
             >
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {getSpanishFriendlyPeriodName(p.name)} (
-                  {p.status === 'CLOSED' ? 'Cerrado' : 'Abierto'})
-                </option>
-              ))}
+              {periods.length === 0 ? (
+                <option value="">Sin Períodos</option>
+              ) : (
+                periods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {getSpanishFriendlyPeriodName(p.name)} (
+                    {p.status === 'CLOSED' ? 'Cerrado' : 'Abierto'})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -548,6 +556,27 @@ export default function BudgetControlPage() {
             })}
           </div>
         </>
+      ) : periods.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm text-center space-y-4 max-w-lg mx-auto">
+          <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl text-indigo-500">
+            <Calendar className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+              No hay períodos contables registrados
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+              Crea un ejercicio fiscal y registra períodos contables para habilitar el control
+              ejecutivo de ejecución presupuestaria.
+            </p>
+          </div>
+          <a
+            href="/periods"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+          >
+            <span>Ir a Períodos Contables</span>
+          </a>
+        </div>
       ) : (
         <div className="flex items-center justify-center p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
           <span className="text-xs text-slate-400">

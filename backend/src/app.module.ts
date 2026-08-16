@@ -6,8 +6,18 @@ import { BudgetModule } from './infrastructure/budgets/budget.module';
 import { ReportsModule } from './infrastructure/reports/reports.module';
 import { BackupModule } from './infrastructure/backup/backup.module';
 
+import { DangerZoneModule } from './infrastructure/danger-zone/danger-zone.module';
+
 @Module({
-  imports: [DatabaseModule, AuthModule, LedgerModule, BudgetModule, ReportsModule, BackupModule],
+  imports: [
+    DatabaseModule,
+    AuthModule,
+    LedgerModule,
+    BudgetModule,
+    ReportsModule,
+    BackupModule,
+    DangerZoneModule,
+  ],
   controllers: [],
   providers: [],
 })

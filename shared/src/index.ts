@@ -436,3 +436,54 @@ export interface DeepDiveDistributionParams {
   annualTotal?: number;
   percentageAdjustment?: number;
 }
+
+// Danger Zone Actions & Schemas
+export enum DangerZoneAction {
+  FACTORY_RESET = 'FACTORY_RESET',
+  DELETE_ACCOUNT = 'DELETE_ACCOUNT',
+}
+
+export const FACTORY_RESET_PHRASE = 'RESTABLECER DATOS';
+export const DELETE_ACCOUNT_PHRASE = 'ELIMINAR MI CUENTA';
+
+export const FactoryResetRequestSchema = z.object({
+  confirmationPhrase: z.literal(FACTORY_RESET_PHRASE, {
+    errorMap: () => ({ message: `Debe escribir exactamente "${FACTORY_RESET_PHRASE}"` }),
+  }),
+  currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
+});
+
+export type FactoryResetRequest = z.infer<typeof FactoryResetRequestSchema>;
+
+export const DeleteAccountRequestSchema = z.object({
+  confirmationPhrase: z
+    .string()
+    .refine((val) => val === DELETE_ACCOUNT_PHRASE, {
+      message: `Debe escribir exactamente "${DELETE_ACCOUNT_PHRASE}"`,
+    }),
+  currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
+});
+
+export type DeleteAccountRequest = z.infer<typeof DeleteAccountRequestSchema>;
+
+export const DangerZoneResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  action: z.nativeEnum(DangerZoneAction),
+  timestamp: z.string().datetime(),
+});
+
+export type DangerZoneResponse = z.infer<typeof DangerZoneResponseSchema>;
+
+export interface StarterAccountDefinition {
+  name: string;
+  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  isCashOrBank?: boolean;
+  systemRole?: 'NET_INCOME' | 'RETAINED_EARNINGS';
+}
+
+export const DEFAULT_STARTER_ACCOUNTS: StarterAccountDefinition[] = [
+  // Cuentas de Sistema obligatorias (Patrimonio Neto) requeridas por el motor contable
+  { name: 'Resultado del Ejercicio', type: 'EQUITY', systemRole: 'NET_INCOME' },
+  { name: 'Resultados Acumulados', type: 'EQUITY', systemRole: 'RETAINED_EARNINGS' },
+];
