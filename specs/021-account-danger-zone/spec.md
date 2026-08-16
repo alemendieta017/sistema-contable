@@ -1,6 +1,6 @@
 # Feature Specification: Danger Zone Settings - Factory Reset & Account Deletion
 
-**Feature Branch**: `019-account-danger-zone`
+**Feature Branch**: `021-account-danger-zone`
 
 **Created**: 2026-08-16
 

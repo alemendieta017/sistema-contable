@@ -52,11 +52,9 @@ export type FactoryResetRequest = z.infer<typeof FactoryResetRequestSchema>;
 
 ```typescript
 export const DeleteAccountRequestSchema = z.object({
-  confirmationPhrase: z
-    .string()
-    .refine((val) => val === DELETE_ACCOUNT_PHRASE, {
-      message: `Debe escribir exactamente "${DELETE_ACCOUNT_PHRASE}"`,
-    }),
+  confirmationPhrase: z.string().refine((val) => val === DELETE_ACCOUNT_PHRASE, {
+    message: `Debe escribir exactamente "${DELETE_ACCOUNT_PHRASE}"`,
+  }),
   currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
 });
 

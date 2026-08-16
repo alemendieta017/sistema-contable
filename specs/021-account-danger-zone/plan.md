@@ -1,8 +1,8 @@
 # Implementation Plan: Danger Zone Settings - Factory Reset & Account Deletion
 
-**Branch**: `019-account-danger-zone` | **Date**: 2026-08-16 | **Spec**: [specs/019-account-danger-zone/spec.md](spec.md)
+**Branch**: `021-account-danger-zone` | **Date**: 2026-08-16 | **Spec**: [specs/021-account-danger-zone/spec.md](spec.md)
 
-**Input**: Feature specification from `specs/019-account-danger-zone/spec.md`
+**Input**: Feature specification from `specs/021-account-danger-zone/spec.md`
 
 ## Summary
 
@@ -62,7 +62,7 @@ _GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design._
 ### Documentation (this feature)
 
 ```text
-specs/019-account-danger-zone/
+specs/021-account-danger-zone/
 ├── spec.md              # Feature specification
 ├── plan.md              # This file (Implementation plan)
 ├── research.md          # Phase 0 research & design choices

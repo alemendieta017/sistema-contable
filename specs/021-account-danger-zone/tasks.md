@@ -1,6 +1,6 @@
 # Tasks: Danger Zone Settings - Factory Reset & Account Deletion
 
-**Input**: Design documents from `/specs/019-account-danger-zone/`
+**Input**: Design documents from `/specs/021-account-danger-zone/`
 **Prerequisites**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md), [research.md](research.md), [contracts/danger-zone-api.contract.md](contracts/danger-zone-api.contract.md)
 **Constitution**: Adheres to Clean Architecture, Strict TDD, TypeScript Type Safety, and ESLint Zero-Error Compliance (Principle VII).
 
@@ -112,7 +112,7 @@
 
 - [x] T027 Run backend automated test suite with `npm run test --workspace=backend`
 - [x] T028 [P] Run full monorepo ESLint verification ensuring 0 errors and 0 warnings with `npm run lint`
-- [x] T029 Execute end-to-end scenarios per `specs/019-account-danger-zone/quickstart.md`
+- [x] T029 Execute end-to-end scenarios per `specs/021-account-danger-zone/quickstart.md`
 
 ---
 
