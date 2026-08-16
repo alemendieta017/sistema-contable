@@ -1,8 +1,9 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { AuthErrorCode, DangerZoneAction, DangerZoneResponse } from '@sistema-contable/shared';
+import { DangerZoneAction, DangerZoneResponse } from '@sistema-contable/shared';
+import { InvalidCurrentPasswordException } from '../../domain/exceptions/auth.exception';
 import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
@@ -17,7 +18,7 @@ import { PasswordResetTokenEntity } from '../../infrastructure/database/entities
 import { DeleteAccountDto } from '../../infrastructure/controllers/dto/danger-zone.dto';
 
 @Injectable()
-export class DeleteAccountUseCase {
+export class DeleteUserAccountUseCase {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -39,10 +40,7 @@ export class DeleteAccountUseCase {
 
     const isMatch = await bcrypt.compare(dto.currentPassword, passwordHash);
     if (!isMatch) {
-      throw new UnauthorizedException({
-        code: AuthErrorCode.INVALID_CURRENT_PASSWORD,
-        message: 'Contraseña actual incorrecta',
-      });
+      throw new InvalidCurrentPasswordException();
     }
 
     await this.dataSource.transaction('SERIALIZABLE', async (manager) => {

@@ -3,8 +3,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { AuthErrorCode, DangerZoneAction, DELETE_ACCOUNT_PHRASE } from '@sistema-contable/shared';
-import { DeleteAccountUseCase } from './delete-account.use-case';
+import { DangerZoneAction, DELETE_ACCOUNT_PHRASE } from '@sistema-contable/shared';
+import { InvalidCurrentPasswordException } from '../../domain/exceptions/auth.exception';
+import { DeleteUserAccountUseCase } from './delete-account.use-case';
 import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
@@ -12,8 +13,8 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PasswordResetTokenEntity } from '../../infrastructure/database/entities/password-reset-token.entity';
 
-describe('DeleteAccountUseCase (US3)', () => {
-  let useCase: DeleteAccountUseCase;
+describe('DeleteUserAccountUseCase (US3)', () => {
+  let useCase: DeleteUserAccountUseCase;
   let userRepositoryMock: any;
   let entityManagerMock: any;
   let queryBuilderMock: any;
@@ -48,7 +49,7 @@ describe('DeleteAccountUseCase (US3)', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        DeleteAccountUseCase,
+        DeleteUserAccountUseCase,
         {
           provide: getRepositoryToken(UserEntity),
           useValue: userRepositoryMock,
@@ -60,7 +61,7 @@ describe('DeleteAccountUseCase (US3)', () => {
       ],
     }).compile();
 
-    useCase = module.get<DeleteAccountUseCase>(DeleteAccountUseCase);
+    useCase = module.get<DeleteUserAccountUseCase>(DeleteUserAccountUseCase);
   });
 
   afterEach(() => {
@@ -81,12 +82,7 @@ describe('DeleteAccountUseCase (US3)', () => {
         confirmationPhrase: DELETE_ACCOUNT_PHRASE,
         currentPassword: 'wrongPassword',
       }),
-    ).rejects.toMatchObject({
-      response: {
-        code: AuthErrorCode.INVALID_CURRENT_PASSWORD,
-        message: 'Contraseña actual incorrecta',
-      },
-    });
+    ).rejects.toThrow(InvalidCurrentPasswordException);
   });
 
   it('should throw NotFoundException if user id is passed and user does not exist in DB', async () => {

@@ -37,14 +37,17 @@ function getHeaders(): HeadersInit {
 async function handleResponse(response: Response) {
   if (!response.ok) {
     let errorMessage = 'An error occurred';
+    let errorCode: string | undefined;
     try {
       const errorData = await response.json();
       errorMessage = errorData.message || errorMessage;
+      errorCode = errorData.code;
     } catch {
       // Ignore if response is not JSON
     }
-    const error = new Error(errorMessage) as Error & { status?: number };
+    const error = new Error(errorMessage) as Error & { status?: number; code?: string };
     error.status = response.status;
+    error.code = errorCode;
     throw error;
   }
   if (response.status === 204) {

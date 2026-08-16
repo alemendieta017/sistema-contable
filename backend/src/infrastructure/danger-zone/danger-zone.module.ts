@@ -15,7 +15,7 @@ import { CurrencyEntity } from '../database/entities/currency.entity';
 import { AuthModule } from '../auth/auth.module';
 import { DangerZoneController } from '../controllers/danger-zone.controller';
 import { FactoryResetUseCase } from '../../application/danger-zone/factory-reset.use-case';
-import { DeleteAccountUseCase } from '../../application/danger-zone/delete-account.use-case';
+import { DeleteUserAccountUseCase } from '../../application/danger-zone/delete-account.use-case';
 
 @Module({
   imports: [
@@ -36,7 +36,7 @@ import { DeleteAccountUseCase } from '../../application/danger-zone/delete-accou
     AuthModule,
   ],
   controllers: [DangerZoneController],
-  providers: [FactoryResetUseCase, DeleteAccountUseCase],
-  exports: [FactoryResetUseCase, DeleteAccountUseCase],
+  providers: [FactoryResetUseCase, DeleteUserAccountUseCase],
+  exports: [FactoryResetUseCase, DeleteUserAccountUseCase],
 })
 export class DangerZoneModule {}

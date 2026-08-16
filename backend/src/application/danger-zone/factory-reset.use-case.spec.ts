@@ -3,12 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import {
-  AuthErrorCode,
-  DangerZoneAction,
-  FACTORY_RESET_PHRASE,
-  DEFAULT_STARTER_ACCOUNTS,
-} from '@sistema-contable/shared';
+import { DangerZoneAction, FACTORY_RESET_PHRASE } from '@sistema-contable/shared';
+import { InvalidCurrentPasswordException } from '../../domain/exceptions/auth.exception';
 import { FactoryResetUseCase } from './factory-reset.use-case';
 import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
@@ -38,9 +34,12 @@ describe('FactoryResetUseCase (US2)', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((entityClass, data) => data),
-      save: jest
-        .fn()
-        .mockImplementation((entityClass, data) => Promise.resolve({ id: 'saved-id', ...data })),
+      save: jest.fn().mockImplementation((entityClass, data) => {
+        if (Array.isArray(data)) {
+          return Promise.resolve(data.map((d, i) => ({ id: `saved-id-${i}`, ...d })));
+        }
+        return Promise.resolve({ id: 'saved-id', ...data });
+      }),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock),
     };
 
@@ -90,12 +89,7 @@ describe('FactoryResetUseCase (US2)', () => {
         confirmationPhrase: FACTORY_RESET_PHRASE,
         currentPassword: 'wrongPassword',
       }),
-    ).rejects.toMatchObject({
-      response: {
-        code: AuthErrorCode.INVALID_CURRENT_PASSWORD,
-        message: 'Contraseña actual incorrecta',
-      },
-    });
+    ).rejects.toThrow(InvalidCurrentPasswordException);
   });
 
   it('should throw NotFoundException if user id is passed and user is not in database', async () => {
@@ -157,8 +151,8 @@ describe('FactoryResetUseCase (US2)', () => {
       expect.objectContaining({ userId: 'user-1' }),
     );
 
-    // Verify starter accounts, fiscal year, periods, and budgets re-seeded
-    // DEFAULT_STARTER_ACCOUNTS (accounts) + 1 (FY) + 12 (periods) + 12 (budgets)
-    expect(entityManagerMock.save).toHaveBeenCalledTimes(DEFAULT_STARTER_ACCOUNTS.length + 25);
+    // Verify starter accounts, fiscal year, periods, and budgets re-seeded in batch
+    // 1 (accounts batch) + 1 (FY) + 1 (periods batch) + 1 (budgets batch) = 4 save calls
+    expect(entityManagerMock.save).toHaveBeenCalledTimes(4);
   });
 });

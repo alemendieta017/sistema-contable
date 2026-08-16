@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import {
-  AuthErrorCode,
   DangerZoneAction,
   DangerZoneResponse,
   DEFAULT_STARTER_ACCOUNTS,
 } from '@sistema-contable/shared';
+import { InvalidCurrentPasswordException } from '../../domain/exceptions/auth.exception';
 import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
@@ -44,10 +44,7 @@ export class FactoryResetUseCase {
 
     const isMatch = await bcrypt.compare(dto.currentPassword, passwordHash);
     if (!isMatch) {
-      throw new UnauthorizedException({
-        code: AuthErrorCode.INVALID_CURRENT_PASSWORD,
-        message: 'Contraseña actual incorrecta',
-      });
+      throw new InvalidCurrentPasswordException();
     }
 
     await this.dataSource.transaction('SERIALIZABLE', async (manager) => {
@@ -122,15 +119,15 @@ export class FactoryResetUseCase {
         await manager.delete(AccountEntity, { userId });
       }
 
-      // 7. Re-seed default starter accounts
+      // 7. Re-seed default starter accounts in batch
       const baseCurrency =
         (await manager.findOne(CurrencyEntity, { where: { isBase: true } })) ||
         (await manager.findOne(CurrencyEntity, { where: {} }));
 
       const currencyId = baseCurrency ? baseCurrency.id : undefined;
 
-      for (const item of DEFAULT_STARTER_ACCOUNTS) {
-        const account = manager.create(AccountEntity, {
+      const starterAccounts = DEFAULT_STARTER_ACCOUNTS.map((item) =>
+        manager.create(AccountEntity, {
           userId,
           name: item.name,
           type: item.type,
@@ -140,11 +137,11 @@ export class FactoryResetUseCase {
           systemRole: item.systemRole || null,
           metadata: null,
           parentId: null,
-        });
-        await manager.save(AccountEntity, account);
-      }
+        }),
+      );
+      await manager.save(AccountEntity, starterAccounts);
 
-      // 8. Re-seed current Fiscal Year, 12 monthly periods, and 12 empty budgets
+      // 8. Re-seed current Fiscal Year, 12 monthly periods, and 12 empty budgets in batch
       const currentYear = new Date().getFullYear();
       const friendlyMonthNames = [
         'Enero',
@@ -170,28 +167,35 @@ export class FactoryResetUseCase {
       });
       const savedFy = await manager.save(FiscalYearEntity, fyEntity);
 
+      const periodsToCreate = [];
       for (let m = 0; m < 12; m++) {
         const pStart = `${currentYear}-${String(m + 1).padStart(2, '0')}-01`;
         const pEnd = new Date(Date.UTC(currentYear, m + 1, 0)).toISOString().split('T')[0];
         const periodName = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
 
-        const periodEntity = manager.create(PeriodEntity, {
-          fiscalYearId: savedFy.id,
-          name: periodName,
-          startDate: pStart,
-          endDate: pEnd,
-          status: 'OPEN',
-        });
-        const savedPeriod = await manager.save(PeriodEntity, periodEntity);
-
-        const budgetFriendlyName = `${friendlyMonthNames[m]} ${currentYear}`;
-        const budgetEntity = manager.create(BudgetEntity, {
-          userId,
-          periodId: savedPeriod.id,
-          name: budgetFriendlyName,
-        });
-        await manager.save(BudgetEntity, budgetEntity);
+        periodsToCreate.push(
+          manager.create(PeriodEntity, {
+            fiscalYearId: savedFy.id,
+            name: periodName,
+            startDate: pStart,
+            endDate: pEnd,
+            status: 'OPEN',
+          }),
+        );
       }
+      const savedPeriods = await manager.save(PeriodEntity, periodsToCreate);
+
+      const budgetsToCreate = (Array.isArray(savedPeriods) ? savedPeriods : []).map(
+        (savedPeriod, m) => {
+          const budgetFriendlyName = `${friendlyMonthNames[m]} ${currentYear}`;
+          return manager.create(BudgetEntity, {
+            userId,
+            periodId: savedPeriod.id,
+            name: budgetFriendlyName,
+          });
+        },
+      );
+      await manager.save(BudgetEntity, budgetsToCreate);
     });
 
     return {

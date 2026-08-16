@@ -4,14 +4,19 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertOctagon, X, Trash2, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { api } from '../../services/api';
-import { DELETE_ACCOUNT_PHRASE } from '@sistema-contable/shared';
+import { DELETE_ACCOUNT_PHRASE, AuthErrorCode } from '@sistema-contable/shared';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onError?: (error: string) => void;
 }
 
-export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps) {
+export default function DeleteAccountModal({
+  isOpen,
+  onClose,
+  onError: onParentError,
+}: DeleteAccountModalProps) {
   const router = useRouter();
   const [confirmationPhrase, setConfirmationPhrase] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -51,23 +56,32 @@ export default function DeleteAccountModal({ isOpen, onClose }: DeleteAccountMod
       api.auth.logout();
 
       // Redirect user to login page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      } else {
+      try {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        } else {
+          router.push('/login');
+        }
+      } catch {
         router.push('/login');
       }
     } catch (err: any) {
+      let errorMessage = 'Error al eliminar la cuenta.';
       if (
+        err.code === AuthErrorCode.INVALID_CURRENT_PASSWORD ||
         err.status === 401 ||
-        err.code === 'AUTH_INVALID_CURRENT_PASSWORD' ||
         (typeof err.message === 'string' &&
           (err.message.includes('AUTH_INVALID_CURRENT_PASSWORD') ||
             err.message.toLowerCase().includes('contraseña actual incorrecta') ||
             err.message.toLowerCase().includes('invalid current password')))
       ) {
-        setError('Contraseña actual incorrecta');
-      } else {
-        setError(err.message || 'Error al eliminar la cuenta.');
+        errorMessage = 'Contraseña actual incorrecta';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+      if (onParentError) {
+        onParentError(errorMessage);
       }
       setLoading(false);
     }

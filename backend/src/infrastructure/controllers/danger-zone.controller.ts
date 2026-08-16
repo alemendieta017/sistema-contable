@@ -4,7 +4,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { UserEntity } from '../database/entities/user.entity';
 import { FactoryResetDto, DeleteAccountDto } from './dto/danger-zone.dto';
 import { FactoryResetUseCase } from '../../application/danger-zone/factory-reset.use-case';
-import { DeleteAccountUseCase } from '../../application/danger-zone/delete-account.use-case';
+import { DeleteUserAccountUseCase } from '../../application/danger-zone/delete-account.use-case';
 import { DangerZoneResponse } from '@sistema-contable/shared';
 
 @Controller(['api/v1/danger-zone', 'api/danger-zone'])
@@ -12,7 +12,7 @@ import { DangerZoneResponse } from '@sistema-contable/shared';
 export class DangerZoneController {
   constructor(
     private readonly factoryResetUseCase: FactoryResetUseCase,
-    private readonly deleteAccountUseCase: DeleteAccountUseCase,
+    private readonly deleteAccountUseCase: DeleteUserAccountUseCase,
   ) {}
 
   @Post('reset-data')

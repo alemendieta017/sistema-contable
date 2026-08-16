@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X, RotateCcw, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { api } from '../../services/api';
-import { FACTORY_RESET_PHRASE } from '@sistema-contable/shared';
+import { FACTORY_RESET_PHRASE, AuthErrorCode } from '@sistema-contable/shared';
 
 interface FactoryResetModalProps {
   isOpen: boolean;
@@ -57,8 +57,8 @@ export default function FactoryResetModal({
     } catch (err: any) {
       let errorMessage = 'Error al restablecer los datos.';
       if (
+        err.code === AuthErrorCode.INVALID_CURRENT_PASSWORD ||
         err.status === 401 ||
-        err.code === 'AUTH_INVALID_CURRENT_PASSWORD' ||
         (typeof err.message === 'string' &&
           (err.message.includes('AUTH_INVALID_CURRENT_PASSWORD') ||
             err.message.toLowerCase().includes('contraseña actual incorrecta') ||
