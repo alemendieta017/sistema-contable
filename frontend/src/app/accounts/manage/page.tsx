@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '../../../lib/utils';
 import { useSearch } from '../../../lib/search-context';
+import { AccountStatus } from '@sistema-contable/shared';
 
 interface AccountSummary {
   id: string;
@@ -53,7 +54,7 @@ export default function AccountsManagePage() {
     setError('');
     setSuggestedDeactivateId(null);
     try {
-      await api.accounts.update(id, { status: 'ACTIVE' });
+      await api.accounts.update(id, { status: AccountStatus.ACTIVE });
       await fetchAccounts();
     } catch (err: any) {
       setError(err.message || 'Error al reactivar la cuenta.');
@@ -73,7 +74,7 @@ export default function AccountsManagePage() {
     setError('');
     setSuggestedDeactivateId(null);
     try {
-      await api.accounts.update(id, { status: 'INACTIVE' });
+      await api.accounts.update(id, { status: AccountStatus.INACTIVE });
       await fetchAccounts();
     } catch (err: any) {
       const isProtected =

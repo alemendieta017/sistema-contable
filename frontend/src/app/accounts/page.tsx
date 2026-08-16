@@ -7,6 +7,7 @@ import AccountModal from '../../components/AccountModal';
 import { Plus, Wallet, ShieldAlert, BadgeAlert } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { useSearch } from '../../lib/search-context';
+import { AccountStatus } from '@sistema-contable/shared';
 
 type AccountSummary = {
   id: string;
@@ -66,7 +67,7 @@ export default function AccountsPage() {
     setError('');
     setDeactivateSuggestedId(null);
     try {
-      await api.accounts.update(id, { status: 'ACTIVE' });
+      await api.accounts.update(id, { status: AccountStatus.ACTIVE });
       await loadSummary();
     } catch (err: any) {
       setError(err.message || 'Error al reactivar la cuenta.');
@@ -80,7 +81,7 @@ export default function AccountsPage() {
     setError('');
     setDeactivateSuggestedId(null);
     try {
-      await api.accounts.update(id, { status: 'INACTIVE' });
+      await api.accounts.update(id, { status: AccountStatus.INACTIVE });
       await loadSummary();
     } catch (err: any) {
       setError(err.message || 'Error al desactivar la cuenta.');
