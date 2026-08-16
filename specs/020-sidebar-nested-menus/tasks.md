@@ -1,6 +1,6 @@
 # Tasks: Menús y Submenús Anidados en Sidebar y Navegación Móvil
 
-**Input**: Design documents from `specs/019-sidebar-nested-menus/` (`spec.md`, `plan.md`, `data-model.md`, `research.md`, `contracts/navigation-ui-contract.md`, `quickstart.md`)
+**Input**: Design documents from `specs/020-sidebar-nested-menus/` (`spec.md`, `plan.md`, `data-model.md`, `research.md`, `contracts/navigation-ui-contract.md`, `quickstart.md`)
 
 **Prerequisites**: `plan.md` (required), `spec.md` (required for user stories), `research.md`, `data-model.md`, `contracts/`
 
@@ -107,7 +107,7 @@
 - [x] T017 [P] Verify WCAG AA accessibility, color contrast across light/dark themes, and ARIA attributes in frontend/src/components/Sidebar.tsx and frontend/src/components/BottomNav.tsx
 - [x] T018 Execute full frontend test suite and ensure 100% test pass rate via npm run test --workspace=frontend
 - [x] T019 Run ESLint verification to ensure 0 errors and 0 warnings across modified and created files via npm run lint
-- [x] T020 Run manual validation against quickstart scenarios in specs/019-sidebar-nested-menus/quickstart.md
+- [x] T020 Run manual validation against quickstart scenarios in specs/020-sidebar-nested-menus/quickstart.md
 
 ---
 

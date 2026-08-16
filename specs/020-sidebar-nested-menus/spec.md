@@ -1,6 +1,6 @@
 # Feature Specification: Menús y Submenús Anidados en Sidebar y Navegación Móvil
 
-**Feature Branch**: `019-sidebar-nested-menus`
+**Feature Branch**: `020-sidebar-nested-menus`
 
 **Created**: 2026-08-15
 

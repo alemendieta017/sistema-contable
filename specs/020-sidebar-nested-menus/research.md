@@ -1,6 +1,6 @@
 # Phase 0 Research: Menús y Submenús Anidados en Sidebar y Navegación Móvil
 
-**Feature**: `019-sidebar-nested-menus`  
+**Feature**: `020-sidebar-nested-menus`  
 **Date**: 2026-08-15  
 **Status**: Completed
 

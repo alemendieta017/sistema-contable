@@ -1,8 +1,8 @@
 # Implementation Plan: Menús y Submenús Anidados en Sidebar y Navegación Móvil
 
-**Branch**: `implement_sidebar_nested_menus` | **Date**: 2026-08-15 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/implement_sidebar_nested_menus/specs/019-sidebar-nested-menus/spec.md)
+**Branch**: `implement_sidebar_nested_menus` | **Date**: 2026-08-15 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/implement_sidebar_nested_menus/specs/020-sidebar-nested-menus/spec.md)
 
-**Input**: Feature specification from `/specs/019-sidebar-nested-menus/spec.md`
+**Input**: Feature specification from `/specs/020-sidebar-nested-menus/spec.md`
 
 ## Summary
 
@@ -64,7 +64,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 ### Documentation (this feature)
 
 ```text
-specs/019-sidebar-nested-menus/
+specs/020-sidebar-nested-menus/
 ├── spec.md              # Feature specification
 ├── plan.md              # Implementation plan (this file)
 ├── research.md          # Phase 0 output

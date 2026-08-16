@@ -1,6 +1,6 @@
 # UI & Component Contract: Menús y Submenús Anidados
 
-**Feature**: `019-sidebar-nested-menus`  
+**Feature**: `020-sidebar-nested-menus`  
 **Date**: 2026-08-15  
 **Status**: Completed
 
