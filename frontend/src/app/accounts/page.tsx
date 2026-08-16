@@ -98,12 +98,8 @@ export default function AccountsPage() {
     setError('');
     setDeactivateSuggestedId(null);
     try {
-      const res = await api.accounts.delete(id);
-      if (res && res.action === 'DEACTIVATED') {
-        alert('La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.');
-      } else {
-        alert('La cuenta ha sido eliminada con éxito.');
-      }
+      await api.accounts.delete(id);
+      alert('La cuenta ha sido eliminada con éxito.');
       loadSummary();
     } catch (err: any) {
       const isProtected =

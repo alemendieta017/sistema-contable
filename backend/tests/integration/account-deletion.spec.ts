@@ -77,6 +77,26 @@ describe('Account Deletion/Deactivation Integration Tests', () => {
     expect(mockEntityManager.delete).not.toHaveBeenCalled();
   });
 
+  it('should throw BadRequestException when trying to delete account with child accounts', async () => {
+    const userId = 'user-123';
+    const accountId = 'acc-parent-123';
+    const account = { id: accountId, userId, status: 'ACTIVE' };
+
+    mockEntityManager.findOne.mockResolvedValue(account);
+    mockEntityManager.count.mockImplementation((entity: any) => {
+      if (entity === JournalEntryEntity) return Promise.resolve(0);
+      if (entity === AccountEntity) return Promise.resolve(2); // 2 child accounts
+      return Promise.resolve(0);
+    });
+
+    await expect(useCase.execute(userId, accountId)).rejects.toThrow(
+      new BadRequestException(
+        'Cannot delete account because it contains sub-accounts. Please reassign or delete sub-accounts first.',
+      ),
+    );
+    expect(mockEntityManager.delete).not.toHaveBeenCalled();
+  });
+
   it('should throw NotFoundException if account does not exist', async () => {
     mockEntityManager.findOne.mockResolvedValue(null);
 

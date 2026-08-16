@@ -85,6 +85,30 @@ describe('DeleteAccountUseCase (US2)', () => {
     expect(entityManagerMock.save).not.toHaveBeenCalled();
   });
 
+  it('should throw BadRequestException when account has child accounts (sub-accounts)', async () => {
+    const account = {
+      id: 'acc-parent-1',
+      userId: 'user-1',
+      name: 'Parent Category',
+      status: 'ACTIVE',
+    };
+    entityManagerMock.findOne.mockResolvedValue(account);
+    // entriesCount = 0, childrenCount = 2
+    entityManagerMock.count.mockImplementation((entity: any) => {
+      if (entity === JournalEntryEntity) return Promise.resolve(0);
+      if (entity === AccountEntity) return Promise.resolve(2);
+      return Promise.resolve(0);
+    });
+
+    await expect(useCase.execute('user-1', 'acc-parent-1')).rejects.toThrow(
+      new BadRequestException(
+        'Cannot delete account because it contains sub-accounts. Please reassign or delete sub-accounts first.',
+      ),
+    );
+
+    expect(entityManagerMock.delete).not.toHaveBeenCalled();
+  });
+
   it('should throw NotFoundException when account does not exist', async () => {
     entityManagerMock.findOne.mockResolvedValue(null);
 

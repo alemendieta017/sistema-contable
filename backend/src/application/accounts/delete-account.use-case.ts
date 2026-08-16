@@ -24,14 +24,25 @@ export class DeleteAccountUseCase {
         throw new NotFoundException(`Account with ID ${accountId} not found`);
       }
 
-      // Check if there are journal entries associated
-      const entriesCount = await entityManager.count(JournalEntryEntity, {
-        where: { accountId },
-      });
+      // Check if there are journal entries or child accounts associated
+      const [entriesCount, childrenCount] = await Promise.all([
+        entityManager.count(JournalEntryEntity, {
+          where: { accountId },
+        }),
+        entityManager.count(AccountEntity, {
+          where: { parentId: accountId },
+        }),
+      ]);
 
       if (entriesCount > 0) {
         throw new BadRequestException(
           'Cannot delete account with existing transactions. Deactivate the account instead.',
+        );
+      }
+
+      if (childrenCount > 0) {
+        throw new BadRequestException(
+          'Cannot delete account because it contains sub-accounts. Please reassign or delete sub-accounts first.',
         );
       }
 
