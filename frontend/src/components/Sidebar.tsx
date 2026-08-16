@@ -1,32 +1,25 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  ReceiptText,
-  BarChart3,
-  Wallet,
-  Settings,
-  LogOut,
-  Moon,
-  Sun,
-  Plus,
-  Calendar,
-  FileText,
-  Table,
-  ShieldAlert,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { LogOut, Moon, Sun, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../lib/theme-context';
 import { api } from '../services/api';
+import { navigationRegistry, isNavGroup, isNavItem, isNavGroupActive } from '../config/navigation';
+import { SidebarNavItem } from './navigation/SidebarNavItem';
+import { SidebarNavGroup } from './navigation/SidebarNavGroup';
+import { SidebarFlyout } from './navigation/SidebarFlyout';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [flyoutGroupId, setFlyoutGroupId] = useState<string | null>(null);
+  const flyoutCloseTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // Restore collapsed state from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     if (saved !== null) {
@@ -34,12 +27,45 @@ export default function Sidebar() {
     }
   }, []);
 
+  // Cleanup flyout close timer on unmount
+  useEffect(() => {
+    return () => {
+      if (flyoutCloseTimer.current) {
+        clearTimeout(flyoutCloseTimer.current);
+      }
+    };
+  }, []);
+
+  // Auto-expand groups when pathname matches an active child (US3)
+  useEffect(() => {
+    navigationRegistry.forEach((entry) => {
+      if (isNavGroup(entry)) {
+        if (isNavGroupActive(entry, pathname)) {
+          setExpandedGroups((prev) => ({
+            ...prev,
+            [entry.id]: true,
+          }));
+        }
+      }
+    });
+  }, [pathname]);
+
   const toggleCollapse = () => {
     setIsCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem('sidebar_collapsed', String(next));
+      if (next) {
+        setFlyoutGroupId(null);
+      }
       return next;
     });
+  };
+
+  const handleToggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
   };
 
   const handleLogout = () => {
@@ -47,22 +73,27 @@ export default function Sidebar() {
     window.location.href = '/';
   };
 
-  const navItems = [
-    { name: 'Transacciones', href: '/transactions', icon: ReceiptText },
-    { name: 'Cuentas', href: '/accounts', icon: Wallet },
-    { name: 'Planificación Presupuestaria', href: '/budgets/matrix', icon: Table },
-    { name: 'Control de Ejecución', href: '/budgets/control', icon: ShieldAlert },
-    { name: 'Balance General', href: '/reports/balance-sheet', icon: FileText },
-    { name: 'Estado de Resultados', href: '/reports/income-statement', icon: FileText },
-    { name: 'Resultados Proyectados', href: '/reports/income-statement/forecast', icon: FileText },
-    { name: 'Caja Proyectada', href: '/reports/cash-flow', icon: FileText },
-    { name: 'Estadísticas', href: '/stats', icon: BarChart3 },
-    { name: 'Períodos', href: '/periods', icon: Calendar },
-    { name: 'Ajustes', href: '/settings', icon: Settings },
-  ];
+  const handleFlyoutOpen = (groupId: string) => {
+    if (flyoutCloseTimer.current) {
+      clearTimeout(flyoutCloseTimer.current);
+      flyoutCloseTimer.current = null;
+    }
+    setFlyoutGroupId(groupId);
+  };
+
+  const handleFlyoutClose = () => {
+    setFlyoutGroupId(null);
+  };
+
+  const handleFlyoutHoverLeave = () => {
+    flyoutCloseTimer.current = setTimeout(() => {
+      setFlyoutGroupId(null);
+    }, 150);
+  };
 
   return (
     <aside
+      aria-label="Barra lateral principal"
       className={`hidden sm:flex flex-col ${
         isCollapsed ? 'w-20 p-3' : 'w-64 p-5'
       } bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-screen justify-between transition-all duration-300 ease-in-out shrink-0`}
@@ -98,7 +129,9 @@ export default function Sidebar() {
             )}
           </div>
           <button
+            type="button"
             onClick={toggleCollapse}
+            aria-label={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
             title={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
           >
@@ -124,35 +157,61 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              pathname === item.href ||
-              pathname.startsWith(item.href + '/') ||
-              (item.href === '/budgets/matrix' && pathname === '/budgets');
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={isCollapsed ? item.name : undefined}
-                className={`flex items-center rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-3'
-                } ${
-                  isActive
-                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icon
-                  className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-indigo-600 dark:text-indigo-400' : ''
-                  }`}
+        {/* Navigation Items / Groups */}
+        <nav className="space-y-1" aria-label="Navegación del sistema">
+          {navigationRegistry.map((entry) => {
+            if (isNavGroup(entry)) {
+              if (isCollapsed) {
+                return (
+                  <div
+                    key={entry.id}
+                    className="relative"
+                    onMouseEnter={() => handleFlyoutOpen(entry.id)}
+                    onMouseLeave={handleFlyoutHoverLeave}
+                  >
+                    <SidebarNavGroup
+                      group={entry}
+                      isSidebarCollapsed={true}
+                      isExpanded={flyoutGroupId === entry.id}
+                      onToggleExpand={() =>
+                        setFlyoutGroupId((prev) => (prev === entry.id ? null : entry.id))
+                      }
+                      pathname={pathname}
+                    />
+                    <SidebarFlyout
+                      group={entry}
+                      pathname={pathname}
+                      isOpen={flyoutGroupId === entry.id}
+                      onClose={handleFlyoutClose}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <SidebarNavGroup
+                  key={entry.id}
+                  group={entry}
+                  isSidebarCollapsed={false}
+                  isExpanded={!!expandedGroups[entry.id]}
+                  onToggleExpand={handleToggleGroup}
+                  pathname={pathname}
                 />
-                {!isCollapsed && <span className="truncate">{item.name}</span>}
-              </Link>
-            );
+              );
+            }
+
+            if (isNavItem(entry)) {
+              return (
+                <SidebarNavItem
+                  key={entry.id}
+                  item={entry}
+                  pathname={pathname}
+                  isCollapsed={isCollapsed}
+                />
+              );
+            }
+
+            return null;
           })}
         </nav>
       </div>
@@ -160,7 +219,9 @@ export default function Sidebar() {
       <div className="space-y-2">
         {/* Theme Toggle Button */}
         <button
+          type="button"
           onClick={toggleTheme}
+          aria-label={theme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
           title={isCollapsed ? (theme === 'light' ? 'Modo Oscuro' : 'Modo Claro') : undefined}
           className={`flex items-center w-full rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-slate-200 transition duration-200 cursor-pointer ${
             isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-2.5'
@@ -176,7 +237,9 @@ export default function Sidebar() {
 
         {/* Logout Button */}
         <button
+          type="button"
           onClick={handleLogout}
+          aria-label="Cerrar sesión"
           title={isCollapsed ? 'Cerrar Sesión' : undefined}
           className={`flex items-center w-full rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition duration-200 cursor-pointer ${
             isCollapsed ? 'justify-center p-3' : 'space-x-3 px-4 py-2.5'
