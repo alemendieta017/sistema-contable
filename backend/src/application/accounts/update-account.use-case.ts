@@ -17,7 +17,7 @@ export class UpdateAccountUseCase {
   async execute(
     userId: string,
     accountId: string,
-    dto: { name?: string; isCashOrBank?: boolean },
+    dto: { name?: string; isCashOrBank?: boolean; status?: 'ACTIVE' | 'INACTIVE' },
   ): Promise<{ success: boolean }> {
     return this.dataSource.transaction(async (entityManager) => {
       const account = await entityManager.findOne(AccountEntity, {
@@ -44,6 +44,10 @@ export class UpdateAccountUseCase {
 
       if (dto.name !== undefined) {
         account.name = dto.name;
+      }
+
+      if (dto.status !== undefined) {
+        account.status = dto.status;
       }
 
       await entityManager.save(AccountEntity, account);

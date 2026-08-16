@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AccountEntity } from '../database/entities/account.entity';
@@ -7,6 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UserEntity } from '../database/entities/user.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
 import { UpdateAccountUseCase } from '../../application/accounts/update-account.use-case';
@@ -23,9 +34,18 @@ export class AccountController {
   ) {}
 
   @Get()
-  async list(@CurrentUser() user: UserEntity) {
+  async list(@CurrentUser() user: UserEntity, @Query('status') status?: string) {
+    const where: any = { userId: user.id };
+    if (status === 'INACTIVE') {
+      where.status = 'INACTIVE';
+    } else if (status === 'ALL') {
+      // no status filter
+    } else {
+      where.status = 'ACTIVE';
+    }
+
     return this.accountRepository.find({
-      where: { userId: user.id },
+      where,
       relations: ['currency'],
       order: { name: 'ASC' },
     });
@@ -66,7 +86,7 @@ export class AccountController {
   async update(
     @CurrentUser() user: UserEntity,
     @Param('id') id: string,
-    @Body() body: { name?: string; isCashOrBank?: boolean },
+    @Body() body: UpdateAccountDto,
   ) {
     return this.updateAccountUseCase.execute(user.id, id, body);
   }

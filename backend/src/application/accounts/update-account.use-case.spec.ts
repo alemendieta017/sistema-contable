@@ -87,4 +87,85 @@ describe('UpdateAccountUseCase (US3)', () => {
       NotFoundException,
     );
   });
+
+  describe('Status Transitions (US1)', () => {
+    it('should deactivate an active account (ACTIVE -> INACTIVE)', async () => {
+      const account = { id: 'acc-1', userId: 'user-1', name: 'Sales Account', status: 'ACTIVE' };
+      entityManagerMock.findOne.mockResolvedValue(account);
+      entityManagerMock.save.mockResolvedValue({ ...account, status: 'INACTIVE' });
+
+      const result = await useCase.execute('user-1', 'acc-1', { status: 'INACTIVE' });
+      expect(result.success).toBe(true);
+      expect(account.status).toBe('INACTIVE');
+      expect(entityManagerMock.save).toHaveBeenCalledWith(
+        AccountEntity,
+        expect.objectContaining({ id: 'acc-1', status: 'INACTIVE' }),
+      );
+    });
+
+    it('should reactivate an inactive account (INACTIVE -> ACTIVE)', async () => {
+      const account = { id: 'acc-2', userId: 'user-1', name: 'Old Account', status: 'INACTIVE' };
+      entityManagerMock.findOne.mockResolvedValue(account);
+      entityManagerMock.save.mockResolvedValue({ ...account, status: 'ACTIVE' });
+
+      const result = await useCase.execute('user-1', 'acc-2', { status: 'ACTIVE' });
+      expect(result.success).toBe(true);
+      expect(account.status).toBe('ACTIVE');
+      expect(entityManagerMock.save).toHaveBeenCalledWith(
+        AccountEntity,
+        expect.objectContaining({ id: 'acc-2', status: 'ACTIVE' }),
+      );
+    });
+
+    it('should idempotently handle setting ACTIVE on already ACTIVE account', async () => {
+      const account = { id: 'acc-3', userId: 'user-1', name: 'Active Account', status: 'ACTIVE' };
+      entityManagerMock.findOne.mockResolvedValue(account);
+      entityManagerMock.save.mockResolvedValue(account);
+
+      const result = await useCase.execute('user-1', 'acc-3', { status: 'ACTIVE' });
+      expect(result.success).toBe(true);
+      expect(account.status).toBe('ACTIVE');
+      expect(entityManagerMock.save).toHaveBeenCalledWith(
+        AccountEntity,
+        expect.objectContaining({ id: 'acc-3', status: 'ACTIVE' }),
+      );
+    });
+
+    it('should idempotently handle setting INACTIVE on already INACTIVE account', async () => {
+      const account = {
+        id: 'acc-4',
+        userId: 'user-1',
+        name: 'Inactive Account',
+        status: 'INACTIVE',
+      };
+      entityManagerMock.findOne.mockResolvedValue(account);
+      entityManagerMock.save.mockResolvedValue(account);
+
+      const result = await useCase.execute('user-1', 'acc-4', { status: 'INACTIVE' });
+      expect(result.success).toBe(true);
+      expect(account.status).toBe('INACTIVE');
+      expect(entityManagerMock.save).toHaveBeenCalledWith(
+        AccountEntity,
+        expect.objectContaining({ id: 'acc-4', status: 'INACTIVE' }),
+      );
+    });
+
+    it('should update name and status simultaneously', async () => {
+      const account = { id: 'acc-5', userId: 'user-1', name: 'Old Name', status: 'INACTIVE' };
+      entityManagerMock.findOne.mockResolvedValue(account);
+      entityManagerMock.save.mockResolvedValue({ ...account, name: 'New Name', status: 'ACTIVE' });
+
+      const result = await useCase.execute('user-1', 'acc-5', {
+        name: 'New Name',
+        status: 'ACTIVE',
+      });
+      expect(result.success).toBe(true);
+      expect(account.name).toBe('New Name');
+      expect(account.status).toBe('ACTIVE');
+      expect(entityManagerMock.save).toHaveBeenCalledWith(
+        AccountEntity,
+        expect.objectContaining({ name: 'New Name', status: 'ACTIVE' }),
+      );
+    });
+  });
 });

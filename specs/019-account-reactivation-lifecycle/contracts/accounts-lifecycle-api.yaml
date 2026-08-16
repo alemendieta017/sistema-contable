@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Account Lifecycle & Reactivation API
+  version: 1.0.0
+  description: API endpoints for managing account lifecycle, activation, deactivation, and safe deletion.
+paths:
+  /api/accounts:
+    get:
+      summary: List accounts with optional status filter
+      description: Returns accounts for the authenticated user. In transaction selectors, status=ACTIVE is used.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, ALL]
+            default: ACTIVE
+          description: Filter accounts by operational status.
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /api/accounts/summary:
+    get:
+      summary: Get accounts summary with computed balances
+      description: Returns all accounts (active and inactive) with balances for chart of accounts management.
+      responses:
+        '200':
+          description: Accounts summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountsSummaryResponse'
+        '401':
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /api/accounts/{id}:
+    patch:
+      summary: Update account attributes and status (Reactivate / Deactivate)
+      description: Updates account properties including operational status (ACTIVE / INACTIVE), name, or isCashOrBank flag.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateAccountResponse'
+        '400':
+          description: Validation error or invalid state transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete account (strictly permitted only if 0 historical movements)
+      description: Physically deletes an unused account. Returns 400 Bad Request if account has associated journal entries.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account physically deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAccountResponse'
+        '400':
+          description: Account has historical transactions and cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [ASSET, LIABILITY, EQUITY, INCOME, EXPENSE]
+        currencyId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        isCashOrBank:
+          type: boolean
+        systemRole:
+          type: string
+          nullable: true
+          enum: [NET_INCOME, RETAINED_EARNINGS]
+
+    AccountSummaryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum: [ASSET, LIABILITY, EQUITY, INCOME, EXPENSE]
+        currencyId:
+          type: string
+          format: uuid
+        currencyCode:
+          type: string
+        currencySymbol:
+          type: string
+        decimalPlaces:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        isCashOrBank:
+          type: boolean
+        systemRole:
+          type: string
+          nullable: true
+        balance:
+          type: number
+
+    AccountsSummaryResponse:
+      type: object
+      properties:
+        netWorth:
+          type: number
+        totalAssets:
+          type: number
+        totalLiabilities:
+          type: number
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountSummaryItem'
+
+    UpdateAccountRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        isCashOrBank:
+          type: boolean
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+
+    UpdateAccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+
+    DeleteAccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        action:
+          type: string
+          enum: [DELETED]
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string

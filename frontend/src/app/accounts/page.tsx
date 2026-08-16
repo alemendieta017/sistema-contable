@@ -18,6 +18,8 @@ type AccountSummary = {
   decimalPlaces?: number;
   parentId?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
+  isCashOrBank?: boolean;
+  systemRole?: string | null;
 };
 
 type SummaryData = {
@@ -33,9 +35,12 @@ export default function AccountsPage() {
   const [currencies, setCurrencies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deactivateSuggestedId, setDeactivateSuggestedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState('');
+  const [reactivatingId, setReactivatingId] = useState('');
+  const [deactivatingId, setDeactivatingId] = useState('');
 
   useEffect(() => {
     loadSummary();
@@ -45,6 +50,7 @@ export default function AccountsPage() {
     try {
       setLoading(true);
       setError('');
+      setDeactivateSuggestedId(null);
       const [data, curs] = await Promise.all([api.accounts.summary(), api.currencies.list()]);
       setSummary(data);
       setCurrencies(curs || []);
@@ -55,23 +61,60 @@ export default function AccountsPage() {
     }
   };
 
+  const handleReactivateAccount = async (id: string) => {
+    setReactivatingId(id);
+    setError('');
+    setDeactivateSuggestedId(null);
+    try {
+      await api.accounts.update(id, { status: 'ACTIVE' });
+      await loadSummary();
+    } catch (err: any) {
+      setError(err.message || 'Error al reactivar la cuenta.');
+    } finally {
+      setReactivatingId('');
+    }
+  };
+
+  const handleDeactivateAccount = async (id: string) => {
+    setDeactivatingId(id);
+    setError('');
+    setDeactivateSuggestedId(null);
+    try {
+      await api.accounts.update(id, { status: 'INACTIVE' });
+      await loadSummary();
+    } catch (err: any) {
+      setError(err.message || 'Error al desactivar la cuenta.');
+    } finally {
+      setDeactivatingId('');
+    }
+  };
+
   const handleDeleteAccount = async (id: string) => {
-    if (!confirm('¿Está seguro de que desea eliminar o desactivar esta cuenta/categoría?')) {
+    if (!confirm('¿Está seguro de que desea eliminar permanentemente esta cuenta?')) {
       return;
     }
     setSaving(true);
     setDeletingId(id);
     setError('');
+    setDeactivateSuggestedId(null);
     try {
-      const res = await api.accounts.delete(id);
-      if (res && res.action === 'DEACTIVATED') {
-        alert('La cuenta tiene transacciones asociadas y ha sido marcada como INACTIVA.');
-      } else {
-        alert('La cuenta ha sido eliminada con éxito.');
-      }
+      await api.accounts.delete(id);
+      alert('La cuenta ha sido eliminada con éxito.');
       loadSummary();
     } catch (err: any) {
-      setError(err.message || 'Error al eliminar la cuenta.');
+      const isProtected =
+        err.status === 400 ||
+        /deactivate|desactivar|existing transactions|movimientos|historial/i.test(
+          err.message || '',
+        );
+      if (isProtected) {
+        setDeactivateSuggestedId(id);
+        setError(
+          'Esta cuenta posee asientos históricos registrados y no puede eliminarse físicamente para proteger la integridad contable. Puede desactivarla para restringir nuevas operaciones.',
+        );
+      } else {
+        setError(err.message || 'Error al eliminar la cuenta.');
+      }
     } finally {
       setSaving(false);
       setDeletingId('');
@@ -166,9 +209,19 @@ export default function AccountsPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
-          <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+          {deactivateSuggestedId && (
+            <button
+              onClick={() => handleDeactivateAccount(deactivateSuggestedId)}
+              className="self-start sm:self-auto shrink-0 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-3xs transition shadow-sm"
+            >
+              Desactivar cuenta ahora
+            </button>
+          )}
         </div>
       )}
 
@@ -246,6 +299,10 @@ export default function AccountsPage() {
             onDelete={handleDeleteAccount}
             deletingId={deletingId}
             onToggleCashOrBank={handleToggleCashOrBank}
+            onReactivate={handleReactivateAccount}
+            onDeactivate={handleDeactivateAccount}
+            reactivatingId={reactivatingId}
+            deactivatingId={deactivatingId}
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import AccountModal from '../../../components/AccountModal';
-import { ArrowLeft, Plus, Check, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Check, AlertTriangle, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '../../../lib/utils';
 import { useSearch } from '../../../lib/search-context';
@@ -18,6 +18,7 @@ interface AccountSummary {
   decimalPlaces?: number;
   parentId?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
+  systemRole?: string | null;
 }
 
 export default function AccountsManagePage() {
@@ -25,7 +26,8 @@ export default function AccountsManagePage() {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [suggestedDeactivateId, setSuggestedDeactivateId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function AccountsManagePage() {
     try {
       setLoading(true);
       setError('');
+      setSuggestedDeactivateId(null);
       const data = await api.accounts.summary();
       setAccounts(data?.accounts || []);
     } catch (err: any) {
@@ -45,17 +48,50 @@ export default function AccountsManagePage() {
     }
   };
 
-  const handleDeactivate = async (id: string) => {
-    if (!confirm('¿Está seguro de que desea desactivar o eliminar este rubro?')) return;
-    setSaving(true);
+  const handleReactivate = async (id: string) => {
+    setUpdatingId(id);
     setError('');
+    setSuggestedDeactivateId(null);
     try {
-      await api.accounts.delete(id);
-      fetchAccounts();
+      await api.accounts.update(id, { status: 'ACTIVE' });
+      await fetchAccounts();
     } catch (err: any) {
-      setError(err.message || 'Error al actualizar estado de la cuenta.');
+      setError(err.message || 'Error al reactivar la cuenta.');
     } finally {
-      setSaving(false);
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDeactivate = async (id: string) => {
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm('¿Está seguro de que desea desactivar esta cuenta?')
+    ) {
+      return;
+    }
+    setUpdatingId(id);
+    setError('');
+    setSuggestedDeactivateId(null);
+    try {
+      await api.accounts.update(id, { status: 'INACTIVE' });
+      await fetchAccounts();
+    } catch (err: any) {
+      const isProtected =
+        err.status === 400 ||
+        /deactivate|desactivar|existing transactions|movimientos|historial/i.test(
+          err.message || '',
+        );
+      if (isProtected) {
+        setSuggestedDeactivateId(id);
+        setError(
+          err.message ||
+            'Esta cuenta tiene movimientos contables históricos y no puede eliminarse físicamente. Puede desactivarla para restringir nuevas operaciones.',
+        );
+      } else {
+        setError(err.message || 'Error al desactivar la cuenta.');
+      }
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -107,9 +143,19 @@ export default function AccountsManagePage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+          {suggestedDeactivateId && (
+            <button
+              onClick={() => handleDeactivate(suggestedDeactivateId)}
+              className="self-start sm:self-auto shrink-0 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-3xs transition shadow-sm"
+            >
+              Desactivar cuenta
+            </button>
+          )}
         </div>
       )}
 
@@ -161,26 +207,47 @@ export default function AccountsManagePage() {
                   <td className="p-4 text-center">
                     {isInactive ? (
                       <span className="inline-flex items-center gap-1 text-red-500 font-bold text-3xs uppercase tracking-wider bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-full">
-                        Inactivo
+                        Inactiva
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-3xs uppercase tracking-wider bg-green-50 dark:bg-green-950/20 px-2 py-0.5 rounded-full">
                         <Check className="w-3 h-3" />
-                        Activo
+                        Activa
                       </span>
                     )}
                   </td>
                   <td className="p-4 text-center">
-                    {!isInactive ? (
-                      <button
-                        onClick={() => handleDeactivate(a.id)}
-                        disabled={saving}
-                        className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
+                    {a.systemRole ? (
+                      <span
+                        className="text-3xs text-slate-400 font-bold"
+                        title="Cuenta especial reservada por el sistema"
                       >
-                        Desactivar
+                        Sistema
+                      </span>
+                    ) : isInactive ? (
+                      <button
+                        onClick={() => handleReactivate(a.id)}
+                        disabled={updatingId === a.id}
+                        className="text-3xs font-bold py-1 px-3 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {updatingId === a.id ? (
+                          <span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        <span>Reactivar</span>
                       </button>
                     ) : (
-                      <span className="text-3xs text-slate-400 font-bold">Deshabilitado</span>
+                      <button
+                        onClick={() => handleDeactivate(a.id)}
+                        disabled={updatingId === a.id}
+                        className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {updatingId === a.id ? (
+                          <span className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                        ) : null}
+                        <span>Desactivar</span>
+                      </button>
                     )}
                   </td>
                 </tr>

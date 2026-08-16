@@ -10,6 +10,7 @@ type Account = {
   name: string;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   systemRole?: string | null;
+  status?: 'ACTIVE' | 'INACTIVE';
 };
 
 type EntryLine = {
@@ -46,8 +47,12 @@ export default function AsientoLibrePage() {
 
   const fetchInitialData = async () => {
     try {
-      const [accList, curList] = await Promise.all([api.accounts.list(), api.currencies.list()]);
-      setAccounts(accList || []);
+      const [accList, curList] = await Promise.all([
+        api.accounts.list('ACTIVE'),
+        api.currencies.list(),
+      ]);
+      const rawAccounts: Account[] = Array.isArray(accList) ? accList : accList?.accounts || [];
+      setAccounts(rawAccounts.filter((a) => a.status !== 'INACTIVE'));
       setCurrencies(curList || []);
     } catch {
       setError('Error al cargar datos iniciales.');

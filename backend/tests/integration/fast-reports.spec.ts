@@ -816,6 +816,76 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.equity.some((e: any) => e.accountId === 'acc-ni')).toBe(false);
       expect(result.equity.some((e: any) => e.accountId === 'acc-re')).toBe(false);
     });
+
+    it('should include inactive accounts with non-zero balances and balance the balance sheet', async () => {
+      const mockPeriod = {
+        id: periodId,
+        name: '2026-03',
+        fiscalYearId: 'fy-uuid',
+      } as PeriodEntity;
+
+      const mockAccounts = [
+        {
+          id: 'acc-cash-inactive',
+          name: 'Efectivo',
+          type: 'ASSET',
+          status: 'INACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-capital',
+          name: 'Capital Inicial',
+          type: 'EQUITY',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-zero-inactive',
+          name: 'Old Bank Account',
+          type: 'ASSET',
+          status: 'INACTIVE',
+          userId,
+        } as AccountEntity,
+      ];
+
+      const mockBalances = [
+        {
+          accountId: 'acc-cash-inactive',
+          periodId,
+          closingBalance: 131000,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-capital',
+          periodId,
+          closingBalance: 131000,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-zero-inactive',
+          periodId,
+          closingBalance: 0,
+        } as AccountPeriodBalanceEntity,
+      ];
+
+      mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
+      mockAccountRepo.find!.mockResolvedValue(mockAccounts);
+      mockBalanceRepo.find!.mockResolvedValue(mockBalances);
+
+      const result = (await balanceSheetUseCase.execute(userId, {
+        mode: 'period',
+        periodId,
+      })) as any;
+
+      // Inactive account with balance must be in assets
+      expect(result.assets).toEqual([
+        { accountId: 'acc-cash-inactive', name: 'Efectivo', balance: 131000 },
+      ]);
+      // Inactive account with 0 balance must be omitted
+      expect(result.assets.some((a: any) => a.accountId === 'acc-zero-inactive')).toBe(false);
+
+      expect(result.totalAssets).toBe(131000);
+      expect(result.totalEquity).toBe(131000);
+      expect(result.balanced).toBe(true);
+    });
   });
 
   describe('IncomeStatementUseCase', () => {
@@ -908,6 +978,76 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.totalIncome).toBe(1800);
       expect(result.totalExpenses).toBe(900);
       expect(result.netProfit).toBe(900);
+    });
+
+    it('should include inactive accounts with movements and omit inactive accounts with zero movements', async () => {
+      const mockPeriod = {
+        id: periodId,
+        name: '2026-03',
+        fiscalYearId: 'fy-uuid',
+      } as PeriodEntity;
+
+      const mockAccounts = [
+        {
+          id: 'acc-inc-inactive-with-mov',
+          name: 'Old Service Income',
+          type: 'INCOME',
+          status: 'INACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-inc-inactive-zero',
+          name: 'Unused Income',
+          type: 'INCOME',
+          status: 'INACTIVE',
+          userId,
+        } as AccountEntity,
+        {
+          id: 'acc-exp-active',
+          name: 'Rent Expense',
+          type: 'EXPENSE',
+          status: 'ACTIVE',
+          userId,
+        } as AccountEntity,
+      ];
+
+      const mockBalances = [
+        {
+          accountId: 'acc-inc-inactive-with-mov',
+          periodId,
+          totalDebits: 0,
+          totalCredits: 5000,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-inc-inactive-zero',
+          periodId,
+          totalDebits: 0,
+          totalCredits: 0,
+        } as AccountPeriodBalanceEntity,
+        {
+          accountId: 'acc-exp-active',
+          periodId,
+          totalDebits: 2000,
+          totalCredits: 0,
+        } as AccountPeriodBalanceEntity,
+      ];
+
+      mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
+      mockAccountRepo.find!.mockResolvedValue(mockAccounts);
+      mockBalanceRepo.find!.mockResolvedValue(mockBalances);
+
+      const result = await incomeStatementUseCase.execute(userId, periodId);
+
+      expect(result.income).toEqual([
+        { accountId: 'acc-inc-inactive-with-mov', name: 'Old Service Income', amount: 5000 },
+      ]);
+      expect(result.income.some((i: any) => i.accountId === 'acc-inc-inactive-zero')).toBe(false);
+      expect(result.expenses).toEqual([
+        { accountId: 'acc-exp-active', name: 'Rent Expense', amount: 2000 },
+      ]);
+      expect(result.totalIncome).toBe(5000);
+      expect(result.totalExpenses).toBe(2000);
+      expect(result.netProfit).toBe(3000);
     });
   });
 });

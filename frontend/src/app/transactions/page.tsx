@@ -104,7 +104,7 @@ export default function TransactionsPage() {
       setError('');
 
       const [accs, curs, txs] = await Promise.all([
-        api.accounts.list(),
+        api.accounts.list('ALL'),
         api.currencies.list(),
         api.transactions.list(activeStartDate, activeEndDate),
       ]);

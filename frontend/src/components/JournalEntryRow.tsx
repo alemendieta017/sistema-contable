@@ -10,6 +10,7 @@ interface Account {
   type: string;
   parentId?: string | null;
   systemRole?: string | null;
+  status?: string;
 }
 
 interface Entry {
@@ -116,7 +117,8 @@ export default function JournalEntryRow({
     const fullName = formatAccountName(a).toLowerCase();
     const matchesSearch = fullName.includes(search.toLowerCase());
     const matchesTab = activeTab === 'ALL' || a.type === activeTab;
-    const isOperable = a.systemRole !== 'NET_INCOME';
+    const isOperable =
+      a.systemRole !== 'NET_INCOME' && (a.status !== 'INACTIVE' || a.id === entry.accountId);
     return matchesSearch && matchesTab && isOperable;
   });
 
@@ -193,7 +195,9 @@ export default function JournalEntryRow({
   };
 
   const getCount = (tabId: string) => {
-    const operableAccounts = accounts.filter((a) => a.systemRole !== 'NET_INCOME');
+    const operableAccounts = accounts.filter(
+      (a) => a.systemRole !== 'NET_INCOME' && (a.status !== 'INACTIVE' || a.id === entry.accountId),
+    );
     if (tabId === 'ALL') {
       return operableAccounts.filter((a) =>
         formatAccountName(a).toLowerCase().includes(search.toLowerCase()),
