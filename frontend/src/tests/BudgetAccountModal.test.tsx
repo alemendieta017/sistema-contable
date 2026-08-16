@@ -143,6 +143,10 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
   test('should close when cancel or Escape is pressed', async () => {
     render(<BudgetAccountModal {...defaultProps} />);
 
+    await waitFor(() => {
+      expect(screen.getByText(/1.2.01.01 - Fondo Mutuo Renta Fija/)).toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }));
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
 

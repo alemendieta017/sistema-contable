@@ -4,6 +4,7 @@ import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
+import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { MatrixCellUpdate } from '@sistema-contable/shared';
 
 @Injectable()
@@ -46,6 +47,25 @@ export class UpdateBudgetMatrixUseCase {
           throw new BadRequestException(
             `Cannot modify budget for closed accounting period '${period.name}'.`,
           );
+        }
+      }
+
+      // Validate that all accountIds in updates belong to this user
+      const accountIds = Array.from(new Set(updates.map((u) => u.accountId)));
+      if (accountIds.length > 0) {
+        const userAccounts = await manager
+          .createQueryBuilder(AccountEntity, 'account')
+          .where('account.user_id = :userId', { userId })
+          .andWhere('account.id IN (:...accountIds)', { accountIds })
+          .getMany();
+
+        const userAccountIdSet = new Set(userAccounts.map((a) => a.id));
+        for (const accountId of accountIds) {
+          if (!userAccountIdSet.has(accountId)) {
+            throw new BadRequestException(
+              `Account '${accountId}' not found or does not belong to user.`,
+            );
+          }
         }
       }
 
