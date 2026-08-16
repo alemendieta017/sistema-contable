@@ -2,20 +2,25 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Save, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../../../services/api';
-import JournalEntryRow from '../../../components/JournalEntryRow';
+import {
+  TransactionMode,
+  QuickOperationType,
+  type CreateTransactionRequest,
+} from '@sistema-contable/shared';
+import {
+  ModeSelector,
+  QuickTransactionForm,
+  FreeJournalEntryGrid,
+  type QuickTransactionFormValues,
+  type FreeJournalFormValues,
+} from '../../../components/transactions';
 import AccountModal from '../../../components/AccountModal';
-import { formatCurrency } from '../../../lib/utils';
 import { AccountOption as Account } from '../../../types/account';
 
-interface Entry {
-  accountId: string;
-  entryType: 'DEBIT' | 'CREDIT';
-  amount: number | '';
-}
-
-function toPureDateString(dateInput: Date | string): string {
+function toPureDateString(dateInput?: Date | string | null): string {
+  if (!dateInput) return '';
   if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
     return dateInput;
   }
@@ -27,7 +32,88 @@ function toPureDateString(dateInput: Date | string): string {
   return `${year}-${month}-${day}`;
 }
 
-function TransactionForm() {
+function getTodayString(): string {
+  return toPureDateString(new Date());
+}
+
+function mapTransactionToQuickValues(
+  tx: any,
+  accounts: Account[],
+): QuickTransactionFormValues | null {
+  if (!tx.entries || tx.entries.length !== 2) return null;
+  const [entry1, entry2] = tx.entries;
+
+  const debitEntry = entry1.entryType === 'DEBIT' ? entry1 : entry2;
+  const creditEntry = entry1.entryType === 'CREDIT' ? entry1 : entry2;
+
+  if (!debitEntry || !creditEntry) return null;
+
+  const debitAcc = accounts.find((a) => a.id === debitEntry.accountId);
+  const creditAcc = accounts.find((a) => a.id === creditEntry.accountId);
+
+  const amount = Number(debitEntry.amount);
+  const accountingDate = toPureDateString(tx.accountingDate || tx.date) || getTodayString();
+  const description = tx.description || '';
+
+  // Expense: DEBIT Expense, CREDIT Asset / Liability
+  if (
+    debitAcc?.type === 'EXPENSE' &&
+    (creditAcc?.type === 'ASSET' || creditAcc?.type === 'LIABILITY')
+  ) {
+    return {
+      accountingDate,
+      operationType: QuickOperationType.EXPENSE,
+      primaryAccountId: creditEntry.accountId, // Payment account
+      secondaryAccountId: debitEntry.accountId, // Expense category
+      amount,
+      description,
+    };
+  }
+
+  // Income: DEBIT Asset / Liability, CREDIT Income
+  if (
+    (debitAcc?.type === 'ASSET' || debitAcc?.type === 'LIABILITY') &&
+    creditAcc?.type === 'INCOME'
+  ) {
+    return {
+      accountingDate,
+      operationType: QuickOperationType.INCOME,
+      primaryAccountId: debitEntry.accountId, // Deposit account
+      secondaryAccountId: creditEntry.accountId, // Income category
+      amount,
+      description,
+    };
+  }
+
+  // Transfer: DEBIT Asset, CREDIT Asset
+  if (debitAcc?.type === 'ASSET' && creditAcc?.type === 'ASSET') {
+    return {
+      accountingDate,
+      operationType: QuickOperationType.TRANSFER,
+      primaryAccountId: creditEntry.accountId, // Source account
+      secondaryAccountId: debitEntry.accountId, // Destination account
+      amount,
+      description,
+    };
+  }
+
+  return null;
+}
+
+function mapTransactionToFreeValues(tx: any): FreeJournalFormValues {
+  return {
+    accountingDate: toPureDateString(tx.accountingDate || tx.date) || getTodayString(),
+    description: tx.description || '',
+    lines: (tx.entries || []).map((e: any, idx: number) => ({
+      id: e.id || `line-${idx}-${Date.now()}`,
+      accountId: e.accountId,
+      debitAmount: e.entryType === 'DEBIT' ? Number(e.amount) : '',
+      creditAmount: e.entryType === 'CREDIT' ? Number(e.amount) : '',
+    })),
+  };
+}
+
+function TransactionPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -36,43 +122,50 @@ function TransactionForm() {
   const isEditMode = !!editId;
   const isCloneMode = !!cloneId;
 
+  // Determine initial mode from URL param
+  const modeParam = searchParams.get('mode');
+  const initialMode =
+    modeParam?.toUpperCase() === 'FREE_JOURNAL'
+      ? TransactionMode.FREE_JOURNAL
+      : TransactionMode.QUICK;
+
+  const [mode, setMode] = useState<TransactionMode>(initialMode);
+  const [pendingMode, setPendingMode] = useState<TransactionMode | null>(null);
+  const [showModeSwitchConfirm, setShowModeSwitchConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
+  const [quickInitialValues, setQuickInitialValues] = useState<Partial<QuickTransactionFormValues>>(
+    {
+      accountingDate: getTodayString(),
+    },
+  );
+  const [freeJournalInitialValues, setFreeJournalInitialValues] = useState<
+    Partial<FreeJournalFormValues>
+  >({
+    accountingDate: getTodayString(),
+  });
+
   const [quickCreateState, setQuickCreateState] = useState<{
-    lineIndex: number;
     initialName: string;
+    targetField?: 'primary' | 'secondary';
+    lineIndex?: number;
   } | null>(null);
 
-  // Set default datetime to local current date-time
-  // Set default date to local current date
-  const getInitialDateString = () => {
-    return toPureDateString(new Date());
-  };
-
-  const [accountingDate, setAccountingDate] = useState(getInitialDateString());
-  const [description, setDescription] = useState('');
-  const [entries, setEntries] = useState<Entry[]>([
-    { accountId: '', entryType: 'DEBIT', amount: '' },
-    { accountId: '', entryType: 'CREDIT', amount: '' },
-  ]);
-  const [isDirty, setIsDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // Track if user has modified anything
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    if (isEditMode || isCloneMode) {
-      loadTransactionDetails(editId || cloneId || '');
-    }
   }, [editId, cloneId]);
 
-  // Prevent accidental tab closing if form is modified
+  // Prevent accidental navigation if form is dirty
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -93,16 +186,22 @@ function TransactionForm() {
         api.currencies.list(),
       ]);
       const rawAccounts: Account[] = Array.isArray(accData) ? accData : accData?.accounts || [];
-      setAccounts(rawAccounts.filter((a) => a.status !== 'INACTIVE'));
+      const activeAccs = rawAccounts.filter((a) => a.status !== 'INACTIVE');
+      setAccounts(activeAccs);
       setCurrencies(curData || []);
+
+      if (isEditMode || isCloneMode) {
+        await loadTransactionDetails(editId || cloneId || '', activeAccs);
+      }
     } catch {
       setError('Error al cargar cuentas y monedas de respaldo.');
     }
   };
 
-  const loadTransactionDetails = async (id: string) => {
+  const loadTransactionDetails = async (id: string, availableAccounts?: Account[]) => {
     setFetchLoading(true);
     setError('');
+    const targetAccounts = availableAccounts || accounts;
     try {
       const tx = await api.transactions.get(id);
       if (tx) {
@@ -115,19 +214,29 @@ function TransactionForm() {
             setError('Los asientos de reversión no pueden ser editados.');
             return;
           }
-          setAccountingDate(toPureDateString(tx.accountingDate || tx.date));
-        } else {
-          // Clone mode resets the date to now
-          setAccountingDate(getInitialDateString());
         }
-        setDescription(tx.description);
-        setEntries(
-          tx.entries.map((e: any) => ({
-            accountId: e.accountId,
-            entryType: e.entryType,
-            amount: Number(e.amount),
-          })),
-        );
+
+        const dateToUse = isEditMode
+          ? toPureDateString(tx.accountingDate || tx.date) || getTodayString()
+          : getTodayString();
+
+        const quickVals = mapTransactionToQuickValues(tx, targetAccounts);
+        const freeVals = mapTransactionToFreeValues({
+          ...tx,
+          accountingDate: dateToUse,
+        });
+
+        if (quickVals && modeParam?.toUpperCase() !== 'FREE_JOURNAL') {
+          setQuickInitialValues({
+            ...quickVals,
+            accountingDate: dateToUse,
+          });
+          setMode(TransactionMode.QUICK);
+        } else {
+          setFreeJournalInitialValues(freeVals);
+          setMode(TransactionMode.FREE_JOURNAL);
+        }
+
         setIsDirty(false);
       }
     } catch {
@@ -137,42 +246,28 @@ function TransactionForm() {
     }
   };
 
-  const handleUpdateEntry = (index: number, updatedFields: Partial<Entry>) => {
-    const updated = [...entries];
-    updated[index] = { ...updated[index], ...updatedFields };
-    setEntries(updated);
-    setIsDirty(true);
+  const handleModeChangeRequest = (newMode: TransactionMode) => {
+    if (newMode === mode) return;
+    if (isDirty) {
+      setPendingMode(newMode);
+      setShowModeSwitchConfirm(true);
+    } else {
+      setMode(newMode);
+    }
   };
 
-  // Balancing logic
-  const totalDebits = useMemo(() => {
-    return entries
-      .filter((e) => e.entryType === 'DEBIT')
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  }, [entries]);
-
-  const totalCredits = useMemo(() => {
-    return entries
-      .filter((e) => e.entryType === 'CREDIT')
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  }, [entries]);
-
-  const difference = Math.abs(totalDebits - totalCredits);
-  const isBalanced = difference < 0.001 && totalDebits > 0;
-
-  const handleAddEntry = () => {
-    const lastType = entries[entries.length - 1]?.entryType || 'DEBIT';
-    const nextType = lastType === 'DEBIT' ? 'CREDIT' : 'DEBIT';
-    const prefillAmount = difference > 0 ? Number(difference.toFixed(2)) : '';
-
-    setEntries([...entries, { accountId: '', entryType: nextType, amount: prefillAmount }]);
-    setIsDirty(true);
+  const confirmModeSwitch = () => {
+    if (pendingMode) {
+      setMode(pendingMode);
+      setPendingMode(null);
+      setIsDirty(false);
+    }
+    setShowModeSwitchConfirm(false);
   };
 
-  const handleRemoveEntry = (index: number) => {
-    if (entries.length <= 2) return;
-    setEntries(entries.filter((_, i) => i !== index));
-    setIsDirty(true);
+  const cancelModeSwitch = () => {
+    setPendingMode(null);
+    setShowModeSwitchConfirm(false);
   };
 
   const handleCancelClick = () => {
@@ -183,55 +278,12 @@ function TransactionForm() {
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (payload: CreateTransactionRequest) => {
     setError('');
     setSuccess('');
-
-    if (!description.trim()) {
-      setError('Por favor, ingrese una descripción / glosa para el asiento.');
-      return;
-    }
-
-    // Verify all fields completed
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-      if (!entry.accountId) {
-        setError(`El apunte #${i + 1} no tiene una cuenta seleccionada.`);
-        return;
-      }
-      if (entry.amount === '' || Number(entry.amount) <= 0) {
-        setError(`El apunte #${i + 1} debe poseer un monto positivo.`);
-        return;
-      }
-    }
-
-    const baseCurrency = currencies.find((c) => c.isBase) || {
-      code: 'PYG',
-      symbol: '₲',
-      decimalPlaces: 0,
-    };
-
-    if (!isBalanced) {
-      setError(
-        `El asiento está descuadrado por ${formatCurrency(difference, baseCurrency)}. Las columnas del Debe y Haber deben coincidir.`,
-      );
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const payload = {
-        accountingDate,
-        description,
-        entries: entries.map((e) => ({
-          accountId: e.accountId,
-          entryType: e.entryType,
-          amount: Number(e.amount),
-        })),
-      };
-
       if (isEditMode) {
         await api.transactions.update(editId!, payload);
         setSuccess('Asiento contable actualizado exitosamente.');
@@ -247,16 +299,21 @@ function TransactionForm() {
       }, 1000);
     } catch (err: any) {
       setError(err.message || 'Error al procesar la solicitud.');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const baseCurrency = currencies.find((c) => c.isBase) || {
-    code: 'PYG',
-    symbol: '₲',
-    decimalPlaces: 0,
-  };
+  const baseCurrency = useMemo(() => {
+    return (
+      currencies.find((c) => c.isBase) || {
+        code: 'PYG',
+        symbol: '₲',
+        decimalPlaces: 0,
+      }
+    );
+  }, [currencies]);
 
   if (fetchLoading) {
     return (
@@ -270,10 +327,10 @@ function TransactionForm() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950">
-      {/* Top Header Row */}
-      <header className="flex justify-between items-center px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* Top Header Row with Navigation, Title, and ModeSelector */}
+      <header className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleCancelClick}
@@ -297,180 +354,64 @@ function TransactionForm() {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleCancelClick}
-            className="hidden sm:block px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-sm text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={loading || !isBalanced}
-            className={`px-4 py-2 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center gap-1.5 shadow-sm ${
-              isBalanced
-                ? 'bg-indigo-600 hover:bg-indigo-700'
-                : 'bg-slate-300 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
-            }`}
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>{loading ? 'Guardando...' : 'Guardar'}</span>
-          </button>
+
+        {/* Mode Selector */}
+        <div className="w-full sm:w-auto flex justify-center">
+          <ModeSelector
+            currentMode={mode}
+            onModeChange={handleModeChangeRequest}
+            disabled={loading}
+          />
         </div>
       </header>
 
-      {/* Main Form Scroll Area */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto w-full">
         {error && (
-          <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-sm flex items-start gap-2.5 max-w-4xl mx-auto border border-red-100 dark:border-red-900/50">
+          <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2.5 border border-red-100 dark:border-red-900/50 shadow-xs">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
         {success && (
-          <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-sm flex items-start gap-2.5 max-w-4xl mx-auto border border-green-100 dark:border-green-900/50">
+          <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl flex items-start gap-2.5 border border-green-100 dark:border-green-900/50 shadow-xs">
             <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{success}</span>
           </div>
         )}
 
-        <form onSubmit={handleSave} className="max-w-4xl mx-auto space-y-6">
-          {/* Header Info Block */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-sm border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                Fecha del Asiento
-              </label>
-              <input
-                type="date"
-                value={accountingDate}
-                required
-                onChange={(e) => {
-                  setAccountingDate(e.target.value);
-                  setIsDirty(true);
-                }}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-sm p-2 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-semibold"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                Descripción / Glosa
-              </label>
-              <input
-                type="text"
-                value={description}
-                required
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setIsDirty(true);
-                }}
-                placeholder="Ej. Pago de alquiler de oficina principal"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-sm p-2 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-semibold"
-              />
-            </div>
-          </div>
-
-          {/* Journal Entries List Block */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-sm border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase text-slate-400 dark:text-slate-400 tracking-wider">
-                Detalle de Asientos (Debe / Haber)
-              </h3>
-              <button
-                type="button"
-                onClick={handleAddEntry}
-                className="flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Agregar Apunte</span>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {entries.map((entry, index) => (
-                <JournalEntryRow
-                  key={index}
-                  index={index}
-                  entry={entry}
-                  accounts={accounts}
-                  onUpdate={handleUpdateEntry}
-                  onRemove={handleRemoveEntry}
-                  canRemove={entries.length > 2}
-                  baseCurrency={baseCurrency}
-                  onQuickCreateAccount={(initialName) =>
-                    setQuickCreateState({ lineIndex: index, initialName })
-                  }
-                />
-              ))}
-            </div>
-          </div>
-        </form>
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          {mode === TransactionMode.QUICK ? (
+            <QuickTransactionForm
+              accounts={accounts}
+              baseCurrency={baseCurrency}
+              initialValues={quickInitialValues}
+              onSubmit={handleSubmit}
+              onCancel={handleCancelClick}
+              loading={loading}
+              onQuickCreateAccount={(initialName, targetField) => {
+                setIsDirty(true);
+                setQuickCreateState({ initialName, targetField });
+              }}
+            />
+          ) : (
+            <FreeJournalEntryGrid
+              accounts={accounts}
+              baseCurrency={baseCurrency}
+              initialValues={freeJournalInitialValues}
+              onSubmit={handleSubmit}
+              onCancel={handleCancelClick}
+              loading={loading}
+              onQuickCreateAccount={(initialName, lineIndex) => {
+                setIsDirty(true);
+                setQuickCreateState({ initialName, lineIndex });
+              }}
+            />
+          )}
+        </div>
       </main>
 
-      {/* Sticky Bottom Summary Panel */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 shrink-0 shadow-lg">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center gap-6 w-full sm:w-auto text-xs justify-around sm:justify-start">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Total Debe
-              </p>
-              <p className="font-extrabold text-sm sm:text-base text-rose-600 dark:text-rose-400 mt-0.5">
-                {formatCurrency(totalDebits, baseCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Total Haber
-              </p>
-              <p className="font-extrabold text-sm sm:text-base text-emerald-600 dark:text-emerald-500 mt-0.5">
-                {formatCurrency(totalCredits, baseCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                Diferencia
-              </p>
-              <div
-                className={`flex items-center gap-1 font-extrabold text-sm sm:text-base mt-0.5 transition-colors duration-500 ${
-                  isBalanced ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-500'
-                }`}
-              >
-                {isBalanced && (
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-in fade-in zoom-in-50 duration-300" />
-                )}
-                <span>{formatCurrency(difference, baseCurrency)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2 w-full sm:w-auto shrink-0">
-            <button
-              type="button"
-              onClick={handleCancelClick}
-              className="flex-1 sm:hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-sm text-xs hover:bg-slate-200 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              type="submit"
-              disabled={loading || !isBalanced}
-              className={`flex-1 sm:flex-none px-6 py-2.5 text-white font-bold rounded-sm text-xs transition duration-150 flex items-center justify-center gap-1.5 shadow-sm ${
-                isBalanced
-                  ? 'bg-indigo-600 hover:bg-indigo-700'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
-              }`}
-            >
-              <Save className="w-4 h-4" />
-              <span>{loading ? 'Guardando...' : 'Guardar Asiento'}</span>
-            </button>
-          </div>
-        </div>
-      </footer>
-
+      {/* Quick Account Creation Modal */}
       {quickCreateState && (
         <AccountModal
           initialName={quickCreateState.initialName}
@@ -481,17 +422,74 @@ function TransactionForm() {
               setAccounts((prev) =>
                 prev.some((a) => a.id === newAccount.id) ? prev : [...prev, newAccount],
               );
-              handleUpdateEntry(quickCreateState.lineIndex, { accountId: newAccount.id });
+
+              if (quickCreateState.targetField === 'primary') {
+                setQuickInitialValues((prev) => ({
+                  ...prev,
+                  primaryAccountId: newAccount.id,
+                }));
+              } else if (quickCreateState.targetField === 'secondary') {
+                setQuickInitialValues((prev) => ({
+                  ...prev,
+                  secondaryAccountId: newAccount.id,
+                }));
+              } else if (quickCreateState.lineIndex !== undefined) {
+                setFreeJournalInitialValues((prev) => {
+                  const nextLines = [
+                    ...(prev?.lines || [
+                      { id: '1', accountId: '', debitAmount: '', creditAmount: '' },
+                      { id: '2', accountId: '', debitAmount: '', creditAmount: '' },
+                    ]),
+                  ];
+                  if (nextLines[quickCreateState.lineIndex!]) {
+                    nextLines[quickCreateState.lineIndex!] = {
+                      ...nextLines[quickCreateState.lineIndex!],
+                      accountId: newAccount.id,
+                    };
+                  }
+                  return { ...prev, lines: nextLines };
+                });
+              }
             }
             setQuickCreateState(null);
           }}
         />
       )}
 
+      {/* Mode Switch Discard Confirmation Dialog */}
+      {showModeSwitchConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+              ¿Cambiar Modo de Transacción?
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Al cambiar de modo, se perderán los datos que hayas ingresado en el formulario actual.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={cancelModeSwitch}
+                className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+              >
+                Seguir en este modo
+              </button>
+              <button
+                type="button"
+                onClick={confirmModeSwitch}
+                className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
+              >
+                Cambiar de Modo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Accidental Navigation Cancel Confirmation Overlay Dialog */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-sm w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
               ¿Descartar Cambios?
             </h3>
@@ -503,7 +501,7 @@ function TransactionForm() {
               <button
                 type="button"
                 onClick={() => setShowCancelConfirm(false)}
-                className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-sm text-xs hover:bg-slate-200 transition"
+                className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-600 transition"
               >
                 Seguir Editando
               </button>
@@ -514,7 +512,7 @@ function TransactionForm() {
                   setIsDirty(false);
                   router.push('/transactions');
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-sm text-xs transition shadow-sm"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
               >
                 Salir de Todos Modos
               </button>
@@ -538,7 +536,7 @@ export default function NewTransactionPage() {
         </div>
       }
     >
-      <TransactionForm />
+      <TransactionPageContent />
     </Suspense>
   );
 }

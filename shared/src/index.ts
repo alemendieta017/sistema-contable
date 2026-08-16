@@ -110,6 +110,21 @@ export const UpdateAccountRequestSchema = z.object({
 
 export type UpdateAccountRequest = z.infer<typeof UpdateAccountRequestSchema>;
 
+// Transaction entry modes
+export enum TransactionMode {
+  QUICK = 'QUICK',
+  FREE_JOURNAL = 'FREE_JOURNAL',
+}
+export const TransactionModeSchema = z.nativeEnum(TransactionMode);
+
+// Operation template for Quick Transaction
+export enum QuickOperationType {
+  EXPENSE = 'EXPENSE',
+  INCOME = 'INCOME',
+  TRANSFER = 'TRANSFER',
+}
+export const QuickOperationTypeSchema = z.nativeEnum(QuickOperationType);
+
 // Journal Entry Request Schema
 export const JournalEntryRequestSchema = z.object({
   accountId: z.string().uuid(),
@@ -456,11 +471,9 @@ export const FactoryResetRequestSchema = z.object({
 export type FactoryResetRequest = z.infer<typeof FactoryResetRequestSchema>;
 
 export const DeleteAccountRequestSchema = z.object({
-  confirmationPhrase: z
-    .string()
-    .refine((val) => val === DELETE_ACCOUNT_PHRASE, {
-      message: `Debe escribir exactamente "${DELETE_ACCOUNT_PHRASE}"`,
-    }),
+  confirmationPhrase: z.string().refine((val) => val === DELETE_ACCOUNT_PHRASE, {
+    message: `Debe escribir exactamente "${DELETE_ACCOUNT_PHRASE}"`,
+  }),
   currentPassword: z.string().min(1, 'La contraseña actual es requerida'),
 });
 
