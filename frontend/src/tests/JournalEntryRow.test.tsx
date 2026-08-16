@@ -86,4 +86,38 @@ describe('JournalEntryRow Component', () => {
     fireEvent.mouseDown(dynamicOption);
     expect(onQuickCreate).toHaveBeenCalledWith('Servicios Tigo');
   });
+
+  test('excludes inactive accounts from combobox options unless currently assigned to row', () => {
+    const accountsWithInactive = [
+      { id: 'acc-1', name: 'Caja Activa', type: 'ASSET', status: 'ACTIVE' },
+      { id: 'acc-2', name: 'Caja Inactiva', type: 'ASSET', status: 'INACTIVE' },
+      { id: 'acc-3', name: 'Banco Inactivo Asignado', type: 'ASSET', status: 'INACTIVE' },
+    ];
+
+    // Case 1: row with empty accountId does not show inactive accounts
+    const { rerender } = render(
+      <JournalEntryRow
+        {...defaultProps}
+        accounts={accountsWithInactive}
+        entry={{ accountId: '', entryType: 'DEBIT', amount: '' }}
+      />,
+    );
+
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+
+    expect(screen.getByText('Caja Activa')).toBeInTheDocument();
+    expect(screen.queryByText('Caja Inactiva')).not.toBeInTheDocument();
+
+    // Case 2: row with acc-3 assigned retains acc-3 for visibility
+    rerender(
+      <JournalEntryRow
+        {...defaultProps}
+        accounts={accountsWithInactive}
+        entry={{ accountId: 'acc-3', entryType: 'DEBIT', amount: 50 }}
+      />,
+    );
+
+    expect(screen.getByRole('combobox')).toHaveValue('Banco Inactivo Asignado');
+  });
 });

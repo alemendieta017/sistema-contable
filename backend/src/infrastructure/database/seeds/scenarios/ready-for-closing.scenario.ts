@@ -18,8 +18,9 @@ export async function readyForClosingScenario(
     name: string;
     type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
     systemRole?: 'NET_INCOME' | 'RETAINED_EARNINGS';
+    isCashOrBank?: boolean;
   }> = [
-    { name: 'Efectivo', type: 'ASSET' },
+    { name: 'Efectivo', type: 'ASSET', isCashOrBank: true },
     { name: 'Capital Inicial', type: 'EQUITY' },
     { name: 'Sueldo', type: 'INCOME' },
     { name: 'Otros Ingresos', type: 'INCOME' },
@@ -40,12 +41,23 @@ export async function readyForClosingScenario(
         type: acc.type,
         currencyId: baseCurrency.id,
         status: 'ACTIVE',
+        isCashOrBank: acc.isCashOrBank ?? false,
         systemRole: acc.systemRole || null,
       });
       account = await em.save(AccountEntity, account);
-    } else if (acc.systemRole && !account.systemRole) {
-      account.systemRole = acc.systemRole;
-      account = await em.save(AccountEntity, account);
+    } else {
+      let modified = false;
+      if (acc.systemRole && !account.systemRole) {
+        account.systemRole = acc.systemRole;
+        modified = true;
+      }
+      if (acc.isCashOrBank !== undefined && account.isCashOrBank !== acc.isCashOrBank) {
+        account.isCashOrBank = acc.isCashOrBank;
+        modified = true;
+      }
+      if (modified) {
+        account = await em.save(AccountEntity, account);
+      }
     }
     accountMap.set(acc.name, account);
   }

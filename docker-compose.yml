@@ -59,7 +59,7 @@ services:
       - /app/shared/node_modules
       - /app/frontend/node_modules
       - /app/frontend/.next
-    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && npm run dev -- --webpack"
+    command: sh -c "rm -f tsconfig*.tsbuildinfo && npm --prefix /app run build -w @sistema-contable/shared && npm run dev"
     depends_on:
       - backend
 

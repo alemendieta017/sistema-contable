@@ -83,11 +83,12 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
     async function loadAccounts() {
       setIsLoadingAccounts(true);
       try {
-        const list = await api.accounts.list();
+        const list = await api.accounts.list('ACTIVE');
         const rawAccounts: AccountItem[] = Array.isArray(list) ? list : list?.accounts || [];
 
         const filtered = rawAccounts.filter((acc) => {
-          if (acc.status && acc.status !== 'ACTIVE') return false;
+          if (acc.status && acc.status !== 'ACTIVE' && (!editRow || editRow.accountId !== acc.id))
+            return false;
           if (isAsset) {
             return acc.type === 'ASSET' && !acc.isCashOrBank;
           } else if (isLiability) {

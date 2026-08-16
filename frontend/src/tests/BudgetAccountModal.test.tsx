@@ -61,6 +61,7 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
 
     // 1. Account selector
     await waitFor(() => {
+      expect(api.accounts.list).toHaveBeenCalledWith('ACTIVE');
       expect(screen.getByText(/1.2.01.01 - Fondo Mutuo Renta Fija/)).toBeInTheDocument();
     });
 
@@ -70,6 +71,35 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
 
     // 3. Concept / Label input
     expect(screen.getByPlaceholderText(/Ej: Aporte Fondo Mutuo/i)).toBeInTheDocument();
+  });
+
+  test('should exclude inactive accounts from selection list', async () => {
+    (api.accounts.list as jest.Mock).mockResolvedValue([
+      {
+        id: 'acc-active',
+        name: 'Inversión Activa',
+        code: '1.2.01.01',
+        type: 'ASSET',
+        isCashOrBank: false,
+        status: 'ACTIVE',
+      },
+      {
+        id: 'acc-inactive',
+        name: 'Inversión Inactiva',
+        code: '1.2.01.02',
+        type: 'ASSET',
+        isCashOrBank: false,
+        status: 'INACTIVE',
+      },
+    ]);
+
+    render(<BudgetAccountModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/1.2.01.01 - Inversión Activa/)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Inversión Inactiva/)).not.toBeInTheDocument();
   });
 
   test('should submit correctly with selected account, direction, and concept', async () => {

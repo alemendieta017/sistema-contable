@@ -32,11 +32,10 @@ export class IncomeStatementUseCase {
       throw new NotFoundException('Period not found');
     }
 
-    // 2. Fetch all active INCOME and EXPENSE accounts for the user
+    // 2. Fetch all INCOME and EXPENSE accounts for the user
     const accounts = await this.accountRepository.find({
       where: {
         userId,
-        status: 'ACTIVE',
         type: In(['INCOME', 'EXPENSE']),
       },
     });
@@ -66,18 +65,22 @@ export class IncomeStatementUseCase {
 
       if (account.type === 'INCOME') {
         amount = bal.totalCredits - bal.totalDebits;
-        income.push({
-          accountId: account.id,
-          name: account.name,
-          amount,
-        });
+        if (account.status === 'ACTIVE' || Math.abs(amount) >= 0.0001) {
+          income.push({
+            accountId: account.id,
+            name: account.name,
+            amount,
+          });
+        }
       } else if (account.type === 'EXPENSE') {
         amount = bal.totalDebits - bal.totalCredits;
-        expenses.push({
-          accountId: account.id,
-          name: account.name,
-          amount,
-        });
+        if (account.status === 'ACTIVE' || Math.abs(amount) >= 0.0001) {
+          expenses.push({
+            accountId: account.id,
+            name: account.name,
+            amount,
+          });
+        }
       }
     }
 

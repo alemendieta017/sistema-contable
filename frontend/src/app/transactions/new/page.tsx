@@ -15,6 +15,7 @@ interface Account {
   currencyId: string;
   parentId?: string | null;
   systemRole?: string | null;
+  status?: 'ACTIVE' | 'INACTIVE';
 }
 
 interface Entry {
@@ -94,8 +95,12 @@ function TransactionForm() {
 
   const fetchInitialData = async () => {
     try {
-      const [accData, curData] = await Promise.all([api.accounts.list(), api.currencies.list()]);
-      setAccounts(accData || []);
+      const [accData, curData] = await Promise.all([
+        api.accounts.list('ACTIVE'),
+        api.currencies.list(),
+      ]);
+      const rawAccounts: Account[] = Array.isArray(accData) ? accData : accData?.accounts || [];
+      setAccounts(rawAccounts.filter((a) => a.status !== 'INACTIVE'));
       setCurrencies(curData || []);
     } catch {
       setError('Error al cargar cuentas y monedas de respaldo.');

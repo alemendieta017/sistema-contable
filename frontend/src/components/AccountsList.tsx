@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RotateCcw } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
 interface AccountSummary {
@@ -20,9 +20,13 @@ interface AccountSummary {
 
 interface AccountsListProps {
   accounts: AccountSummary[];
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   deletingId?: string;
-  onToggleCashOrBank: (id: string, isCashOrBank: boolean) => void;
+  onToggleCashOrBank?: (id: string, isCashOrBank: boolean) => void;
+  onReactivate?: (id: string) => void;
+  onDeactivate?: (id: string) => void;
+  reactivatingId?: string;
+  deactivatingId?: string;
 }
 
 export default function AccountsList({
@@ -30,6 +34,10 @@ export default function AccountsList({
   onDelete,
   deletingId,
   onToggleCashOrBank: _onToggleCashOrBank,
+  onReactivate,
+  onDeactivate,
+  reactivatingId,
+  deactivatingId,
 }: AccountsListProps) {
   const renderAccountList = (list: AccountSummary[]) => {
     const roots = list.filter((a) => !a.parentId);
@@ -47,6 +55,9 @@ export default function AccountsList({
         {ordered.map((a) => {
           const isChild = !!a.parentId;
           const isInactive = a.status === 'INACTIVE';
+          const isReactivating = reactivatingId === a.id;
+          const isDeletingOrDeactivating = deletingId === a.id || deactivatingId === a.id;
+
           return (
             <div
               key={a.id}
@@ -54,7 +65,7 @@ export default function AccountsList({
                 isChild
                   ? 'pl-8 bg-slate-50/20 dark:bg-slate-900/10 border-l-2 border-indigo-500/20'
                   : ''
-              } ${isInactive ? 'opacity-50' : ''}`}
+              } ${isInactive ? 'opacity-60 bg-slate-50/30 dark:bg-slate-900/20' : ''}`}
             >
               <span
                 className={`${isChild ? 'text-slate-500 dark:text-slate-400 font-medium' : 'font-bold text-slate-700 dark:text-slate-200'}`}
@@ -62,18 +73,18 @@ export default function AccountsList({
                 {isChild && <span className="mr-1 text-slate-400">└─</span>}
                 {a.name}
                 {isInactive && (
-                  <span className="ml-1.5 text-5xs bg-slate-200 dark:bg-slate-700 text-slate-500 px-1 rounded uppercase tracking-wider font-bold">
+                  <span className="ml-1.5 text-5xs bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
                     Inactiva
                   </span>
                 )}
                 {a.isCashOrBank && (
-                  <span className="ml-1.5 text-5xs bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-1 rounded uppercase tracking-wider font-bold">
+                  <span className="ml-1.5 text-5xs bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
                     Caja/Banco
                   </span>
                 )}
                 {a.systemRole && (
                   <span
-                    className="ml-1.5 text-5xs bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 px-1 rounded uppercase tracking-wider font-bold"
+                    className="ml-1.5 text-5xs bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold"
                     title="Cuenta especial reservada por el sistema"
                   >
                     Sistema ({a.systemRole === 'NET_INCOME' ? 'Resultado' : 'Retenidas'})
@@ -98,17 +109,46 @@ export default function AccountsList({
                     decimalPlaces: a.decimalPlaces,
                   })}
                 </span>
-                {!isInactive && !a.systemRole && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(a.id)}
-                    disabled={deletingId === a.id}
-                    className="text-slate-400 hover:text-red-500 transition-all duration-150 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20"
-                    title="Eliminar o Desactivar"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                {!a.systemRole &&
+                  (isInactive ? (
+                    onReactivate && (
+                      <button
+                        type="button"
+                        onClick={() => onReactivate(a.id)}
+                        disabled={isReactivating}
+                        className="flex items-center gap-1 text-3xs font-bold py-1 px-2.5 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition disabled:opacity-50"
+                        title="Reactivar cuenta"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Reactivar</span>
+                      </button>
+                    )
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      {onDeactivate && (
+                        <button
+                          type="button"
+                          onClick={() => onDeactivate(a.id)}
+                          disabled={isDeletingOrDeactivating}
+                          className="text-3xs font-bold py-1 px-2 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition disabled:opacity-50"
+                          title="Desactivar cuenta"
+                        >
+                          Desactivar
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(a.id)}
+                          disabled={isDeletingOrDeactivating}
+                          className="text-slate-400 hover:text-red-500 transition-all duration-150 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20"
+                          title="Eliminar cuenta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
           );

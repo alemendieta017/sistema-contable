@@ -1,5 +1,6 @@
 import {
   CreateAccountRequest,
+  UpdateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
   BudgetMatrixResponse,
@@ -131,8 +132,12 @@ export const api = {
   },
 
   accounts: {
-    async list() {
-      const res = await fetch(`${API_BASE_URL}/accounts`, {
+    async list(status?: 'ACTIVE' | 'INACTIVE' | 'ALL') {
+      const url = new URL(`${API_BASE_URL}/accounts`);
+      if (status) {
+        url.searchParams.append('status', status);
+      }
+      const res = await fetch(url.toString(), {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -156,7 +161,7 @@ export const api = {
       return handleResponse(res);
     },
 
-    async update(id: string, data: { name?: string; isCashOrBank?: boolean }) {
+    async update(id: string, data: UpdateAccountRequest) {
       const res = await fetch(`${API_BASE_URL}/accounts/${id}`, {
         method: 'PATCH',
         headers: getHeaders(),

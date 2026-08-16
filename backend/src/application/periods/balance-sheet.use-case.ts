@@ -62,11 +62,10 @@ export class BalanceSheetUseCase {
         throw new BadRequestException('date is required for date mode');
       }
 
-      // 1. Fetch all active accounts
+      // 1. Fetch all accounts for user
       const accounts = await this.accountRepository.find({
         where: {
           userId,
-          status: 'ACTIVE',
         },
       });
 
@@ -228,7 +227,6 @@ export class BalanceSheetUseCase {
           .andWhere('transaction.accountingDate >= :startDate', { startDate: fiscalYear.startDate })
           .andWhere('transaction.accountingDate <= :endDate', { endDate: date })
           .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
-          .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' })
           .groupBy('entry.entryType')
           .getRawMany();
 
@@ -257,8 +255,7 @@ export class BalanceSheetUseCase {
         .innerJoin('entry.account', 'account')
         .where('transaction.userId = :userId', { userId })
         .andWhere('transaction.status = :status', { status: 'POSTED' })
-        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
-        .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' });
+        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] });
 
       if (priorBoundaryDate) {
         priorQuery.andWhere('transaction.accountingDate < :boundaryDate', {
@@ -411,11 +408,10 @@ export class BalanceSheetUseCase {
   }
 
   private async calculateForPeriod(userId: string, period: PeriodEntity, targetDepth: number) {
-    // 1. Fetch all active accounts
+    // 1. Fetch all accounts for user
     const accounts = await this.accountRepository.find({
       where: {
         userId,
-        status: 'ACTIVE',
       },
     });
 
@@ -477,7 +473,6 @@ export class BalanceSheetUseCase {
         .andWhere('transaction.status = :status', { status: 'POSTED' })
         .andWhere('transaction.accountingDate < :boundaryDate', { boundaryDate: priorBoundaryDate })
         .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
-        .andWhere('account.status = :statusActive', { statusActive: 'ACTIVE' })
         .groupBy('entry.entryType')
         .getRawMany();
 
@@ -624,6 +619,11 @@ export class BalanceSheetUseCase {
 
     for (const account of reportingAccounts) {
       const balance = Number((reportingBalances.get(account.id) ?? 0.0).toFixed(4));
+      // If account is INACTIVE and has 0 balance, omit from reporting
+      if (account.status === 'INACTIVE' && Math.abs(balance) < 0.0001) {
+        continue;
+      }
+
       const item = {
         accountId: account.id,
         name: account.name,

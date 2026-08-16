@@ -76,6 +76,12 @@ export interface UserProfile {
 }
 
 // Account Types
+export enum AccountStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
+export const AccountStatusSchema = z.nativeEnum(AccountStatus);
+
 export const SystemRoleSchema = z.enum(['NET_INCOME', 'RETAINED_EARNINGS']).nullable().optional();
 export type SystemRole = 'NET_INCOME' | 'RETAINED_EARNINGS';
 
@@ -94,6 +100,15 @@ export const CreateAccountRequestSchema = z.object({
 });
 
 export type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
+
+// Update Account Request Schema
+export const UpdateAccountRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  isCashOrBank: z.boolean().optional(),
+  status: AccountStatusSchema.optional(),
+});
+
+export type UpdateAccountRequest = z.infer<typeof UpdateAccountRequestSchema>;
 
 // Journal Entry Request Schema
 export const JournalEntryRequestSchema = z.object({

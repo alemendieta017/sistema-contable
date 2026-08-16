@@ -45,13 +45,32 @@ describe('TransactionModal Double-Entry Validation', () => {
     ]);
   });
 
-  test('should load accounts and display the form', async () => {
+  test('should load only ACTIVE accounts and display the form', async () => {
+    (api.accounts.list as jest.Mock).mockResolvedValue([
+      { id: 'acc-1', name: 'Efectivo', type: 'ASSET', currencyId: 'cur-usd', status: 'ACTIVE' },
+      { id: 'acc-2', name: 'Comida', type: 'EXPENSE', currencyId: 'cur-usd', status: 'ACTIVE' },
+      {
+        id: 'acc-inactive',
+        name: 'Caja Cerrada',
+        type: 'ASSET',
+        currencyId: 'cur-usd',
+        status: 'INACTIVE',
+      },
+    ]);
+
     render(<TransactionModal onClose={jest.fn()} />);
 
     expect(screen.getByText(/Registrar Asiento/i)).toBeInTheDocument();
     await waitFor(() => {
-      expect(api.accounts.list).toHaveBeenCalled();
+      expect(api.accounts.list).toHaveBeenCalledWith('ACTIVE');
     });
+
+    const select1 = screen.getAllByRole('combobox')[0];
+    fireEvent.focus(select1);
+
+    expect(screen.getByText('Efectivo')).toBeInTheDocument();
+    expect(screen.getByText('Comida')).toBeInTheDocument();
+    expect(screen.queryByText('Caja Cerrada')).not.toBeInTheDocument();
   });
 
   test('should keep submit button disabled if debits and credits do not balance', async () => {

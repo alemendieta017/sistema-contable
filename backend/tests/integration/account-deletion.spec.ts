@@ -3,7 +3,7 @@ import { DeleteAccountUseCase } from '../../src/application/accounts/delete-acco
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { JournalEntryEntity } from '../../src/infrastructure/database/entities/journal-entry.entity';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 describe('Account Deletion/Deactivation Integration Tests', () => {
@@ -61,7 +61,7 @@ describe('Account Deletion/Deactivation Integration Tests', () => {
     expect(mockEntityManager.delete).toHaveBeenCalledWith(AccountEntity, { id: accountId });
   });
 
-  it('should soft-delete (deactivate) the account if it has journal entries associated', async () => {
+  it('should throw BadRequestException when trying to delete account with journal entries associated', async () => {
     const userId = 'user-123';
     const accountId = 'acc-123';
     const account = { id: accountId, userId, status: 'ACTIVE' };
@@ -69,13 +69,12 @@ describe('Account Deletion/Deactivation Integration Tests', () => {
     mockEntityManager.findOne.mockResolvedValue(account);
     mockEntityManager.count.mockResolvedValue(5); // 5 journal entries exist
 
-    const result = await useCase.execute(userId, accountId);
-
-    expect(result).toBeDefined();
-    expect(result.success).toBe(true);
-    expect(result.action).toBe('DEACTIVATED');
-    expect(account.status).toBe('INACTIVE');
-    expect(mockEntityManager.save).toHaveBeenCalled();
+    await expect(useCase.execute(userId, accountId)).rejects.toThrow(
+      new BadRequestException(
+        'Cannot delete account with existing transactions. Deactivate the account instead.',
+      ),
+    );
+    expect(mockEntityManager.delete).not.toHaveBeenCalled();
   });
 
   it('should throw NotFoundException if account does not exist', async () => {

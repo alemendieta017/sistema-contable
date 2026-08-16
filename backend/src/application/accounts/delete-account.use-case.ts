@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
@@ -30,15 +30,14 @@ export class DeleteAccountUseCase {
       });
 
       if (entriesCount > 0) {
-        // Soft delete / Logical deactivation
-        account.status = 'INACTIVE';
-        await entityManager.save(AccountEntity, account);
-        return { success: true, action: 'DEACTIVATED' };
-      } else {
-        // Physical delete
-        await entityManager.delete(AccountEntity, { id: accountId });
-        return { success: true, action: 'DELETED' };
+        throw new BadRequestException(
+          'Cannot delete account with existing transactions. Deactivate the account instead.',
+        );
       }
+
+      // Physical delete
+      await entityManager.delete(AccountEntity, { id: accountId });
+      return { success: true, action: 'DELETED' };
     });
   }
 }
