@@ -10,7 +10,6 @@ import {
 } from '@sistema-contable/shared';
 import {
   Wand2,
-  Save,
   Lock,
   Plus,
   Trash2,
@@ -41,7 +40,7 @@ export interface BudgetMatrixGridProps {
       subRowId?: string | null;
     }>,
   ) => void;
-  onSave: () => void;
+  onSave?: () => void;
   onOpenDriverModal?: (row: BudgetMatrixRow) => void;
   onOpenAutofill?: (row: BudgetMatrixRow) => void;
   onDirectionChange?: (
@@ -109,7 +108,6 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   baseCurrency,
   onCellChange,
   onPasteBatch,
-  onSave,
   onOpenDriverModal,
   onOpenAutofill,
   onDirectionChange,
@@ -117,7 +115,6 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   onEditBalanceRow,
   onDeleteRow,
   onDeleteSubRow,
-  isSaving = false,
   dirtyCells,
 }) => {
   const { periods, rows, sections } = matrixData;
@@ -641,65 +638,62 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
             >
               {/* Account Label (Sticky left column for desktop & mobile) */}
               <td
-                className={`p-3 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[240px] max-w-[320px] shadow-sm ${
+                className={`px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[250px] max-w-[340px] shadow-sm ${
                   isParent
                     ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-bold text-slate-900 dark:text-slate-100'
                     : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-medium text-slate-800 dark:text-slate-200'
                 } ${isChild ? 'pl-7' : 'pl-3'}`}
               >
-                <div className="flex flex-col space-y-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center space-x-1.5 truncate">
-                      {/* Collapse/Expand Chevron for Parent Categories */}
-                      {isParent && (
-                        <button
-                          type="button"
-                          onClick={() => toggleParentCollapse(row.accountId)}
-                          className="p-0.5 rounded text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors cursor-pointer"
-                          title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
-                        >
-                          {isCollapsed ? (
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
-
-                      <span
-                        className={`truncate ${
-                          isParent
-                            ? 'text-indigo-700 dark:text-indigo-300 font-bold text-xs cursor-pointer'
-                            : isChild
-                              ? 'text-slate-700 dark:text-slate-300 text-xs'
-                              : 'text-slate-800 dark:text-slate-100 text-xs'
-                        }`}
-                        title={row.accountName}
-                        onClick={() => isParent && toggleParentCollapse(row.accountId)}
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center space-x-1.5 min-w-0 truncate">
+                    {/* Collapse/Expand Chevron for Parent Categories */}
+                    {isParent && (
+                      <button
+                        type="button"
+                        onClick={() => toggleParentCollapse(row.accountId)}
+                        className="p-0.5 rounded text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors cursor-pointer shrink-0"
+                        title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
                       >
-                        {row.subRowLabel
+                        {isCollapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+
+                    <span
+                      className={`truncate ${
+                        isParent
+                          ? 'text-indigo-700 dark:text-indigo-300 font-bold text-xs cursor-pointer'
+                          : isChild
+                            ? 'text-slate-700 dark:text-slate-300 text-xs'
+                            : 'text-slate-800 dark:text-slate-100 text-xs'
+                      }`}
+                      title={
+                        row.subRowLabel
                           ? `${row.accountName} (${row.subRowLabel})`
-                          : row.accountName}
-                      </span>
-                    </div>
+                          : row.accountName
+                      }
+                      onClick={() => isParent && toggleParentCollapse(row.accountId)}
+                    >
+                      {row.subRowLabel
+                        ? `${row.accountName} (${row.subRowLabel})`
+                        : row.accountName}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                        {row.accountCode}
+                  <div className="flex items-center space-x-1 shrink-0">
+                    {isParent && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                        Grupo
                       </span>
-                      {isParent && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
-                          Subtotal Grupo
-                        </span>
-                      )}
-                    </div>
+                    )}
 
                     {/* Discrete Cash Flow Direction Badge for Balance Accounts */}
                     {!isParent && isAssetOrLiability && row.cashFlowDirection && (
                       <span
-                        className={`inline-flex items-center space-x-1 text-[10px] font-medium px-2 py-0.5 rounded border ${
+                        className={`inline-flex items-center space-x-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded border ${
                           row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                             : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
@@ -708,12 +702,12 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                         {row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO ? (
                           <>
                             <ArrowUpRight className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-                            <span>Entrada</span>
+                            <span className="hidden xl:inline">Entrada</span>
                           </>
                         ) : (
                           <>
                             <ArrowDownRight className="w-3 h-3 text-rose-500 dark:text-rose-400" />
-                            <span>Salida</span>
+                            <span className="hidden xl:inline">Salida</span>
                           </>
                         )}
                       </span>
@@ -927,52 +921,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-2xl relative">
-      {/* Grid Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-50/90 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center space-x-3">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Navegación por teclado (
-            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-              Tab
-            </kbd>
-            ,{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-              Enter
-            </kbd>
-            ,{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-              Esc
-            </kbd>
-            ), Copiar/Pegar Excel &{' '}
-            <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-              Ctrl+D
-            </kbd>{' '}
-            (Rellenar Derecha)
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          {dirtyCells.size > 0 && (
-            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium animate-pulse">
-              ● {dirtyCells.size} celda(s) con cambios sin guardar
-            </span>
-          )}
-          <button
-            onClick={onSave}
-            disabled={isSaving || dirtyCells.size === 0}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              dirtyCells.size > 0
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 cursor-pointer'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSaving ? 'Guardando...' : 'Guardar Todo'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Spreadsheet Table with Horizontal Touch Scroll & Sticky Account Column (No bottom cash flow footer) */}
+      {/* Spreadsheet Table with Horizontal Touch Scroll & Sticky Account Column */}
       <div
         ref={gridRef}
         tabIndex={0}
@@ -1027,13 +976,13 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                       key={rowKey}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
                     >
-                      <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans font-medium text-slate-800 dark:text-slate-200 sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 shadow-sm">
-                        <div className="flex flex-col">
-                          <span className="text-slate-900 dark:text-slate-100 font-medium">
+                      <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[250px] max-w-[340px] bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 shadow-sm">
+                        <div className="flex items-center min-w-0 truncate">
+                          <span
+                            className="text-slate-800 dark:text-slate-100 font-medium text-xs truncate"
+                            title={row.accountName}
+                          >
                             {row.accountName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                            {row.accountCode}
                           </span>
                         </div>
                       </td>

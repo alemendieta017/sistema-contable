@@ -1,6 +1,6 @@
-# Data Model: Budget Planning Matrix & Execution Control UX
+# Data Model: Budget Planning Matrix & Execution Control UX (Desktop & Mobile)
 
-**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-13 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
+**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-15 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
 
 ---
 
@@ -63,11 +63,11 @@ Represents individual account budget allocations or dynamic cash movement rows.
    - Imputable children editable; parent categories display calculated read-only subtotals.
 3. 🔵 **AHORRO E INVERSIONES (`AHORRO_INVERSIONES`)**:
    - Accounts of type `ASSET` (excluding cash/bank liquid accounts with `isCashOrBank = true`).
-   - Loaded on-demand via modal `+ Presupuestar Activo`.
+   - Loaded on-demand via modal/sheet `+ Presupuestar Activo`.
    - Movement options: `[-] Aporte / Inversión` (`EGRESO_EFECTIVO`) or `[+] Rescate / Desinversión` (`INGRESO_EFECTIVO`).
 4. 🟣 **DEUDAS Y FINANCIACIÓN (`DEUDAS_FINANCIACION`)**:
    - Accounts of type `LIABILITY`.
-   - Loaded on-demand via modal `+ Presupuestar Deuda`.
+   - Loaded on-demand via modal/sheet `+ Presupuestar Deuda`.
    - Movement options: `[-] Pago / Amortización` (`EGRESO_EFECTIVO`) or `[+] Nuevo Préstamo / Financiación` (`INGRESO_EFECTIVO`).
 
 ---
@@ -89,7 +89,7 @@ Audit trail entity recording inter-account budget reallocations within an active
 
 ---
 
-## Enums & Type Definitions
+## 4. Enums & Type Definitions
 
 ```typescript
 export enum BudgetMatrixSectionKey {
@@ -121,25 +121,49 @@ export enum BudgetGaugeStatus {
 
 ---
 
-## Validation & Business Rules
+## 5. Client-Side Mobile Planning & Viewport State Models
 
-1. **Cell Value Sanitization**: Numeric inputs must be non-negative real numbers ($0.00 \dots \infty$). Formatted currency strings (`$1,200.50`), negative parenthesis strings (`(50)`), or invalid values must be sanitized cleanly.
-2. **Locked Period Enforcement**: Budget items in closed/locked periods (`status === 'CLOSED'`) are strictly read-only.
-3. **Double-Entry Execution Calculation**:
+```typescript
+export interface MobilePlanningState {
+  activePeriodId: string;
+  activePeriodIndex: number;
+  expandedAccordionSections: Set<BudgetMatrixSectionKey>;
+  deepDiveRow: BudgetMatrixRow | null;
+  isDeepDiveOpen: boolean;
+  isOptionsMenuOpen: boolean;
+  activeMenuRow: BudgetMatrixRow | null;
+}
+
+export interface DeepDiveDistributionParams {
+  type: 'FLAT' | 'COPY_JAN' | 'PRIOR_YEAR';
+  annualTotal?: number;
+  percentageAdjustment?: number;
+}
+```
+
+---
+
+## 6. Validation & Business Rules
+
+1. **Cell & Touch Input Sanitization**:
+   - Numeric inputs must parse to non-negative real numbers ($0 \dots \infty$). Formatted currency strings (`₲ 150.000`), negative values, or invalid strings must sanitize cleanly without throwing errors.
+2. **Mobile Numeric Input Keyboard**:
+   - Inputs declare `inputmode="numeric"` and `pattern="[0-9]*"` when base currency decimal places are `0` (e.g. Guaraníes `₲`), or `inputmode="decimal"` for fractional currencies (`USD`).
+3. **Locked Period Enforcement**:
+   - Budget items in closed periods (`status === 'CLOSED'`) are strictly read-only on both desktop grid cells and mobile account cards/deep-dive inputs.
+4. **Double-Entry Execution Calculation**:
    - P&L Ingresos: $\text{Executed} = \sum \text{Credits} - \sum \text{Debits}$.
    - P&L Gastos de Vida: $\text{Executed} = \sum \text{Debits} - \sum \text{Credits}$.
    - Salidas de Balance (Aportes / Pagos de Deuda): $\text{Executed} = \sum \text{Debits}$.
    - Entradas de Balance (Rescates / Nuevos Préstamos): $\text{Executed} = \sum \text{Credits}$.
    - $\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$.
-4. **Directional Reallocation Constraint**:
+5. **Directional Reallocation Constraint**:
    - Reassignments are permitted only between accounts sharing the same cash flow direction:
-     - `EGRESO_EFECTIVO` $\leftrightarrow$ `EGRESO_EFECTIVO` (Salida to Salida, e.g. Gasto to Inversión or Pago de Deuda).
-     - `INGRESO_EFECTIVO` $\leftrightarrow$ `INGRESO_EFECTIVO` (Entrada to Entrada, e.g. Ingreso to Rescate or Nuevo Préstamo).
+     - `EGRESO_EFECTIVO` $\leftrightarrow$ `EGRESO_EFECTIVO` (Salida to Salida).
+     - `INGRESO_EFECTIVO` $\leftrightarrow$ `INGRESO_EFECTIVO` (Entrada to Entrada).
    - Source account residual available balance must be $\ge \text{amount}$.
-   - Source and target accounts must be distinct active accounts.
-5. **Baseline Historical Calculations**:
+6. **Baseline Historical Calculations**:
    - Prior year actuals are queried using deterministic 1-year ISO date shifts (`shiftYear(date, -1)`) over indexed accounting dates (`tx.accounting_date >= priorStartDate AND tx.accounting_date <= priorEndDate`).
-   - Accounts without historical transactions default to `0`.
-6. **Atomic Persistence**:
-   - The matrix is persisted atomically in a single batch request via `[ 💾 Guardar Todo ]`.
-   - Dirty state is tracked to prevent navigation loss.
+7. **Atomic Persistence & Dirty State Synchronization**:
+   - Changes are collected client-side in a pending map and persisted atomically via `[ 💾 Guardar Todo ]` (desktop) or Sticky Bottom Action Bar `[ 💾 Guardar Cambios (N pendientes) ]` (mobile).
+   - Viewport resizing/rotation preserves dirty changes without state loss.

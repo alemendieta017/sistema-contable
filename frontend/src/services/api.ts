@@ -2,6 +2,17 @@ import {
   CreateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
+  BudgetMatrixResponse,
+  UpdateBudgetMatrixRequest,
+  UpdateBudgetMatrixResponse,
+  MatrixCellUpdate,
+  ApplyBudgetDriverRequest,
+  ApplyBudgetDriverResponse,
+  BaselineActualsRequest,
+  BaselineActualsResponse,
+  BudgetControlResponse,
+  TransferBudgetFundsRequest,
+  TransferBudgetFundsResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -282,8 +293,8 @@ export const api = {
       return handleResponse(res);
     },
 
-    async getMatrix(fiscalYearId: string, categoryId?: string) {
-      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${fiscalYearId}`;
+    async getMatrix(fiscalYearId: string, categoryId?: string): Promise<BudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${encodeURIComponent(fiscalYearId)}`;
       if (categoryId) {
         url += `&categoryId=${encodeURIComponent(categoryId)}`;
       }
@@ -294,48 +305,42 @@ export const api = {
       return handleResponse(res);
     },
 
-    async getBudgetMatrix(fiscalYearId: string, categoryId?: string) {
+    async getBudgetMatrix(
+      fiscalYearId: string,
+      categoryId?: string,
+    ): Promise<BudgetMatrixResponse> {
       return this.getMatrix(fiscalYearId, categoryId);
     },
 
-    async updateMatrixBatch(data: {
-      fiscalYearId: string;
-      updates: Array<{
-        periodId: string;
-        accountId: string;
-        subRowId?: string | null;
-        subRowLabel?: string | null;
-        amount: number;
-        cashFlowDirection?: any;
-        flowIntention?: any;
-      }>;
-    }) {
+    async updateMatrixBatch(
+      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      updates?: MatrixCellUpdate[],
+    ): Promise<UpdateBudgetMatrixResponse> {
+      const body =
+        typeof fiscalYearIdOrData === 'string'
+          ? { fiscalYearId: fiscalYearIdOrData, updates: updates || [] }
+          : fiscalYearIdOrData;
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
         method: 'PUT',
         headers: getHeaders(),
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
       return handleResponse(res);
     },
 
-    async updateBudgetMatrix(data: {
-      fiscalYearId: string;
-      updates: Array<{
-        periodId: string;
-        accountId: string;
-        subRowId?: string | null;
-        subRowLabel?: string | null;
-        amount: number;
-        cashFlowDirection?: any;
-        flowIntention?: any;
-        isDeleted?: boolean;
-      }>;
-    }) {
-      return this.updateMatrixBatch(data);
+    async updateBudgetMatrix(
+      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      updates?: MatrixCellUpdate[],
+    ): Promise<UpdateBudgetMatrixResponse> {
+      return this.updateMatrixBatch(fiscalYearIdOrData, updates);
     },
 
-    async deleteMatrixRow(fiscalYearId: string, accountId: string, subRowId?: string | null) {
-      let url = `${API_BASE_URL}/budgets/matrix/row?fiscalYearId=${fiscalYearId}&accountId=${accountId}`;
+    async deleteMatrixRow(
+      fiscalYearId: string,
+      accountId: string,
+      subRowId?: string | null,
+    ): Promise<{ success: boolean }> {
+      let url = `${API_BASE_URL}/budgets/matrix/row?fiscalYearId=${encodeURIComponent(fiscalYearId)}&accountId=${encodeURIComponent(accountId)}`;
       if (subRowId) {
         url += `&subRowId=${encodeURIComponent(subRowId)}`;
       }
@@ -346,11 +351,15 @@ export const api = {
       return handleResponse(res);
     },
 
-    async deleteBudgetMatrixRow(fiscalYearId: string, accountId: string, subRowId?: string | null) {
+    async deleteBudgetMatrixRow(
+      fiscalYearId: string,
+      accountId: string,
+      subRowId?: string | null,
+    ): Promise<{ success: boolean }> {
       return this.deleteMatrixRow(fiscalYearId, accountId, subRowId);
     },
 
-    async applyDriver(data: any) {
+    async applyDriver(data: ApplyBudgetDriverRequest): Promise<ApplyBudgetDriverResponse> {
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/apply-driver`, {
         method: 'POST',
         headers: getHeaders(),
@@ -359,11 +368,11 @@ export const api = {
       return handleResponse(res);
     },
 
-    async applyBudgetDriver(data: any) {
+    async applyBudgetDriver(data: ApplyBudgetDriverRequest): Promise<ApplyBudgetDriverResponse> {
       return this.applyDriver(data);
     },
 
-    async baselineActuals(data: any) {
+    async getBaselineActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/baseline-actuals`, {
         method: 'POST',
         headers: getHeaders(),
@@ -372,23 +381,30 @@ export const api = {
       return handleResponse(res);
     },
 
-    async getPriorYearActuals(data: any) {
-      return this.baselineActuals(data);
+    async baselineActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
+      return this.getBaselineActuals(data);
     },
 
-    async getControl(periodId: string) {
-      const res = await fetch(`${API_BASE_URL}/budgets/control?periodId=${periodId}`, {
-        method: 'GET',
-        headers: getHeaders(),
-      });
+    async getPriorYearActuals(data: BaselineActualsRequest): Promise<BaselineActualsResponse> {
+      return this.getBaselineActuals(data);
+    },
+
+    async getControl(periodId: string): Promise<BudgetControlResponse> {
+      const res = await fetch(
+        `${API_BASE_URL}/budgets/control?periodId=${encodeURIComponent(periodId)}`,
+        {
+          method: 'GET',
+          headers: getHeaders(),
+        },
+      );
       return handleResponse(res);
     },
 
-    async getBudgetControl(periodId: string) {
+    async getBudgetControl(periodId: string): Promise<BudgetControlResponse> {
       return this.getControl(periodId);
     },
 
-    async transferControl(data: any) {
+    async transferFunds(data: TransferBudgetFundsRequest): Promise<TransferBudgetFundsResponse> {
       const res = await fetch(`${API_BASE_URL}/budgets/control/transfer`, {
         method: 'POST',
         headers: getHeaders(),
@@ -397,8 +413,14 @@ export const api = {
       return handleResponse(res);
     },
 
-    async transferBudgetFunds(data: any) {
-      return this.transferControl(data);
+    async transferControl(data: TransferBudgetFundsRequest): Promise<TransferBudgetFundsResponse> {
+      return this.transferFunds(data);
+    },
+
+    async transferBudgetFunds(
+      data: TransferBudgetFundsRequest,
+    ): Promise<TransferBudgetFundsResponse> {
+      return this.transferFunds(data);
     },
   },
 

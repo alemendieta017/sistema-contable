@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../../../services/api';
 import {
   BudgetMatrixResponse,
@@ -9,19 +9,46 @@ import {
   BudgetMatrixSectionKey,
 } from '@sistema-contable/shared';
 import { BudgetMatrixGrid } from '../../../components/budgets/BudgetMatrixGrid';
+import { BudgetMobileView } from '../../../components/budgets/BudgetMobileView';
 import { AutofillModal } from '../../../components/budgets/AutofillModal';
-import { Calendar, Filter, RefreshCw, AlertCircle } from 'lucide-react';
+import { useIsMobile } from '../../../hooks/useMediaQuery';
+import { Calendar, Filter, RefreshCw, AlertCircle, Keyboard, Save, History } from 'lucide-react';
 
 export default function BudgetMatrixPage() {
+  const isMobile = useIsMobile();
+
   const [fiscalYears, setFiscalYears] = useState<any[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [matrixData, setMatrixData] = useState<BudgetMatrixResponse | null>(null);
+  const [activePeriodId, setActivePeriodId] = useState<string>('');
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const shortcutsRef = useRef<HTMLDivElement>(null);
+
+  // Close shortcuts popover on outside click or Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (shortcutsRef.current && !shortcutsRef.current.contains(e.target as Node)) {
+        setIsShortcutsOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsShortcutsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // Dirty tracking state
   const [dirtyCells, setDirtyCells] = useState<Set<string>>(new Set());
@@ -105,6 +132,17 @@ export default function BudgetMatrixPage() {
       setMatrixData(data);
       setDirtyCells(new Set());
       setPendingUpdates(new Map());
+
+      // Set initial active period for mobile view if not set or invalid
+      if (data?.periods && data.periods.length > 0) {
+        const openPeriod = data.periods.find((p) => p.status !== 'CLOSED');
+        setActivePeriodId((prev) => {
+          if (prev && data.periods.some((p) => p.id === prev)) {
+            return prev;
+          }
+          return openPeriod ? openPeriod.id : data.periods[0].id;
+        });
+      }
     } catch (err) {
       console.error('Error al obtener la matriz presupuestaria:', err);
     } finally {
@@ -116,7 +154,7 @@ export default function BudgetMatrixPage() {
     fetchMatrixData();
   }, [fetchMatrixData]);
 
-  // Handle cell change from grid
+  // Handle cell change from grid or mobile view
   const handleCellChange = (
     accountId: string,
     periodId: string,
@@ -272,6 +310,16 @@ export default function BudgetMatrixPage() {
       alert(`Error al guardar cambios: ${err.message || 'Intente de nuevo.'}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Discard pending changes
+  const handleDiscard = async () => {
+    if (pendingUpdates.size === 0) return;
+    if (confirm('¿Desea descartar todos los cambios pendientes sin guardar?')) {
+      setPendingUpdates(new Map());
+      setDirtyCells(new Set());
+      await fetchMatrixData();
     }
   };
 
@@ -529,17 +577,16 @@ export default function BudgetMatrixPage() {
 
   return (
     <div className="flex flex-col h-full w-full p-2 sm:p-3 space-y-2 font-sans overflow-hidden">
-      {/* Controls Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl shadow-sm dark:shadow-lg w-full shrink-0">
-        <div className="flex flex-wrap items-center gap-4">
+      {/* Unified Single-Row Controls Header Bar */}
+      <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl shadow-sm dark:shadow-md w-full shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Fiscal Year Selector */}
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Año:</span>
+          <div className="flex items-center space-x-1 shrink-0">
+            <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
             <select
               value={selectedFiscalYearId}
               onChange={(e) => setSelectedFiscalYearId(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs font-semibold focus:border-indigo-500 outline-none"
+              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-semibold focus:border-indigo-500 outline-none cursor-pointer max-w-[130px] sm:max-w-none truncate"
             >
               {fiscalYears.map((fy) => {
                 const isClosed = fy.status === 'CLOSED' || fy.isClosed;
@@ -554,47 +601,141 @@ export default function BudgetMatrixPage() {
           </div>
 
           {/* Category Filter */}
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Categoría:
-            </span>
+          <div className="flex items-center space-x-1 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs font-semibold focus:border-indigo-500 outline-none"
+              className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-semibold focus:border-indigo-500 outline-none cursor-pointer max-w-[120px] sm:max-w-none truncate"
             >
-              <option value="">Todas las categorías</option>
+              <option value="">Todas</option>
               <option value="INGRESOS">Ingresos</option>
               <option value="GASTOS_VIDA">Egresos</option>
-              <option value="AHORRO_INVERSIONES">Ahorro e Inversiones</option>
-              <option value="DEUDAS_FINANCIACION">Deudas y Financiación</option>
+              <option value="AHORRO_INVERSIONES">Ahorro</option>
+              <option value="DEUDAS_FINANCIACION">Deudas</option>
             </select>
+          </div>
+
+          {/* Keyboard Shortcuts Popover (Desktop only, compact tooltip/popover) */}
+          <div className="relative hidden md:block shrink-0" ref={shortcutsRef}>
+            <button
+              type="button"
+              onClick={() => setIsShortcutsOpen((prev) => !prev)}
+              className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 transition-colors cursor-pointer"
+              title="Ver atajos de teclado y navegación"
+            >
+              <Keyboard className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Atajos</span>
+            </button>
+
+            {isShortcutsOpen && (
+              <div className="absolute left-0 top-8 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-3 text-xs text-slate-700 dark:text-slate-300 animate-in fade-in zoom-in-95 duration-100">
+                <div className="font-semibold text-slate-900 dark:text-slate-100 pb-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span>Atajos de Teclado</span>
+                  <span className="text-[10px] text-slate-400">Esc para cerrar</span>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Navegar celdas:</span>
+                    <div className="space-x-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Tab
+                      </kbd>
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Flechas
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Editar / Confirmar:</span>
+                    <div className="space-x-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Enter
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Cancelar edición:</span>
+                    <div className="space-x-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Esc
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Rellenar a la derecha:
+                    </span>
+                    <div className="space-x-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Ctrl+D
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Copiar / Pegar Excel:
+                    </span>
+                    <div className="space-x-1 font-mono">
+                      <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+                        Ctrl+C / V
+                      </kbd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Save Success Alert */}
           {saveSuccessMessage && (
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold animate-in fade-in duration-150">
+            <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold animate-in fade-in duration-150 shrink-0">
               <span>✓ {saveSuccessMessage}</span>
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-3">
+        {/* Action Buttons: Traer Real + Changes counter + Guardar Todo */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {dirtyCells.size > 0 && (
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold animate-pulse hidden sm:inline">
+              ● {dirtyCells.size} sin guardar
+            </span>
+          )}
+
           <button
             onClick={handleLoadPriorYearActuals}
             disabled={isBaselineLoading || !selectedFiscalYearId}
-            className="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+            title="Importar y heredar los valores reales ejecutados del año anterior"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isBaselineLoading ? 'animate-spin' : ''}`} />
-            <span>Traer Real del Año Anterior</span>
+            <History
+              className={`w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 ${isBaselineLoading ? 'animate-spin' : ''}`}
+            />
+            <span className="hidden sm:inline">Traer Real del Año Anterior</span>
+            <span className="sm:hidden">Real Año Anterior</span>
           </button>
+
+          {/* Save Button in desktop unified header */}
+          {!isMobile && (
+            <button
+              onClick={handleSave}
+              disabled={isSaving || dirtyCells.size === 0}
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                dirtyCells.size > 0
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-600/30 cursor-pointer animate-in fade-in'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? 'Guardando...' : 'Guardar Todo'}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 100% Full-Width Grid Content */}
-      <div className="flex-1 w-full min-h-0">
+      {/* Responsive Grid / Mobile View Content */}
+      <div className="flex-1 w-full min-h-0 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
             <div className="flex flex-col items-center space-y-3">
@@ -605,26 +746,49 @@ export default function BudgetMatrixPage() {
             </div>
           </div>
         ) : matrixData ? (
-          <BudgetMatrixGrid
-            matrixData={matrixData}
-            baseCurrency={baseCurrency}
-            onCellChange={handleCellChange}
-            onPasteBatch={handlePasteBatch}
-            onSave={handleSave}
-            onOpenAutofill={(row) => {
-              setActiveAutofillRow(row);
-              setIsAutofillModalOpen(true);
-            }}
-            onOpenDriverModal={(row) => {
-              setActiveAutofillRow(row);
-              setIsAutofillModalOpen(true);
-            }}
-            onAddBalanceRow={handleAddBalanceRow}
-            onEditBalanceRow={handleEditBalanceRow}
-            onDeleteRow={handleDeleteRow}
-            isSaving={isSaving}
-            dirtyCells={dirtyCells}
-          />
+          isMobile ? (
+            <BudgetMobileView
+              matrixData={matrixData}
+              activePeriodId={activePeriodId}
+              onSelectPeriod={setActivePeriodId}
+              baseCurrency={baseCurrency}
+              onCellChange={handleCellChange}
+              onSave={handleSave}
+              onDiscard={handleDiscard}
+              onOpenAutofill={(row) => {
+                setActiveAutofillRow(row);
+                setIsAutofillModalOpen(true);
+              }}
+              onAddBalanceRow={handleAddBalanceRow}
+              onEditBalanceRow={handleEditBalanceRow}
+              onDeleteRow={handleDeleteRow}
+              isSaving={isSaving}
+              dirtyCells={dirtyCells}
+              saveSuccessMessage={saveSuccessMessage}
+              fiscalYearId={selectedFiscalYearId}
+            />
+          ) : (
+            <BudgetMatrixGrid
+              matrixData={matrixData}
+              baseCurrency={baseCurrency}
+              onCellChange={handleCellChange}
+              onPasteBatch={handlePasteBatch}
+              onSave={handleSave}
+              onOpenAutofill={(row) => {
+                setActiveAutofillRow(row);
+                setIsAutofillModalOpen(true);
+              }}
+              onOpenDriverModal={(row) => {
+                setActiveAutofillRow(row);
+                setIsAutofillModalOpen(true);
+              }}
+              onAddBalanceRow={handleAddBalanceRow}
+              onEditBalanceRow={handleEditBalanceRow}
+              onDeleteRow={handleDeleteRow}
+              isSaving={isSaving}
+              dirtyCells={dirtyCells}
+            />
+          )
         ) : (
           <div className="flex items-center justify-center h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
             <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">

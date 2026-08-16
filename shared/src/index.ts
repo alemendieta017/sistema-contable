@@ -405,3 +405,19 @@ export interface BudgetControlResponse {
   sections?: BudgetControlSection[];
   categories?: BudgetControlCategory[];
 }
+
+export interface MobilePlanningState {
+  activePeriodId: string;
+  activePeriodIndex: number;
+  expandedAccordionSections: Set<BudgetMatrixSectionKey>;
+  deepDiveRow: BudgetMatrixRow | null;
+  isDeepDiveOpen: boolean;
+  isOptionsMenuOpen: boolean;
+  activeMenuRow: BudgetMatrixRow | null;
+}
+
+export interface DeepDiveDistributionParams {
+  type: 'FLAT' | 'COPY_JAN' | 'PRIOR_YEAR';
+  annualTotal?: number;
+  percentageAdjustment?: number;
+}

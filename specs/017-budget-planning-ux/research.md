@@ -1,6 +1,6 @@
-# Phase 0 Research & Technical Decisions: Budget Planning Matrix & Execution Control UX
+# Phase 0 Research & Technical Decisions: Budget Planning Matrix & Execution Control UX (Desktop & Mobile)
 
-**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-13 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
+**Branch**: `017-budget-planning-ux` | **Date**: 2026-08-15 | **Spec**: [spec.md](file:///C:/Users/amend/.gemini/antigravity/worktrees/sistema-contable/redesign_budget_planning_ux/specs/017-budget-planning-ux/spec.md)
 
 ---
 
@@ -13,11 +13,11 @@ Organize the Annual Planning Matrix (`/budgets/matrix`) and Execution Control Da
 1. 🟢 **INGRESOS (P&L)**: Automatic pre-population of all active `REVENUE` accounts from the Chart of Accounts. Structured as a collapsible hierarchical tree with dynamic, read-only parent subtotals. Standard cash inflow direction (`+`).
 2. 🔴 **GASTOS DE VIDA (P&L)**: Automatic pre-population of all active `EXPENSE` accounts. Structured as a collapsible hierarchical tree with dynamic, read-only parent subtotals. Standard cash outflow direction (`-`).
 3. 🔵 **AHORRO E INVERSIONES (Balance - Activos)**: On-demand budgeting for `ASSET` accounts added via `+ Presupuestar Activo` with specific intention:
-   - `[-] Aporte / Inversión`: Salida de Caja (Outflow).
-   - `[+] Rescate / Desinversión`: Entrada de Caja (Inflow).
+   - `[-] Aporte / Inversión`: Salida de efectivo (Outflow / `EGRESO_EFECTIVO`).
+   - `[+] Rescate / Desinversión`: Entrada de efectivo (Inflow / `INGRESO_EFECTIVO`).
 4. 🟣 **DEUDAS Y FINANCIACIÓN (Balance - Pasivos)**: On-demand budgeting for `LIABILITY` accounts added via `+ Presupuestar Deuda` with specific intention:
-   - `[-] Pago / Amortización de Cuota`: Salida de Caja (Outflow).
-   - `[+] Nuevo Préstamo / Financiación`: Entrada de Caja (Inflow).
+   - `[-] Pago / Amortización de Cuota`: Salida de efectivo (Outflow / `EGRESO_EFECTIVO`).
+   - `[+] Nuevo Préstamo / Financiación`: Entrada de efectivo (Inflow / `INGRESO_EFECTIVO`).
 
 ### Rationale
 
@@ -32,43 +32,102 @@ Organize the Annual Planning Matrix (`/budgets/matrix`) and Execution Control Da
 
 ---
 
-## 2. P&L Hierarchical Tree Structure & Real-Time Client Rollups
+## 2. Dual-Axis Paradigm & Mobile Viewport Strategy
 
 ### Decision
 
-Render P&L accounts (Ingresos and Gastos de Vida) as an interactive hierarchical category tree. Parent category rows display auto-calculated, read-only monthly subtotals rolled up from their descendant child accounts. Parent nodes can be expanded or collapsed; only leaf (imputable) accounts have editable input cells.
+Implement the **Paradigma de Doble Eje (Dual-Axis Paradigm)** across responsive breakpoints ($768\text{px}$ boundary):
+
+- **🖥️ Desktop Viewport ($> 768\text{px}$)**:
+  - 100% full-width (`w-full`) interactive 12-month spreadsheet grid.
+  - Inline editing with spreadsheet keyboard navigation (`Tab`, `Shift+Tab`, `Enter`, `Shift+Enter`, `Esc`, `Ctrl+D` / `Cmd+D`).
+  - Native clipboard paste handling for multi-cell tabular input.
+  - Collapsible category tree with dynamic parent rollups.
+- **📱 Mobile Viewport ($\le 768\text{px}$)**:
+  - **Active Month View ("Mes Activo")**: Displays one month at a time with a horizontal swipeable Month Selector Strip (`[Ene] [Feb] [Mar] ...`).
+  - **4 Financial Block Accordions**: Collapsible sections (🟢 Ingresos, 🔴 Gastos de Vida, 🔵 Ahorro e Inversiones, 🟣 Deudas y Financiación) displaying monthly subtotal sums in each accordion header.
+  - **Touch-Friendly Account Cards**: High-target card layout ($\ge 44\times 44\text{px}$ touch targets), account code/name, contextual stats (_"Promedio anual: ₲ 120.000"_ or _"Mes anterior: ₲ 115.000"_), clean numeric input, and 3-dots contextual menu (`•••`).
+  - **"Deep-Dive por Rubro" Bottom Sheet**: Vertical 12-month breakdown for a single account with mass-distribution tools.
 
 ### Rationale
 
-- **Cognitive Load Reduction**: Users can collapse entire expenditure areas (e.g. "Gastos de Vehículo", "Servicios Básicos") while reviewing higher-level category totals.
-- **Data Consistency**: Subtotals are dynamically calculated client-side in real time whenever an imputable child account cell changes, eliminating out-of-sync subtotal values.
+- Spreadsheets with 12+ columns are inherently frustrating on 390px mobile screens (requiring excessive horizontal panning, tiny text, and difficult cell selection).
+- Separating macro 12-month desktop editing from focused single-month mobile review + vertical single-account deep-dive provides peak productivity on both form factors without compromising functionality.
 
 ### Alternatives Considered
 
-- **Flat Account List without Hierarchy**: Rejected as it makes navigation in large charts of accounts tedious and lacks high-level financial overview.
-- **Editable Parent Rows with Auto-distribution to Children**: Rejected due to ambiguity in how distribution ratios should be maintained across multi-tiered category trees.
+- **Forced 12-Column Horizontal Scroll on Mobile**: Rejected due to horizontal scroll fatigue, clipped content, and accidental cell tapping.
+- **Separate Mobile-Only App**: Rejected in favor of a single unified Next.js responsive component architecture sharing identical React state and backend endpoints.
 
 ---
 
-## 3. Inline Grid Cell Editing, Mobile-First Responsive & Keyboard Navigation
+## 3. Mobile Deep-Dive por Rubro & Mass Distribution Actions
 
 ### Decision
 
-Implement a custom lightweight React Matrix Grid component with:
+When a user taps an account card or chooses "Ver desglose de los 12 meses" in mobile view, open a modal Bottom Sheet (Drawer) that displays:
 
-- **Mobile First Responsive Layout**: Fixed sticky account name column on the left with smooth horizontal touch-scrolling (`overflow-x: auto`) for the 12 month columns.
-- **Desktop Keyboard Navigation**: `Tab` (next month right), `Shift+Tab` (previous month left), `Enter` (same month next row down), `Shift+Enter` (row up), and `Esc` (revert active cell).
-- **Clipboard Paste Support**: Native `onPaste` handler parsing `\n` and `\t` delimited data with number sanitization (handling currency symbols, negative formats like `(100)`, and commas/dots).
-- **Atomic Persistence & Dirty State Tracking**: An explicit `[ 💾 Guardar Todo ]` button with dirty state tracking, preventing accidental navigation via `beforeunload` events and custom modal confirmation.
+1. **Header Toolbar**: Account name, code, total annual sum, and quick mass distribution action buttons:
+   - `[ Distribuir parejo ]`: Prorates a total annual amount equally across 12 months.
+   - `[ Copiar de Ene a Dic ]` (Replicar): Copies January's value to months February through December.
+   - `[ Traer Real del Año Anterior + % ]`: Loads prior-year historical ledger actuals with percentage adjustment.
+2. **Vertical 12-Month List**: Stacked list of all 12 months (Ene a Dic) with large, finger-friendly numeric inputs, locked-period badges, and smooth scroll behavior.
 
 ### Rationale
 
-- **Performance**: Direct matrix state management in React enables sub-100ms response times and 60fps rendering without the bundle overhead of heavy commercial grids (AG-Grid, Handsontable).
-- **Mobile Usability**: Users accessing the budget planner on mobile or tablet viewports can view account names cleanly fixed while swiping through the 12 months.
+- Vertical scrolling is natural and ergonomic on phones. A user can rapidly budget a full year for a specific account in seconds using either mass distribution buttons or vertical thumb inputs.
+
+### Alternatives Considered
+
+- **Multi-step wizard**: Rejected as too slow and rigid compared to a direct vertical list with instant mass action shortcuts.
 
 ---
 
-## 4. Smart Distribution Drivers & Historical Baseline Engine
+## 4. Mobile Ergonomics & Micro-Interactions
+
+### Decision
+
+Implement tactile mobile optimizations:
+
+1. **Teclado Numérico Nativo (`inputmode="numeric"`)**:
+   - For currencies with 0 decimal places (e.g. Paraguayan Guaraní `PYG` / `₲`), set `inputmode="numeric"` and `pattern="[0-9]*"`. This immediately invokes the clean 10-key numeric keypad (0-9) on iOS and Android without confusing decimal points or text keys.
+   - For currencies with decimals (e.g. `USD`), dynamically set `inputmode="decimal"`.
+2. **Fluid Currency Masking (Guaraníes Thousands Dot)**:
+   - Apply thousands separators (e.g. `150.000`) without jumping the cursor position or losing focus during rapid typing.
+3. **Thumb Zone Optimization & Sticky Bottom Action Bar**:
+   - Primary actions (Guardar Cambios, Descartar, Selector de mes, 3-dots menus) are positioned within the lower half of the screen.
+   - When modifications occur (`dirtyCells.size > 0`), slide in a **Sticky Bottom Action Bar**:
+     - `[ 💾 Guardar Cambios (N pendientes) ]` (accented primary action).
+     - `[ Descartar ]` (outline secondary action).
+4. **Bottom Sheets (Drawers) in Place of Centered Modales**:
+   - All mobile dialogs (Autorellenar, Presupuestar Cuenta, Reasignar Fondos, Menú 3 puntos, Deep-Dive) render as bottom sheets anchored to the screen bottom with `env(safe-area-inset-bottom)` padding, backdrop dismiss, and swipe-down gestures.
+5. **Touch Targets**:
+   - All interactive touch targets maintain a minimum dimension of $44\times 44\text{px}$.
+
+### Rationale
+
+- Enhances thumb reachability, prevents virtual keyboard overlap, and ensures rapid micro-sessions on mobile devices.
+
+---
+
+## 5. P&L Hierarchical Tree Structure & Real-Time Rollups
+
+### Decision
+
+Render P&L accounts (Ingresos and Gastos de Vida) as a hierarchical category tree:
+
+- Parent category rows display auto-calculated, read-only monthly subtotals rolled up from their descendant child accounts.
+- Parent nodes can be expanded or collapsed.
+- Only leaf (imputable) accounts have editable input cells.
+
+### Rationale
+
+- Users can collapse entire expenditure branches while reviewing higher-level category totals, keeping cognitive load low.
+- Subtotals calculate dynamically in real time on the client, ensuring instant responsiveness without network overhead.
+
+---
+
+## 6. Smart Distribution Drivers & Historical Baseline Engine
 
 ### Decision
 
@@ -87,7 +146,7 @@ Provide client-side math distribution drivers for instant feedback, combined wit
 
 ---
 
-## 5. Executive Execution Control Engine & Residual Available Calculation
+## 7. Executive Execution Control Engine & Residual Available Calculation
 
 ### Decision
 
@@ -96,14 +155,14 @@ $$\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$$
 
 ### Ledger Mapping for `Executed` (Partida Doble Mapping)
 
-- **🟢 Ingresos (P&L `REVENUE`)**: $\text{Executed} = \sum \text{Credits} - \sum \text{Debits}$ (Net Revenue).
+- **🟢 Ingresos (P&L `REVENUE` / `INCOME`)**: $\text{Executed} = \sum \text{Credits} - \sum \text{Debits}$ (Net Revenue).
 - **🔴 Gastos de Vida (P&L `EXPENSE`)**: $\text{Executed} = \sum \text{Debits} - \sum \text{Credits}$ (Net Expense).
 - **🔵 Ahorro e Inversiones (Activos `ASSET`)**:
-  - `[-] Aporte / Inversión` (Salida): $\text{Executed} = \sum \text{Debits}$ (Asset increase via cash payment).
-  - `[+] Rescate / Desinversión` (Entrada): $\text{Executed} = \sum \text{Credits}$ (Asset decrease generating cash).
+  - `[-] Aporte / Inversión` (Salida / `EGRESO_EFECTIVO`): $\text{Executed} = \sum \text{Debits}$ (Asset increase via cash payment).
+  - `[+] Rescate / Desinversión` (Entrada / `INGRESO_EFECTIVO`): $\text{Executed} = \sum \text{Credits}$ (Asset decrease generating cash).
 - **🟣 Deudas y Financiación (Pasivos `LIABILITY`)**:
-  - `[-] Pago / Amortización` (Salida): $\text{Executed} = \sum \text{Debits}$ (Liability decrease via debt repayment).
-  - `[+] Nuevo Préstamo / Financiación` (Entrada): $\text{Executed} = \sum \text{Credits}$ (Liability increase via loan disbursement).
+  - `[-] Pago / Amortización` (Salida / `EGRESO_EFECTIVO`): $\text{Executed} = \sum \text{Debits}$ (Liability decrease via debt repayment).
+  - `[+] Nuevo Préstamo / Financiación` (Entrada / `INGRESO_EFECTIVO`): $\text{Executed} = \sum \text{Credits}$ (Liability increase via loan disbursement).
 
 ### Consumption Gauges
 
@@ -113,7 +172,7 @@ $$\text{Available} = \text{Budgeted} - \text{Executed} - \text{Committed}$$
 
 ---
 
-## 6. Directional Inter-Account Budget Reallocations
+## 8. Directional Inter-Account Budget Reallocations
 
 ### Decision
 
@@ -123,21 +182,10 @@ Allow budget reassignments between accounts across any block, provided both acco
 - **Entrada $\leftrightarrow$ Entrada**: Transfers permitted between Ingresos, Rescates de Inversión, and Nuevos Préstamos.
 - Reassignments modify `BudgetItemEntity` amounts transactionally and create an immutable audit record in `budget_reassignments`.
 
-### Rationale
-
-- Transfers between opposite flow directions (e.g., trying to move available budget from an Income item to an Expense item) would create mathematical and financial inconsistencies. Enforcing directional parity guarantees valid cash flow governance.
-
 ---
 
-## 7. Sticky Footer Summary Metrics
+## 9. 100% Screen Width & Elimination of Sticky Cash Flow Footer
 
 ### Decision
 
-The sticky footer summary bar displays 4 cash flow metrics in real time:
-
-1. **Total Entradas (+)**: Sum of Ingresos, Rescates de Inversión, and Nuevos Préstamos.
-2. **Total Salidas (-)**: Sum of Gastos de Vida, Aportes a Inversión, and Pagos de Deuda.
-3. **Flujo Neto del Mes**: $\text{Total Entradas} - \text{Total Salidas}$.
-4. **Flujo Neto Acumulado**: $\sum_{m=1}^{12} \text{Flujo Neto}_m$ (Cumulative cash flow delta over the 12 months).
-
-Absolute bank balance projections are intentionally omitted to avoid assumptions about unverified starting liquid balances.
+The desktop budget planning matrix layout occupies 100% of the available screen width (`w-full`). The sticky footer summary bar with cash flow aggregates is completely eliminated from the budget matrix, as cash flow aggregates are exclusively managed in the dedicated Cash Flow module.

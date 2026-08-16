@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { CashFlowDirection, BudgetMatrixSectionKey } from '@sistema-contable/shared';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import {
   X,
   Plus,
@@ -52,6 +53,7 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
   editRow,
   onSave,
 }) => {
+  const isMobile = useIsMobile();
   const isEditMode = !!editRow;
 
   const isAsset =
@@ -67,9 +69,11 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
     editRow?.accountType === 'EQUITY';
 
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-  const [direction, setDirection] = useState<CashFlowDirection>(CashFlowDirection.EGRESO_EFECTIVO);
-  const [label, setLabel] = useState<string>('');
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(editRow?.accountId || '');
+  const [direction, setDirection] = useState<CashFlowDirection>(
+    editRow?.cashFlowDirection || CashFlowDirection.EGRESO_EFECTIVO,
+  );
+  const [label, setLabel] = useState<string>(editRow?.subRowLabel || '');
   const [isLoadingAccounts, setIsLoadingAccounts] = useState<boolean>(true);
 
   // Load accounts when modal opens
@@ -215,14 +219,36 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
     onClose();
   };
 
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (isMobile) {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-5 font-sans text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      {/* Backdrop dismiss gesture / click */}
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+
+      {/* Dialog: Modal on Desktop / Bottom Sheet Drawer on Mobile */}
+      <div
+        className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 sm:space-y-5 font-sans text-slate-900 dark:text-slate-100 animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 z-10 max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+        style={{
+          paddingBottom: isMobile ? 'max(1.25rem, env(safe-area-inset-bottom))' : undefined,
+        }}
+      >
+        {/* Mobile Pull Handle Bar */}
+        {isMobile && (
+          <div className="w-full flex items-center justify-center -mt-1 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full" />
+          </div>
+        )}
+
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div className="flex items-center space-x-2.5">
             <div
-              className={`p-2 rounded-lg ${
+              className={`p-2 rounded-xl ${
                 isEditMode
                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                   : isAsset
@@ -256,15 +282,17 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Cerrar ventana"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-0.5">
           {/* 1. Account Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
@@ -272,16 +300,16 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               <span>Cuenta Contable de Balance:</span>
             </label>
             {isEditMode ? (
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+              <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 min-h-[44px] flex items-center">
                 {editRow.accountCode ? `${editRow.accountCode} - ` : ''}
                 {editRow.accountName} ({editRow.accountType || (isAsset ? 'ACTIVO' : 'PASIVO')})
               </div>
             ) : isLoadingAccounts ? (
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-500 dark:text-slate-400">
+              <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 min-h-[44px] flex items-center">
                 Cargando cuentas disponibles...
               </div>
             ) : accounts.length === 0 ? (
-              <div className="p-3 bg-rose-50 dark:bg-slate-950 border border-rose-200 dark:border-slate-800 rounded-lg text-xs text-rose-600 dark:text-rose-400">
+              <div className="p-3 bg-rose-50 dark:bg-slate-950 border border-rose-200 dark:border-slate-800 rounded-xl text-xs text-rose-600 dark:text-rose-400">
                 {isAsset
                   ? 'No se encontraron cuentas de activo registradas. Cree una cuenta de activo primero en el Plan de Cuentas.'
                   : 'No se encontraron cuentas de pasivo registradas. Cree una cuenta de pasivo primero en el Plan de Cuentas.'}
@@ -290,7 +318,8 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               <select
                 value={selectedAccountId}
                 onChange={(e) => handleAccountChange(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-medium"
+                onFocus={handleInputFocus}
+                className="w-full bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl p-3 outline-none focus:border-indigo-500 font-medium min-h-[44px]"
               >
                 {accounts.map((acc) => (
                   <option
@@ -316,17 +345,17 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleDirectionChange(CashFlowDirection.EGRESO_EFECTIVO)}
-                className={`flex flex-col p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all cursor-pointer min-h-[52px] ${
                   direction === CashFlowDirection.EGRESO_EFECTIVO
                     ? 'bg-rose-500/10 border-rose-500/60 ring-1 ring-rose-500/40 text-rose-800 dark:text-rose-200'
                     : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
               >
-                <div className="flex items-center space-x-1.5 font-bold text-xs mb-1">
+                <div className="flex items-center space-x-1.5 font-bold text-xs mb-0.5">
                   <ArrowDownRight className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
                   <span>Salida de efectivo</span>
                 </div>
-                <span className="text-[11px] text-rose-600 dark:text-rose-400/80 font-mono">
+                <span className="text-[11px] text-rose-600 dark:text-rose-400/80 font-mono font-medium">
                   {isAsset ? '[-] Aporte / Inversión' : '[-] Pago / Amortización'}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
@@ -340,17 +369,17 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleDirectionChange(CashFlowDirection.INGRESO_EFECTIVO)}
-                className={`flex flex-col p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`flex flex-col p-3 rounded-xl border text-left transition-all cursor-pointer min-h-[52px] ${
                   direction === CashFlowDirection.INGRESO_EFECTIVO
                     ? 'bg-emerald-500/10 border-emerald-500/60 ring-1 ring-emerald-500/40 text-emerald-800 dark:text-emerald-200'
                     : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-855 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
               >
-                <div className="flex items-center space-x-1.5 font-bold text-xs mb-1">
+                <div className="flex items-center space-x-1.5 font-bold text-xs mb-0.5">
                   <ArrowUpRight className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
                   <span>Entrada de efectivo</span>
                 </div>
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400/80 font-mono">
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400/80 font-mono font-medium">
                   {isAsset ? '[+] Rescate / Desinversión' : '[+] Nuevo Préstamo / Financiación'}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
@@ -372,8 +401,9 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               required
               value={label}
               onChange={(e) => setLabel(e.target.value)}
+              onFocus={handleInputFocus}
               placeholder="Ej: Aporte Fondo Mutuo, Pago Cuota Auto, Préstamo Banco..."
-              className="w-full bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 outline-none focus:border-indigo-500 font-medium"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl p-3 outline-none focus:border-indigo-500 font-medium min-h-[44px]"
             />
           </div>
 
@@ -382,14 +412,14 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={(!isEditMode && accounts.length === 0) || (!selectedAccountId && !editRow)}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-colors cursor-pointer"
+              className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-colors cursor-pointer min-h-[44px]"
             >
               {isEditMode ? <Save className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
               <span>
