@@ -23,43 +23,58 @@ describe('Auth Register (E2E)', () => {
     }
   });
 
-  it('POST /api/v1/auth/register - successfully registers a new user and returns JWT token', async () => {
+  it('POST /api/v1/auth/register - successfully registers a new user, creates system accounts and returns JWT token', async () => {
     const email = `testuser_${Date.now()}@example.com`;
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'Jane Doe',
-        email,
-        password: 'Password123!',
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'Jane Doe',
+      email,
+      password: 'Password123!',
+    });
 
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('access_token');
     expect(res.body).toHaveProperty('user');
     expect(res.body.user.fullName).toBe('Jane Doe');
     expect(res.body.user.email).toBe(email);
+
+    const token = res.body.access_token;
+
+    // Verify system accounts were created for the newly registered user
+    const accRes = await request(app.getHttpServer())
+      .get('/api/accounts')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(accRes.status).toBe(200);
+    expect(Array.isArray(accRes.body)).toBe(true);
+
+    const netIncomeAcc = accRes.body.find((a: any) => a.systemRole === 'NET_INCOME');
+    const retainedEarningsAcc = accRes.body.find((a: any) => a.systemRole === 'RETAINED_EARNINGS');
+
+    expect(netIncomeAcc).toBeDefined();
+    expect(netIncomeAcc.name).toBe('Resultado del Ejercicio');
+    expect(netIncomeAcc.type).toBe('EQUITY');
+
+    expect(retainedEarningsAcc).toBeDefined();
+    expect(retainedEarningsAcc.name).toBe('Resultados Acumulados');
+    expect(retainedEarningsAcc.type).toBe('EQUITY');
   });
 
   it('POST /api/v1/auth/register - rejects duplicate email registration with 409 Conflict', async () => {
     const email = `dupuser_${Date.now()}@example.com`;
 
     // First registration
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'First User',
-        email,
-        password: 'Password123!',
-      });
+    await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'First User',
+      email,
+      password: 'Password123!',
+    });
 
     // Duplicate registration attempt
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'Second User',
-        email,
-        password: 'Password123!',
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'Second User',
+      email,
+      password: 'Password123!',
+    });
 
     expect(res.status).toBe(409);
     expect(res.body.code).toBe(AuthErrorCode.EMAIL_ALREADY_EXISTS);

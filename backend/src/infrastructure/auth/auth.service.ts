@@ -4,21 +4,24 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UserEntity } from '../database/entities/user.entity';
 import { PasswordResetTokenEntity } from '../database/entities/password-reset-token.entity';
+import { AccountEntity } from '../database/entities/account.entity';
+import { CurrencyEntity } from '../database/entities/currency.entity';
 import { EmailService } from '../mail/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { AuthErrorCode } from '@sistema-contable/shared';
+import { AuthErrorCode, DEFAULT_STARTER_ACCOUNTS } from '@sistema-contable/shared';
 
 const DUMMY_HASH = '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW';
 
@@ -29,6 +32,8 @@ export class AuthService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(PasswordResetTokenEntity)
     private readonly tokenRepository: Repository<PasswordResetTokenEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
   ) {}
@@ -46,14 +51,46 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(dto.password, salt);
 
-    const user = this.userRepository.create({
-      fullName: dto.fullName.trim(),
-      email: normalizedEmail,
-      passwordHash,
-      isActive: true,
-    });
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const user = manager.create(UserEntity, {
+        fullName: dto.fullName.trim(),
+        email: normalizedEmail,
+        passwordHash,
+        isActive: true,
+      });
 
-    const saved = await this.userRepository.save(user);
+      const savedUser = await manager.save(UserEntity, user);
+
+      const baseCurrency =
+        (await manager.findOne(CurrencyEntity, { where: { isBase: true } })) ||
+        (await manager.findOne(CurrencyEntity, { where: {} }));
+
+      if (!baseCurrency) {
+        throw new InternalServerErrorException(
+          'Base currency is not configured. Please initialize currencies before registering users.',
+        );
+      }
+
+      const currencyId = baseCurrency.id;
+
+      const systemAccounts = DEFAULT_STARTER_ACCOUNTS.map((item) =>
+        manager.create(AccountEntity, {
+          userId: savedUser.id,
+          name: item.name,
+          type: item.type,
+          currencyId,
+          status: 'ACTIVE',
+          isCashOrBank: !!item.isCashOrBank,
+          systemRole: item.systemRole || null,
+          metadata: null,
+          parentId: null,
+        }),
+      );
+
+      await manager.save(AccountEntity, systemAccounts);
+
+      return savedUser;
+    });
 
     const payload = { sub: saved.id, email: saved.email };
     const access_token = this.jwtService.sign(payload);
