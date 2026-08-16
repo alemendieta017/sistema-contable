@@ -1,18 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
+import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 
 @Injectable()
 export class GetAccountsSummaryUseCase {
-  constructor(
-    @InjectRepository(AccountEntity)
-    private readonly accountRepository: Repository<AccountEntity>,
-    @InjectRepository(JournalEntryEntity)
-    private readonly journalEntryRepository: Repository<JournalEntryEntity>,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   async execute(userId: string) {
     return this.dataSource.transaction('READ UNCOMMITTED', async (entityManager) => {
@@ -22,18 +17,47 @@ export class GetAccountsSummaryUseCase {
         relations: ['currency'],
       });
 
-      // 2. Fetch aggregated debit/credit sums for each account
-      const rawSums = await entityManager
+      // 2. Find the latest closed accounting period for this user
+      const latestClosedPeriod = await entityManager
+        .createQueryBuilder(PeriodEntity, 'period')
+        .innerJoin('period.fiscalYear', 'fiscalYear')
+        .where('fiscalYear.userId = :userId', { userId })
+        .andWhere('period.status = :status', { status: 'CLOSED' })
+        .orderBy('period.endDate', 'DESC')
+        .addOrderBy('period.startDate', 'DESC')
+        .getOne();
+
+      // 3. Load baseline balances from the latest closed period if present
+      const baseBalances = new Map<string, number>();
+
+      if (latestClosedPeriod) {
+        const periodBalances = await entityManager.find(AccountPeriodBalanceEntity, {
+          where: { periodId: latestClosedPeriod.id },
+        });
+        for (const bal of periodBalances) {
+          baseBalances.set(bal.accountId, Number(bal.closingBalance || 0));
+        }
+      }
+
+      // 4. Query incremental journal entries beyond the last closed period
+      const queryBuilder = entityManager
         .createQueryBuilder(JournalEntryEntity, 'entry')
         .select('entry.accountId', 'accountId')
         .addSelect('entry.entryType', 'entryType')
         .addSelect('SUM(entry.amountBase)', 'sum')
         .innerJoin('entry.transaction', 'tx', 'tx.userId = :userId', { userId })
         .groupBy('entry.accountId')
-        .addGroupBy('entry.entryType')
-        .getRawMany();
+        .addGroupBy('entry.entryType');
 
-      // Organize sums into a map: accountId -> { DEBIT: num, CREDIT: num }
+      if (latestClosedPeriod) {
+        queryBuilder.andWhere('tx.accountingDate > :lastClosedEndDate', {
+          lastClosedEndDate: latestClosedPeriod.endDate,
+        });
+      }
+
+      const rawSums = await queryBuilder.getRawMany();
+
+      // Organize incremental sums: accountId -> { DEBIT: num, CREDIT: num }
       const sumMap: Record<string, { DEBIT: number; CREDIT: number }> = {};
       for (const row of rawSums) {
         const accId = row.accountId;
@@ -46,19 +70,22 @@ export class GetAccountsSummaryUseCase {
         sumMap[accId][type] = sum;
       }
 
-      // 3. Compute balance for each account
+      // 5. Compute consolidated balance for each account (Base Snapshot + Incremental Delta)
       let totalAssets = 0;
       let totalLiabilities = 0;
 
       const accountSummaries = accounts.map((acc) => {
+        const baseBalance = baseBalances.get(acc.id) ?? 0;
         const sums = sumMap[acc.id] || { DEBIT: 0, CREDIT: 0 };
-        let balance = 0;
+        let delta = 0;
 
         if (acc.type === 'ASSET' || acc.type === 'EXPENSE') {
-          balance = sums.DEBIT - sums.CREDIT;
+          delta = sums.DEBIT - sums.CREDIT;
         } else {
-          balance = sums.CREDIT - sums.DEBIT;
+          delta = sums.CREDIT - sums.DEBIT;
         }
+
+        let balance = baseBalance + delta;
 
         // Round to 4 decimals to avoid float discrepancies
         balance = Number(balance.toFixed(4));
