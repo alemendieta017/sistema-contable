@@ -120,4 +120,44 @@ describe('JournalEntryRow Component', () => {
 
     expect(screen.getByRole('combobox')).toHaveValue('Banco Inactivo Asignado');
   });
+
+  test('displays available balance for ASSET and LIABILITY accounts but not for EXPENSE/INCOME', () => {
+    const accountsWithBalances = [
+      { id: 'acc-1', name: 'Caja Chica', type: 'ASSET', balance: 1500 },
+      { id: 'acc-2', name: 'Tarjeta Crédito', type: 'LIABILITY', balance: -500 },
+      { id: 'acc-3', name: 'Supermercado', type: 'EXPENSE', balance: 800 },
+    ];
+
+    // Case 1: ASSET account selected -> displays Saldo in row header
+    const { rerender } = render(
+      <JournalEntryRow
+        {...defaultProps}
+        accounts={accountsWithBalances}
+        entry={{ accountId: 'acc-1', entryType: 'DEBIT', amount: 100 }}
+      />,
+    );
+
+    expect(screen.getByText(/Saldo:/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\.500,00/i)).toBeInTheDocument();
+
+    // Case 2: EXPENSE account selected -> does not display Saldo in row header
+    rerender(
+      <JournalEntryRow
+        {...defaultProps}
+        accounts={accountsWithBalances}
+        entry={{ accountId: 'acc-3', entryType: 'DEBIT', amount: 100 }}
+      />,
+    );
+
+    expect(screen.queryByText(/Saldo:/i)).not.toBeInTheDocument();
+
+    // Case 3: In dropdown, ASSET and LIABILITY show their balances, but EXPENSE does not show 800
+    const input = screen.getByRole('combobox');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.focus(input);
+
+    expect(screen.getByText(/1\.500,00/i)).toBeInTheDocument();
+    expect(screen.getByText(/-.*500,00/i)).toBeInTheDocument();
+    expect(screen.queryByText(/800,00/i)).not.toBeInTheDocument();
+  });
 });

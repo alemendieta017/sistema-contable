@@ -9,8 +9,13 @@ type Account = {
   id: string;
   name: string;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  currencyId?: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   systemRole?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
+  balance?: number;
 };
 
 type EntryLine = {
@@ -48,7 +53,9 @@ export default function AsientoLibrePage() {
   const fetchInitialData = async () => {
     try {
       const [accList, curList] = await Promise.all([
-        api.accounts.list('ACTIVE'),
+        api.accounts.summary
+          ? api.accounts.summary().catch(() => api.accounts.list('ACTIVE'))
+          : api.accounts.list('ACTIVE'),
         api.currencies.list(),
       ]);
       const rawAccounts: Account[] = Array.isArray(accList) ? accList : accList?.accounts || [];
@@ -221,9 +228,38 @@ export default function AsientoLibrePage() {
               >
                 {/* Account Selector */}
                 <div className="w-full">
-                  <label className="block sm:hidden text-4xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
-                    Cuenta / Categoría
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block sm:hidden text-4xs font-bold uppercase text-slate-400 dark:text-slate-500">
+                      Cuenta / Categoría
+                    </label>
+                    {(() => {
+                      const selectedAccount = accounts.find((a) => a.id === entry.accountId);
+                      if (
+                        selectedAccount &&
+                        (selectedAccount.type === 'ASSET' ||
+                          selectedAccount.type === 'LIABILITY') &&
+                        selectedAccount.balance !== undefined
+                      ) {
+                        return (
+                          <span className="text-4xs text-slate-500 dark:text-slate-400 font-medium">
+                            Saldo:{' '}
+                            <span
+                              className={`font-bold ${
+                                (selectedAccount.balance ?? 0) < 0
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : (selectedAccount.balance ?? 0) > 0
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              {formatCurrency(selectedAccount.balance, baseCurrency)}
+                            </span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                   <select
                     value={entry.accountId}
                     onChange={(e) => updateLine(index, 'accountId', e.target.value)}
@@ -232,11 +268,16 @@ export default function AsientoLibrePage() {
                     <option value="">Seleccionar cuenta...</option>
                     {accounts
                       .filter((a) => a.systemRole !== 'NET_INCOME')
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name} ({a.type})
-                        </option>
-                      ))}
+                      .map((a) => {
+                        const showBal =
+                          (a.type === 'ASSET' || a.type === 'LIABILITY') && a.balance !== undefined;
+                        return (
+                          <option key={a.id} value={a.id}>
+                            {a.name} ({a.type})
+                            {showBal ? ` • Saldo: ${formatCurrency(a.balance, baseCurrency)}` : ''}
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
 

@@ -2,15 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trash2, Search, ChevronDown, Plus } from 'lucide-react';
-import type { CurrencyInfo } from '../lib/utils';
+import { formatCurrency, type CurrencyInfo } from '../lib/utils';
 
 interface Account {
   id: string;
   name: string;
   type: string;
+  currencyId?: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   parentId?: string | null;
   systemRole?: string | null;
   status?: string;
+  balance?: number;
 }
 
 interface Entry {
@@ -86,6 +91,19 @@ export default function JournalEntryRow({
       }
     }
     return a.name;
+  };
+
+  const isBalanceEligible = (type?: string) => type === 'ASSET' || type === 'LIABILITY';
+
+  const formatAccBalance = (a: Account) => {
+    const curInfo = a.currencySymbol
+      ? {
+          code: a.currencyCode,
+          symbol: a.currencySymbol,
+          decimalPlaces: a.decimalPlaces,
+        }
+      : baseCurrency;
+    return formatCurrency(a.balance, curInfo);
   };
 
   useEffect(() => {
@@ -256,9 +274,37 @@ export default function JournalEntryRow({
     >
       {/* Searchable Account Selector */}
       <div className="flex-1 w-full relative">
-        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
-          Cuenta / Categoría
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Cuenta / Categoría
+          </label>
+          {(() => {
+            const selectedAccount = accounts.find((a) => a.id === entry.accountId);
+            if (
+              selectedAccount &&
+              isBalanceEligible(selectedAccount.type) &&
+              selectedAccount.balance !== undefined
+            ) {
+              return (
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                  Saldo:{' '}
+                  <span
+                    className={`font-bold ${
+                      (selectedAccount.balance ?? 0) < 0
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : (selectedAccount.balance ?? 0) > 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {formatAccBalance(selectedAccount)}
+                  </span>
+                </span>
+              );
+            }
+            return null;
+          })()}
+        </div>
 
         <div className="relative flex items-center">
           <input
@@ -438,31 +484,44 @@ export default function JournalEntryRow({
                                       )}
                                     </div>
 
-                                    {activeTab === 'ALL' && (
-                                      <span
-                                        className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                                          a.type === 'ASSET'
-                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {isBalanceEligible(a.type) && a.balance !== undefined && (
+                                        <span
+                                          className={`text-[10px] font-semibold ${
+                                            a.balance < 0
+                                              ? 'text-rose-600 dark:text-rose-400 font-bold'
+                                              : 'text-slate-500 dark:text-slate-400'
+                                          }`}
+                                        >
+                                          {formatAccBalance(a)}
+                                        </span>
+                                      )}
+                                      {activeTab === 'ALL' && (
+                                        <span
+                                          className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                            a.type === 'ASSET'
+                                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                              : a.type === 'LIABILITY'
+                                                ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
+                                                : a.type === 'EQUITY'
+                                                  ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400'
+                                                  : a.type === 'INCOME'
+                                                    ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400'
+                                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                                          }`}
+                                        >
+                                          {a.type === 'ASSET'
+                                            ? 'Activo'
                                             : a.type === 'LIABILITY'
-                                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
+                                              ? 'Pasivo'
                                               : a.type === 'EQUITY'
-                                                ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400'
+                                                ? 'Patrimonio'
                                                 : a.type === 'INCOME'
-                                                  ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400'
-                                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
-                                        }`}
-                                      >
-                                        {a.type === 'ASSET'
-                                          ? 'Activo'
-                                          : a.type === 'LIABILITY'
-                                            ? 'Pasivo'
-                                            : a.type === 'EQUITY'
-                                              ? 'Patrimonio'
-                                              : a.type === 'INCOME'
-                                                ? 'Ingreso'
-                                                : 'Egreso'}
-                                      </span>
-                                    )}
+                                                  ? 'Ingreso'
+                                                  : 'Egreso'}
+                                        </span>
+                                      )}
+                                    </div>
                                   </button>
                                 );
                               })}

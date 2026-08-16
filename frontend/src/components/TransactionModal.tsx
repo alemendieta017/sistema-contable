@@ -12,9 +12,13 @@ interface Account {
   name: string;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   currencyId: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  decimalPlaces?: number;
   parentId?: string | null;
   systemRole?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
+  balance?: number;
 }
 
 interface Entry {
@@ -60,7 +64,9 @@ export default function TransactionModal({ onClose, onSaveSuccess }: Transaction
   const fetchInitialData = async () => {
     try {
       const [accData, curData] = await Promise.all([
-        api.accounts.list('ACTIVE'),
+        api.accounts.summary
+          ? api.accounts.summary().catch(() => api.accounts.list('ACTIVE'))
+          : api.accounts.list('ACTIVE'),
         api.currencies.list(),
       ]);
       const rawAccounts: Account[] = Array.isArray(accData) ? accData : accData?.accounts || [];
