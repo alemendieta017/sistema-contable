@@ -150,9 +150,10 @@ export default function AccountPickerSheet({
       // Exclude inactive accounts unless currently selected
       if (a.status === 'INACTIVE' && a.id !== selectedAccountId) return false;
       // Filter by mode / allowedTypes
-      const matchesType = effectiveAllowedTypes.includes(a.type);
-      const isPaymentMatch = filterMode === 'PAYMENT_ACCOUNTS' && a.isCashOrBank;
-      return matchesType || isPaymentMatch;
+      if (filterMode === 'PAYMENT_ACCOUNTS') {
+        return a.isCashOrBank || a.type === 'ASSET' || a.type === 'LIABILITY';
+      }
+      return effectiveAllowedTypes.includes(a.type);
     });
   }, [accounts, selectedAccountId, effectiveAllowedTypes, filterMode]);
 

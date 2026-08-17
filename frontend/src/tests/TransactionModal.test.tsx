@@ -5,6 +5,15 @@ import TransactionModal from '../components/TransactionModal';
 import { api } from '../services/api';
 import { TransactionMode } from '@sistema-contable/shared';
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    refresh: jest.fn(),
+  }),
+  usePathname: () => '/transactions',
+}));
+
 // Mock the API service
 jest.mock('../services/api', () => ({
   api: {

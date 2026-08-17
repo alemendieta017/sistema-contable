@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
 import { TransactionMode, type CreateTransactionRequest } from '@sistema-contable/shared';
@@ -25,6 +26,7 @@ export default function TransactionModal({
   onSaveSuccess,
   defaultMode = TransactionMode.QUICK,
 }: TransactionModalProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<TransactionMode>(defaultMode);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
@@ -76,13 +78,10 @@ export default function TransactionModal({
 
       setTimeout(() => {
         if (onSaveSuccess) onSaveSuccess();
-        if (typeof window !== 'undefined') {
-          if (
-            window.location.pathname.startsWith('/transactions') ||
-            window.location.pathname.startsWith('/accounts')
-          ) {
-            window.location.reload();
-          }
+        try {
+          router.refresh();
+        } catch {
+          // Ignore if router is not available
         }
         onClose();
       }, 1000);

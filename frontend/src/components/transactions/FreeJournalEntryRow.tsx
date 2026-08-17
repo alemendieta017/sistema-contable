@@ -48,18 +48,20 @@ export function FreeJournalEntryRow({
 
   const handleDebitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    const num = Number(val);
     onChange({
       ...line,
-      debitAmount: val === '' ? '' : Number(val),
+      debitAmount: val === '' || isNaN(num) ? '' : num,
       creditAmount: '',
     });
   };
 
   const handleCreditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    const num = Number(val);
     onChange({
       ...line,
-      creditAmount: val === '' ? '' : Number(val),
+      creditAmount: val === '' || isNaN(num) ? '' : num,
       debitAmount: '',
     });
   };

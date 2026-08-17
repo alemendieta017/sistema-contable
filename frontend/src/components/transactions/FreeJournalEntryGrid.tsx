@@ -14,6 +14,14 @@ const createDefaultLine = (idSuffix: string | number): FreeJournalLineState => (
   creditAmount: '',
 });
 
+const getLocalDateString = (): string => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export function FreeJournalEntryGrid({
   accounts,
   baseCurrency = { code: 'PYG', symbol: '₲', decimalPlaces: 0 },
@@ -24,8 +32,8 @@ export function FreeJournalEntryGrid({
   onQuickCreateAccount,
   className,
 }: FreeJournalEntryGridProps) {
-  // Today's date string YYYY-MM-DD
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // Today's date string YYYY-MM-DD (local calendar date)
+  const today = useMemo(() => getLocalDateString(), []);
 
   // Form states
   const [accountingDate, setAccountingDate] = useState<string>(
