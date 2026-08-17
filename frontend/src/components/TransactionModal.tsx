@@ -87,8 +87,22 @@ export default function TransactionModal({
         onClose();
       }, 1000);
     } catch (err: any) {
-      setError(err.message || 'Error al guardar el asiento contable.');
-      throw err;
+      const msg = err?.message || 'Error al guardar el asiento contable.';
+      if (msg.includes('No accounting period found')) {
+        setError(
+          'No existe un período contable configurado para la fecha seleccionada. Debe crear el ejercicio fiscal correspondiente en Configuración > Períodos Contables.',
+        );
+      } else if (msg.includes('The accounting period for the transaction date is closed')) {
+        setError(
+          'El período contable correspondiente a la fecha seleccionada se encuentra cerrado.',
+        );
+      } else if (
+        msg.includes('The accounting period for the transaction date is in planning status')
+      ) {
+        setError('El período contable para la fecha seleccionada está en estado de planificación.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,21 +123,26 @@ export default function TransactionModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[88vh] flex flex-col shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 overflow-hidden">
+        {/* Mobile Pull Bar */}
+        <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
+
         {/* Modal Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-          <div>
-            <h2
-              data-testid="modal-title"
-              className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide"
-            >
-              Registrar Asiento Contable
-            </h2>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-              Seleccione el tipo de registro deseado
-            </p>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div>
+              <h2
+                data-testid="modal-title"
+                className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-50 tracking-tight"
+              >
+                Registrar Asiento Contable
+              </h2>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                Seleccione el tipo de registro deseado
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -136,7 +155,7 @@ export default function TransactionModal({
             <button
               onClick={onClose}
               aria-label="Cerrar modal"
-              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition text-slate-500 dark:text-slate-400"
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition text-slate-500 dark:text-slate-400 cursor-pointer shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -144,17 +163,17 @@ export default function TransactionModal({
         </div>
 
         {/* Modal Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2 border border-red-100 dark:border-red-900/50 shadow-xs">
+            <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 rounded-2xl flex items-start gap-2.5 border border-red-200 dark:border-red-900/60 shadow-xs animate-in fade-in duration-150">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{error}</span>
+              <span className="font-medium">{error}</span>
             </div>
           )}
           {success && (
-            <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl flex items-start gap-2 border border-green-100 dark:border-green-900/50 shadow-xs">
+            <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/40 dark:text-green-300 rounded-2xl flex items-start gap-2.5 border border-green-200 dark:border-green-900/60 shadow-xs animate-in fade-in duration-150">
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{success}</span>
+              <span className="font-medium">{success}</span>
             </div>
           )}
 

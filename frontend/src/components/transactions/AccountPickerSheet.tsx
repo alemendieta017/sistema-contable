@@ -38,7 +38,7 @@ const ALL_TABS: TabConfig[] = [
   { id: 'ALL', label: 'Todos', dot: null },
   { id: 'ASSET', type: 'ASSET', label: 'Activos', dot: 'bg-emerald-500' },
   { id: 'LIABILITY', type: 'LIABILITY', label: 'Pasivos', dot: 'bg-rose-500' },
-  { id: 'EXPENSE', type: 'EXPENSE', label: 'Gastos', dot: 'bg-amber-500' },
+  { id: 'EXPENSE', type: 'EXPENSE', label: 'Gastos', dot: 'bg-rose-500' },
   { id: 'INCOME', type: 'INCOME', label: 'Ingresos', dot: 'bg-sky-500' },
   { id: 'EQUITY', type: 'EQUITY', label: 'Patrimonio', dot: 'bg-violet-500' },
 ];
@@ -388,15 +388,15 @@ export default function AccountPickerSheet({
           }
         }}
         className={cn(
-          'w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 transition text-left outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500',
+          'w-full flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-[42px] sm:min-h-[44px] text-xs font-medium rounded-xl border bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 transition text-left outline-none focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-500',
           error
-            ? 'border-rose-500 dark:border-rose-500/80'
-            : 'border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600',
+            ? 'border-rose-500 dark:border-rose-500/80 focus:ring-rose-500/15'
+            : 'border-slate-200 dark:border-slate-700/70 hover:border-indigo-300 dark:hover:border-slate-600 shadow-2xs',
           disabled && 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900',
         )}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="truncate">
+          <span className="truncate font-semibold">
             {selectedAccount ? (
               formatAccountName(selectedAccount)
             ) : (
@@ -411,7 +411,7 @@ export default function AccountPickerSheet({
             selectedAccount.balance !== undefined && (
               <span
                 className={cn(
-                  'text-[10px] font-semibold px-1.5 py-0.5 rounded',
+                  'text-[10px] font-bold px-2 py-0.5 rounded-lg tabular-nums',
                   selectedAccount.balance < 0
                     ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',

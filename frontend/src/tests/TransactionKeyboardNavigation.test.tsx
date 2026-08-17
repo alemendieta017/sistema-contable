@@ -227,7 +227,7 @@ describe('US3: Rapid Keyboard-First Desktop Navigation Tests', () => {
         />,
       );
 
-      const descriptionInput = screen.getByLabelText('Concepto / Glosa');
+      const descriptionInput = screen.getByLabelText('Concepto');
       fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter', ctrlKey: true });
 
       await waitFor(() => {
@@ -358,7 +358,7 @@ describe('US3: Rapid Keyboard-First Desktop Navigation Tests', () => {
       const primaryAccountBtn = comboboxes[0];
       const secondaryAccountBtn = comboboxes[1];
       const amountInput = screen.getByLabelText('Monto');
-      const descriptionInput = screen.getByLabelText('Concepto / Glosa');
+      const descriptionInput = screen.getByLabelText('Concepto');
       const submitBtn = screen.getByRole('button', { name: /Guardar Transacción/i });
 
       // Verify DOM document position order (Node.DOCUMENT_POSITION_FOLLOWING)

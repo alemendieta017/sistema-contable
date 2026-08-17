@@ -298,8 +298,22 @@ function TransactionPageContent() {
         router.push('/transactions');
       }, 1000);
     } catch (err: any) {
-      setError(err.message || 'Error al procesar la solicitud.');
-      throw err;
+      const msg = err?.message || 'Error al procesar la solicitud.';
+      if (msg.includes('No accounting period found')) {
+        setError(
+          'No existe un período contable configurado para la fecha seleccionada. Debe crear el ejercicio fiscal correspondiente en Configuración > Períodos Contables.',
+        );
+      } else if (msg.includes('The accounting period for the transaction date is closed')) {
+        setError(
+          'El período contable correspondiente a la fecha seleccionada se encuentra cerrado.',
+        );
+      } else if (
+        msg.includes('The accounting period for the transaction date is in planning status')
+      ) {
+        setError('El período contable para la fecha seleccionada está en estado de planificación.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -327,31 +341,36 @@ function TransactionPageContent() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Top Header Row with Navigation, Title, and ModeSelector */}
-      <header className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-50/80 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* Top Header Row with Responsive Breadcrumbs, Title, and ModeSelector */}
+      <header className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-30 shrink-0">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleCancelClick}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"
+            className="p-2 -ml-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition text-slate-600 dark:text-slate-300 active:scale-95 cursor-pointer"
             title="Volver"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Transacciones /
+              </span>
+              {isEditMode && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-medium">
+                  ID: {editId}
+                </span>
+              )}
+            </div>
+            <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
               {isEditMode
-                ? 'Editar Asiento'
+                ? 'Editar Asiento Contable'
                 : isCloneMode
-                  ? 'Clonar Asiento'
+                  ? 'Clonar Asiento Contable'
                   : 'Nuevo Asiento Contable'}
             </h1>
-            {isEditMode && (
-              <span className="text-[10px] text-indigo-500 font-mono font-medium">
-                ID: {editId}
-              </span>
-            )}
           </div>
         </div>
 
@@ -365,22 +384,22 @@ function TransactionPageContent() {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto w-full">
+      {/* Main Content Area (Responsive Container) */}
+      <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 space-y-4 max-w-4xl mx-auto w-full">
         {error && (
-          <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2.5 border border-red-100 dark:border-red-900/50 shadow-xs">
+          <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 rounded-2xl flex items-start gap-2.5 border border-red-200 dark:border-red-900/60 shadow-xs animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>{error}</span>
+            <span className="font-medium">{error}</span>
           </div>
         )}
         {success && (
-          <div className="p-3 text-xs text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-xl flex items-start gap-2.5 border border-green-100 dark:border-green-900/50 shadow-xs">
+          <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/40 dark:text-green-300 rounded-2xl flex items-start gap-2.5 border border-green-200 dark:border-green-900/60 shadow-xs animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>{success}</span>
+            <span className="font-medium">{success}</span>
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-7 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all">
           {mode === TransactionMode.QUICK ? (
             <QuickTransactionForm
               accounts={accounts}

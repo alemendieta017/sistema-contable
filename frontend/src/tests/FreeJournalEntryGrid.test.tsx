@@ -303,16 +303,16 @@ describe('User Story 2: Free Journal Entry Grid (T011)', () => {
       expect(updatedDebitInputs[2]).toHaveValue(150);
     });
 
-    test('real-time balance indicator: shows "Cuadrado" when total Debe === total Haber > 0 and "Descuadrado" when unbalanced', () => {
+    test('real-time balance indicator: shows "Sin movimientos" initially, "Descuadrado" when unbalanced, and "Cuadrado" when total Debe === total Haber > 0', () => {
       render(<FreeJournalEntryGrid {...defaultGridProps} />);
 
-      // Initially unbalanced / empty
-      expect(screen.getByText(/descuadrado/i)).toBeInTheDocument();
+      // Initially empty / 0 movements
+      expect(screen.getByText(/sin movimientos/i)).toBeInTheDocument();
 
       const debitInputs = screen.getAllByLabelText(/debe/i);
       const creditInputs = screen.getAllByLabelText(/haber/i);
 
-      // Line 1: Debit 150
+      // Line 1: Debit 150 -> Unbalanced
       fireEvent.change(debitInputs[0], { target: { value: '150' } });
       expect(screen.getByText(/descuadrado/i)).toBeInTheDocument();
 

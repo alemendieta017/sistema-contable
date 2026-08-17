@@ -16,7 +16,7 @@ const createDefaultLine = (idSuffix: string | number): FreeJournalLineState => (
 
 export function FreeJournalEntryGrid({
   accounts,
-  baseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 },
+  baseCurrency = { code: 'PYG', symbol: '₲', decimalPlaces: 0 },
   initialValues,
   onSubmit,
   onCancel,
@@ -84,6 +84,7 @@ export function FreeJournalEntryGrid({
     () => Math.round(Math.abs(roundedDebit - roundedCredit) * 100) / 100,
     [roundedDebit, roundedCredit],
   );
+  const hasMovements = useMemo(() => totalDebit > 0 || totalCredit > 0, [totalDebit, totalCredit]);
   const isBalanced = useMemo(
     () => totalDebit > 0 && totalCredit > 0 && difference < 0.001,
     [totalDebit, totalCredit, difference],
@@ -163,7 +164,7 @@ export function FreeJournalEntryGrid({
     }
 
     if (!description.trim()) {
-      newErrors.description = 'El concepto / glosa es obligatorio';
+      newErrors.description = 'El concepto es obligatorio';
       hasError = true;
     }
 
@@ -233,6 +234,8 @@ export function FreeJournalEntryGrid({
       setIsSubmitting(true);
       try {
         await onSubmit(payload);
+      } catch {
+        // Error state is handled and displayed by parent container
       } finally {
         setIsSubmitting(false);
       }
@@ -256,90 +259,100 @@ export function FreeJournalEntryGrid({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn('flex flex-col gap-5 w-full', className)}
+      className={cn('flex flex-col gap-6 w-full text-slate-800 dark:text-slate-100', className)}
       noValidate
     >
-      {/* Top Header Fields: Date & Description */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/60 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-        {/* Accounting Date Field */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="free-journal-date"
-            className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
-          >
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>Fecha Contable</span>
-          </label>
-          <input
-            id="free-journal-date"
-            type="date"
-            value={accountingDate}
-            onChange={(e) => {
-              setAccountingDate(e.target.value);
-              if (errors.accountingDate) {
-                setErrors((prev) => ({ ...prev, accountingDate: undefined }));
-              }
-            }}
-            disabled={loading}
-            aria-label="Fecha"
-            className={cn(
-              'w-full bg-white dark:bg-slate-800 border rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition',
-              errors.accountingDate
-                ? 'border-rose-400 dark:border-rose-600'
-                : 'border-slate-200 dark:border-slate-700/80',
-            )}
-          />
-          {errors.accountingDate && (
-            <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
-              {errors.accountingDate}
-            </p>
-          )}
+      {/* 1. Voucher Header (Fecha Contable & Concepto) */}
+      <div className="bg-slate-50/70 dark:bg-slate-900/50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3.5 shadow-2xs">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <span>Datos del Comprobante de Diario</span>
+          </span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+            Partida Doble Multilínea
+          </span>
         </div>
 
-        {/* Description / Glosa Field */}
-        <div className="md:col-span-2 flex flex-col gap-1.5">
-          <label
-            htmlFor="free-journal-description"
-            className="text-xs font-bold text-slate-700 dark:text-slate-300"
-          >
-            Concepto / Glosa
-          </label>
-          <input
-            id="free-journal-description"
-            type="text"
-            placeholder="Ej: Devengamiento de planilla, apertura contable..."
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              if (errors.description) {
-                setErrors((prev) => ({ ...prev, description: undefined }));
-              }
-            }}
-            disabled={loading}
-            aria-label="Concepto / Glosa"
-            className={cn(
-              'w-full bg-white dark:bg-slate-800 border rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition',
-              errors.description
-                ? 'border-rose-400 dark:border-rose-600'
-                : 'border-slate-200 dark:border-slate-700/80',
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-start">
+          {/* Accounting Date Field */}
+          <div className="sm:col-span-4 flex flex-col gap-1.5">
+            <label
+              htmlFor="free-journal-date"
+              className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+              <span>Fecha Contable</span>
+            </label>
+            <input
+              id="free-journal-date"
+              type="date"
+              value={accountingDate}
+              onChange={(e) => {
+                setAccountingDate(e.target.value);
+                if (errors.accountingDate) {
+                  setErrors((prev) => ({ ...prev, accountingDate: undefined }));
+                }
+              }}
+              disabled={loading}
+              aria-label="Fecha"
+              className={cn(
+                'w-full bg-white dark:bg-slate-800 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 outline-none transition-all duration-200',
+                errors.accountingDate
+                  ? 'border-rose-400 dark:border-rose-600 focus:ring-4 focus:ring-rose-500/15'
+                  : 'border-slate-200 dark:border-slate-700/80 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15 shadow-xs',
+              )}
+            />
+            {errors.accountingDate && (
+              <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                {errors.accountingDate}
+              </p>
             )}
-          />
-          {errors.description && (
-            <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
-              {errors.description}
-            </p>
-          )}
+          </div>
+
+          {/* Description / Concepto Field */}
+          <div className="sm:col-span-8 flex flex-col gap-1.5">
+            <label
+              htmlFor="free-journal-description"
+              className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+            >
+              Concepto / Glosa del Asiento
+            </label>
+            <input
+              id="free-journal-description"
+              type="text"
+              placeholder="Ej: Devengamiento de planilla del mes, apertura contable..."
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) {
+                  setErrors((prev) => ({ ...prev, description: undefined }));
+                }
+              }}
+              disabled={loading}
+              className={cn(
+                'w-full bg-white dark:bg-slate-800 border rounded-xl px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 outline-none transition-all duration-200',
+                errors.description
+                  ? 'border-rose-400 dark:border-rose-600 focus:ring-4 focus:ring-rose-500/15'
+                  : 'border-slate-200 dark:border-slate-700/80 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15 shadow-xs',
+              )}
+            />
+            {errors.description && (
+              <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                {errors.description}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Grid Lines Section */}
+      {/* 2. Grid Lines Section */}
       <div className="flex flex-col gap-3">
         {/* Desktop Table Header */}
         <div
           data-testid="grid-header"
-          className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-100/60 dark:bg-slate-800/50 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider"
+          className="hidden sm:flex items-center gap-3 px-4 py-2 bg-slate-100/70 dark:bg-slate-800/60 rounded-xl text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider border border-slate-200/50 dark:border-slate-700/50"
         >
-          <span className="w-6 text-center">#</span>
+          <span className="w-7 text-center">#</span>
           <span className="flex-1">Cuenta Contable</span>
           <span data-testid="header-debit" className="w-32 md:w-36 text-right pr-3">
             Debe
@@ -351,7 +364,7 @@ export function FreeJournalEntryGrid({
         </div>
 
         {/* Rows List */}
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 sm:gap-3">
           {lines.map((line, index) => (
             <FreeJournalEntryRow
               key={line.id}
@@ -374,56 +387,68 @@ export function FreeJournalEntryGrid({
           ))}
         </div>
 
-        {/* Add Line Action */}
-        <div className="flex items-center justify-between pt-1">
+        {/* Add Line Action Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
           <button
             type="button"
             onClick={handleAddLine}
             disabled={loading || isSubmitting}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 transition shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar Apunte</span>
+            {difference > 0 && (
+              <span className="hidden sm:inline text-[10px] font-medium text-amber-600 dark:text-amber-400 ml-1">
+                (Diferencia: {formatCurrency(difference, baseCurrency)})
+              </span>
+            )}
           </button>
+
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium text-center sm:text-right">
+            Mínimo 2 apuntes contables
+          </span>
         </div>
       </div>
 
-      {/* Real-Time Balance Summary Panel */}
-      <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Totals Breakdown */}
-        <div data-testid="summary-totals" className="flex flex-wrap items-center gap-6 text-xs">
+      {/* 3. Real-Time Balance & Totals Summary Panel (Responsive Design) */}
+      <div className="bg-slate-50/90 dark:bg-slate-900/80 rounded-2xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        {/* Totals Breakdown (Responsive 3-Col Grid on Mobile, Flex on Desktop) */}
+        <div
+          data-testid="summary-totals"
+          className="grid grid-cols-3 sm:flex items-center gap-3 sm:gap-6 text-xs"
+        >
           <div data-testid="total-debit-container" className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               Total Debe
             </span>
             <span
               data-testid="total-debit-amount"
-              className="text-sm font-bold text-slate-800 dark:text-slate-200 tabular-nums"
+              className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 tabular-nums truncate"
             >
               {formatCurrency(totalDebit, baseCurrency)}
             </span>
           </div>
 
           <div data-testid="total-credit-container" className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               Total Haber
             </span>
             <span
               data-testid="total-credit-amount"
-              className="text-sm font-bold text-slate-800 dark:text-slate-200 tabular-nums"
+              className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 tabular-nums truncate"
             >
               {formatCurrency(totalCredit, baseCurrency)}
             </span>
           </div>
 
           <div data-testid="difference-container" className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
               Diferencia
             </span>
             <span
               data-testid="difference-amount"
               className={cn(
-                'text-sm font-bold tabular-nums',
+                'text-xs sm:text-sm font-semibold tabular-nums truncate',
                 difference > 0
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-slate-700 dark:text-slate-300',
@@ -435,67 +460,88 @@ export function FreeJournalEntryGrid({
         </div>
 
         {/* Balance Status Badge */}
-        <div className="flex items-center gap-2">
-          {isBalanced ? (
+        <div className="flex items-center justify-end">
+          {!hasMovements ? (
             <div
               data-testid="balance-badge"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-bold shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-xs"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="w-2 h-2 rounded-full bg-slate-400" />
+              <span>Sin movimientos</span>
+            </div>
+          ) : isBalanced ? (
+            <div
+              data-testid="balance-badge"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/70 text-xs font-semibold shadow-xs animate-in zoom-in-95 duration-150"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Cuadrado</span>
             </div>
           ) : (
             <div
               data-testid="balance-badge"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-bold shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700/70 text-xs font-semibold shadow-xs animate-in zoom-in-95 duration-150"
             >
-              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>Descuadrado</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* General Form Error Feedback */}
+      {/* 4. General Form Error Feedback */}
       {errors.general && (
-        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-2">
+        <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errors.general}</span>
         </div>
       )}
 
-      {/* Single Consolidated Action Bar */}
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading || isSubmitting}
-          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Cancelar
-        </button>
+      {/* 5. Single Consolidated Action Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+          <kbd className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">
+            Ctrl
+          </kbd>
+          <span>+</span>
+          <kbd className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[10px]">
+            Enter
+          </kbd>
+          <span>para guardar</span>
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading || isSubmitting}
-          className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all duration-150',
-            loading || isSubmitting
-              ? 'bg-slate-400 cursor-not-allowed'
-              : !isBalanced
-                ? 'bg-slate-800/90 dark:bg-slate-700 hover:bg-slate-900'
-                : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]',
-          )}
-        >
-          {loading || isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Guardando...</span>
-            </>
-          ) : (
-            <span>Guardar Asiento</span>
-          )}
-        </button>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading || isSubmitting}
+            className="flex-1 sm:flex-initial px-4 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading || isSubmitting}
+            className={cn(
+              'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold text-white transition-all duration-150 cursor-pointer shadow-xs',
+              loading || isSubmitting
+                ? 'bg-slate-400 cursor-not-allowed'
+                : !isBalanced
+                  ? 'bg-slate-800/90 dark:bg-slate-700 hover:bg-slate-900 active:scale-[0.98]'
+                  : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-500/20',
+            )}
+          >
+            {loading || isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <span>Guardar Asiento</span>
+            )}
+          </button>
+        </div>
       </div>
     </form>
   );

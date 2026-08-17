@@ -504,4 +504,52 @@ describe('QuickTransactionForm Component (T007)', () => {
       });
     });
   });
+
+  describe('User Adjustments: Mode switching, zero-decimal currencies, and styling', () => {
+    test('clears secondary account when switching from Expense to Transfer if an Expense account was selected', () => {
+      render(
+        <QuickTransactionForm
+          {...defaultProps}
+          initialValues={{
+            operationType: QuickOperationType.EXPENSE,
+            primaryAccountId: 'acc-bank',
+            secondaryAccountId: 'acc-exp-fuel',
+          }}
+        />,
+      );
+
+      // Verify secondary account is Combustibles initially
+      expect(screen.getByText('Combustibles y Lubricantes')).toBeInTheDocument();
+
+      // Switch to Transfer
+      const transferBtn = screen.getByRole('button', { name: /transferencia/i });
+      fireEvent.click(transferBtn);
+
+      // Secondary account should have been reset because Combustibles is an Expense, not Asset/Liability
+      expect(screen.queryByText('Combustibles y Lubricantes')).not.toBeInTheDocument();
+      expect(
+        screen.getByText('Seleccionar cuenta destino (donde entra el dinero)...'),
+      ).toBeInTheDocument();
+    });
+
+    test('respects zero decimal places for Guaraníes (PYG)', () => {
+      render(
+        <QuickTransactionForm
+          {...defaultProps}
+          baseCurrency={{ code: 'PYG', symbol: '₲', decimalPlaces: 0 }}
+        />,
+      );
+
+      const amountInput = screen.getByLabelText(/monto/i);
+      expect(amountInput).toHaveAttribute('step', '1');
+      expect(amountInput).toHaveAttribute('placeholder', '0');
+    });
+
+    test('applies rose/red styling to Gasto button when active', () => {
+      render(<QuickTransactionForm {...defaultProps} />);
+
+      const expenseBtn = screen.getByRole('button', { name: /gasto/i });
+      expect(expenseBtn.className).toMatch(/rose/);
+    });
+  });
 });

@@ -208,7 +208,7 @@ describe('User Story 5: Clean Visual Hierarchy & Neutral Accounting Semantics (T
   });
 
   describe('2. Difference Status Badge: Cuadrado vs Descuadrado (T026)', () => {
-    test('displays "Descuadrado" badge with amber styling when journal entries are unbalanced', () => {
+    test('displays "Sin movimientos" on empty load, and "Descuadrado" badge with amber styling when journal entries are unbalanced', () => {
       render(
         <FreeJournalEntryGrid
           accounts={mockAccounts}
@@ -219,6 +219,11 @@ describe('User Story 5: Clean Visual Hierarchy & Neutral Accounting Semantics (T
       );
 
       const balanceBadge = screen.getByTestId('balance-badge');
+      expect(balanceBadge).toHaveTextContent('Sin movimientos');
+
+      const debitInputs = screen.getAllByLabelText(/debe/i);
+      fireEvent.change(debitInputs[0], { target: { value: '400' } });
+
       expect(balanceBadge).toHaveTextContent('Descuadrado');
       expect(balanceBadge.className).toMatch(/amber/);
       expect(screen.getByTestId('icon-alertcircle')).toBeInTheDocument();
@@ -318,8 +323,8 @@ describe('User Story 5: Clean Visual Hierarchy & Neutral Accounting Semantics (T
       const submitButtons = screen.getAllByRole('button', { name: /Guardar Asiento/i });
       expect(submitButtons).toHaveLength(1);
 
-      // Balance badge is present with Descuadrado initial state
-      expect(screen.getByTestId('balance-badge')).toHaveTextContent('Descuadrado');
+      // Balance badge is present with Sin movimientos initial state
+      expect(screen.getByTestId('balance-badge')).toHaveTextContent('Sin movimientos');
     });
   });
 });
