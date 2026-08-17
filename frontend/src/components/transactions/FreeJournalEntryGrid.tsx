@@ -531,23 +531,10 @@ export function FreeJournalEntryGrid({
           <button
             type="submit"
             disabled={loading || isSubmitting}
-            className={cn(
-              'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold text-white transition-all duration-150 cursor-pointer shadow-xs',
-              loading || isSubmitting
-                ? 'bg-slate-400 cursor-not-allowed'
-                : !isBalanced
-                  ? 'bg-slate-800/90 dark:bg-slate-700 hover:bg-slate-900 active:scale-[0.98]'
-                  : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-500/20',
-            )}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] text-xs font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {loading || isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <span>Guardar Asiento</span>
-            )}
+            {(loading || isSubmitting) && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{loading || isSubmitting ? 'Guardando...' : 'Guardar Asiento'}</span>
           </button>
         </div>
       </div>

@@ -92,8 +92,8 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
 
   const defaultBaseCurrency = { code: 'USD', symbol: '$', decimalPlaces: 2 };
 
-  describe('1. AccountPickerSheet Mobile Bottom Sheet Overlay (T022)', () => {
-    test('renders mobile bottom sheet overlay container with fixed positioning and rounded top corners', () => {
+  describe('1. AccountPickerSheet Responsive Modal Overlay (T022)', () => {
+    test('renders responsive modal overlay container with centered positioning and rounded corners', () => {
       render(
         <AccountPickerSheet accounts={mockAccounts} onSelect={jest.fn()} label="Cuenta de Pago" />,
       );
@@ -103,29 +103,32 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
 
       const dialog = screen.getByRole('dialog');
       expect(dialog).toBeInTheDocument();
+      expect(dialog.className).toContain('fixed');
+      expect(dialog.className).toContain('inset-0');
+      expect(dialog.className).toContain('items-center');
+      expect(dialog.className).toContain('justify-center');
 
-      // Find sheet container inside dialog
-      const sheetContainer = dialog.querySelector('.fixed.inset-x-0.bottom-0');
-      expect(sheetContainer).toBeInTheDocument();
-      expect(sheetContainer?.className).toContain('fixed');
-      expect(sheetContainer?.className).toContain('inset-x-0');
-      expect(sheetContainer?.className).toContain('bottom-0');
-      expect(sheetContainer?.className).toContain('max-h-[85vh]');
-      expect(sheetContainer?.className).toContain('rounded-t-2xl');
-      expect(sheetContainer?.className).toContain('z-50');
+      // Find modal container inside dialog
+      const modalContainer = dialog.querySelector('.relative.w-full.max-w-lg');
+      expect(modalContainer).toBeInTheDocument();
+      expect(modalContainer?.className).toContain('max-h-[85vh]');
+      expect(modalContainer?.className).toContain('rounded-2xl');
+      expect(modalContainer?.className).toContain('z-50');
     });
 
-    test('renders touch drag pull bar at top on mobile screens', () => {
-      render(<AccountPickerSheet accounts={mockAccounts} onSelect={jest.fn()} />);
+    test('does not autofocus search input on open to prevent mobile virtual keyboard popup', () => {
+      const originalWidth = window.innerWidth;
+      window.innerWidth = 375;
+      try {
+        render(<AccountPickerSheet accounts={mockAccounts} onSelect={jest.fn()} />);
 
-      fireEvent.click(screen.getByRole('combobox'));
+        fireEvent.click(screen.getByRole('combobox'));
 
-      const pullBar = screen.getByTestId('mobile-pull-bar');
-      expect(pullBar).toBeInTheDocument();
-      expect(pullBar.className).toContain('sm:hidden');
-      expect(pullBar.className).toContain('w-12');
-      expect(pullBar.className).toContain('h-1.5');
-      expect(pullBar.className).toContain('rounded-full');
+        const searchInput = screen.getByPlaceholderText('Buscar por nombre...');
+        expect(searchInput).not.toHaveFocus();
+      } finally {
+        window.innerWidth = originalWidth;
+      }
     });
 
     test('renders horizontal scrollable category tabs bar with minimum 44px touch targets', () => {
@@ -142,7 +145,7 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
       const tabs = within(tablist).getAllByRole('tab');
       expect(tabs.length).toBeGreaterThanOrEqual(5);
       tabs.forEach((tab) => {
-        expect(tab.className).toContain('min-h-[44px]');
+        expect(tab.className).toContain('min-h-11');
       });
     });
 
@@ -162,12 +165,12 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
       expect(accountOptions.length).toBeGreaterThan(0);
 
       accountOptions.forEach((option) => {
-        expect(option.className).toContain('min-h-[44px]');
+        expect(option.className).toContain('min-h-11');
       });
 
       // Check bottom quick create button
       const quickCreateBtn = screen.getByText('Crear nueva cuenta').closest('button');
-      expect(quickCreateBtn?.className).toContain('min-h-[44px]');
+      expect(quickCreateBtn?.className).toContain('min-h-11');
     });
 
     test('renders dynamic search quick create button with >= 44px touch target', () => {
@@ -188,7 +191,7 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
         .getByText(/Crear cuenta “Nueva Cuenta Móvil”/i)
         .closest('button');
       expect(dynamicCreateBtn).toBeInTheDocument();
-      expect(dynamicCreateBtn?.className).toContain('min-h-[44px]');
+      expect(dynamicCreateBtn?.className).toContain('min-h-11');
     });
 
     test('backdrop click closes the mobile bottom sheet overlay', () => {

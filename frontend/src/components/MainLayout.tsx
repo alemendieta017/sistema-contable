@@ -39,7 +39,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   const isTransactionEntryPage =
-    pathname === '/transactions/new' || pathname?.startsWith('/transactions/new/');
+    pathname === '/transactions/new' ||
+    pathname?.startsWith('/transactions/new/') ||
+    pathname === '/transactions/asiento-libre';
   const isBudgetMatrixPage = pathname === '/budgets/matrix';
 
   if (isAuthPage) {

@@ -119,34 +119,36 @@ export default function AsientoLibrePage() {
       </header>
 
       {/* Main Content Scroll Area */}
-      <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 space-y-4 max-w-4xl mx-auto w-full">
-        {error && (
-          <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 rounded-2xl flex items-start gap-2.5 border border-red-200 dark:border-red-900/60 shadow-xs animate-in fade-in duration-150">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span className="font-medium">{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/40 dark:text-green-300 rounded-2xl flex items-start gap-2.5 border border-green-200 dark:border-green-900/60 shadow-xs animate-in fade-in duration-150">
-            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-            <span className="font-medium">{success}</span>
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto w-full">
+        <main className="p-3.5 sm:p-6 lg:p-8 space-y-4 max-w-4xl mx-auto w-full">
+          {error && (
+            <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-300 rounded-2xl flex items-start gap-2.5 border border-red-200 dark:border-red-900/60 shadow-xs animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span className="font-medium">{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="p-3.5 text-xs text-green-700 bg-green-50 dark:bg-green-950/40 dark:text-green-300 rounded-2xl flex items-start gap-2.5 border border-green-200 dark:border-green-900/60 shadow-xs animate-in fade-in duration-150">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+              <span className="font-medium">{success}</span>
+            </div>
+          )}
 
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-7 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all">
-          <FreeJournalEntryGrid
-            accounts={accounts}
-            baseCurrency={baseCurrency}
-            initialValues={freeJournalInitialValues}
-            onSubmit={handleSubmit}
-            onCancel={() => router.push('/transactions')}
-            loading={loading}
-            onQuickCreateAccount={(initialName, lineIndex) =>
-              setQuickCreateState({ initialName, lineIndex })
-            }
-          />
-        </div>
-      </main>
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-7 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all">
+            <FreeJournalEntryGrid
+              accounts={accounts}
+              baseCurrency={baseCurrency}
+              initialValues={freeJournalInitialValues}
+              onSubmit={handleSubmit}
+              onCancel={() => router.push('/transactions')}
+              loading={loading}
+              onQuickCreateAccount={(initialName, lineIndex) =>
+                setQuickCreateState({ initialName, lineIndex })
+              }
+            />
+          </div>
+        </main>
+      </div>
 
       {/* Quick Account Creation Modal */}
       {quickCreateState && (

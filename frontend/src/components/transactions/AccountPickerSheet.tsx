@@ -246,13 +246,21 @@ export default function AccountPickerSheet({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Auto focus search input when sheet opens
+  // Auto focus search input on desktop only (non-touch / viewport >= 640px)
   useEffect(() => {
     if (isOpen) {
-      const timer = setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
+      const isTouchOrMobile =
+        typeof window !== 'undefined' &&
+        (window.innerWidth < 640 ||
+          Boolean(window.matchMedia?.('(pointer: coarse)').matches) ||
+          ('ontouchstart' in window && window.innerWidth < 1024));
+
+      if (!isTouchOrMobile) {
+        const timer = setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 50);
+        return () => clearTimeout(timer);
+      }
     } else {
       setSearch('');
       setActiveTab('ALL');
@@ -389,10 +397,10 @@ export default function AccountPickerSheet({
           }
         }}
         className={cn(
-          'w-full flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-[42px] sm:min-h-[44px] text-xs font-medium rounded-xl border bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 transition text-left outline-none focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-500',
+          'w-full flex items-center justify-between gap-2 px-3.5 py-2.5 min-h-11 text-xs font-medium rounded-xl border bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 transition text-left outline-none focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-500',
           error
-            ? 'border-rose-500 dark:border-rose-500/80 focus:ring-rose-500/15'
-            : 'border-slate-200 dark:border-slate-700/70 hover:border-indigo-300 dark:hover:border-slate-600 shadow-2xs',
+            ? 'border-rose-500 dark:border-rose-600 focus:ring-rose-500/15'
+            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-slate-600 shadow-2xs',
           disabled && 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900',
         )}
       >
@@ -412,7 +420,7 @@ export default function AccountPickerSheet({
             selectedAccount.balance !== undefined && (
               <span
                 className={cn(
-                  'text-[10px] font-bold px-2 py-0.5 rounded-lg tabular-nums',
+                  'text-xs font-bold px-2 py-0.5 rounded-lg tabular-nums',
                   selectedAccount.balance < 0
                     ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
@@ -430,12 +438,12 @@ export default function AccountPickerSheet({
         </div>
       </button>
 
-      {error && <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">{error}</p>}
+      {error && <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error}</p>}
 
       {/* Sheet / Dialog Modal Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
           aria-label={label || 'Seleccionar Cuenta'}
@@ -447,31 +455,30 @@ export default function AccountPickerSheet({
             data-testid="account-picker-backdrop"
           />
 
-          {/* Sheet / Popover Container */}
-          <div className="fixed inset-x-0 bottom-0 max-h-[85vh] sm:max-h-[80vh] w-full sm:max-w-lg sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 rounded-t-2xl sm:rounded-2xl z-50 bg-white dark:bg-slate-900 shadow-2xl flex flex-col border border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom sm:slide-in-from-top-1/2 sm:zoom-in-95 duration-200 overflow-hidden">
-            {/* Mobile Drag Indicator */}
-            <div
-              data-testid="mobile-pull-bar"
-              className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0"
-            />
-
+          {/* Modal Container */}
+          <div className="relative w-full max-w-lg max-h-[85vh] rounded-2xl z-50 bg-white dark:bg-slate-900 shadow-2xl flex flex-col border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                {label || 'Seleccionar Cuenta'}
-              </h3>
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                  {label || 'Seleccionar Cuenta'}
+                </h3>
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                  Catálogo de cuentas contables
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 aria-label="Cerrar"
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Search Input Bar */}
-            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-3 sm:p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="relative flex items-center">
                 <Search className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
                 <input
@@ -485,14 +492,14 @@ export default function AccountPickerSheet({
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Buscar por nombre..."
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg pl-9 pr-9 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-9 py-2.5 text-sm sm:text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch('')}
                     aria-label="Limpiar búsqueda"
-                    className="absolute right-2.5 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded"
+                    className="absolute right-2.5 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -519,15 +526,15 @@ export default function AccountPickerSheet({
                       data-testid={`category-tab-${tab.id}`}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-full min-h-[44px] transition-all border shrink-0',
+                        'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full min-h-11 transition-all border shrink-0',
                         isActive
                           ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 shadow-xs'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/60 dark:hover:bg-slate-700/50',
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700 dark:hover:bg-slate-700',
                       )}
                     >
                       {tab.dot && <span className={cn('w-1.5 h-1.5 rounded-full', tab.dot)} />}
                       <span>{tab.label}</span>
-                      <span className="text-[10px] font-normal opacity-75">({count})</span>
+                      <span className="text-xs font-normal opacity-75">({count})</span>
                     </button>
                   );
                 })}
@@ -539,7 +546,7 @@ export default function AccountPickerSheet({
               id="account-picker-listbox"
               role="listbox"
               aria-label="Cuentas disponibles"
-              className="overflow-y-auto flex-1 p-2 space-y-1 max-h-80 sm:max-h-96"
+              className="overflow-y-auto flex-1 p-2.5 sm:p-3 space-y-1 min-h-0"
               ref={listContainerRef}
             >
               {/* Dynamic Quick Create Option */}
@@ -552,9 +559,9 @@ export default function AccountPickerSheet({
                     id="account-sheet-opt-search-create"
                     onClick={() => handleQuickCreate(search.trim())}
                     className={cn(
-                      'w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-bold flex items-center gap-2 transition bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60',
+                      'w-full text-left px-3 py-2.5 min-h-11 rounded-xl text-xs font-bold flex items-center gap-2 transition bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800',
                       focusedIndex === 0 &&
-                        'ring-2 ring-indigo-500 bg-indigo-100 dark:bg-indigo-900/60',
+                        'ring-2 ring-indigo-500 bg-indigo-100 dark:bg-indigo-900',
                     )}
                   >
                     <Plus className="w-4 h-4 shrink-0" />
@@ -564,14 +571,15 @@ export default function AccountPickerSheet({
               )}
 
               {displayGroups.length === 0 ? (
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
-                  No se encontraron cuentas disponibles
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
+                  <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-1" />
+                  <span>No se encontraron cuentas disponibles</span>
                 </div>
               ) : (
                 displayGroups.map((group) => (
-                  <div key={group.type} className="mb-2 last:mb-0">
+                  <div key={group.type} className="mb-2.5 last:mb-0">
                     {activeTab === 'ALL' && availableTabs.length > 2 && (
-                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs z-10">
+                      <div className="px-2 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs z-10">
                         {group.label}
                       </div>
                     )}
@@ -593,22 +601,24 @@ export default function AccountPickerSheet({
                             id={`account-sheet-opt-${acc.id}`}
                             onClick={() => handleSelectAccount(acc)}
                             className={cn(
-                              'w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg text-xs transition flex items-center justify-between gap-3 group outline-none',
+                              'w-full text-left px-3.5 py-2.5 min-h-11 rounded-xl text-xs transition flex items-center justify-between gap-3 group outline-none',
                               isSelected
-                                ? 'bg-indigo-50/70 text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200 font-semibold'
+                                ? 'bg-indigo-50/80 text-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200 font-semibold'
                                 : isFocused
                                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100'
-                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60',
+                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800',
                             )}
                           >
                             <div className="flex flex-col min-w-0 flex-1">
                               {acc.parentId && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                                <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                                   {getParentName(acc.parentId)} ›
                                 </span>
                               )}
                               <div className="flex items-center gap-1.5">
-                                <span className="truncate">{highlightMatch(acc.name, search)}</span>
+                                <span className="text-sm sm:text-xs font-medium truncate">
+                                  {highlightMatch(acc.name, search)}
+                                </span>
                                 {isSelected && (
                                   <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                                 )}
@@ -619,7 +629,7 @@ export default function AccountPickerSheet({
                               {isBalanceEligible(acc.type) && acc.balance !== undefined && (
                                 <span
                                   className={cn(
-                                    'text-[11px] font-semibold tabular-nums',
+                                    'text-xs font-semibold tabular-nums',
                                     acc.balance < 0
                                       ? 'text-rose-600 dark:text-rose-400'
                                       : 'text-slate-500 dark:text-slate-400',
@@ -630,7 +640,7 @@ export default function AccountPickerSheet({
                               )}
                               <span
                                 className={cn(
-                                  'text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md',
+                                  'text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md',
                                   getTypeBadgeClasses(acc.type),
                                 )}
                               >
@@ -644,21 +654,21 @@ export default function AccountPickerSheet({
                   </div>
                 ))
               )}
-
-              {/* Static Quick Create Button at bottom */}
-              {onQuickCreateAccount && (
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickCreate('')}
-                    className="w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/30 transition"
-                  >
-                    <Plus className="w-4 h-4 shrink-0" />
-                    <span>Crear nueva cuenta</span>
-                  </button>
-                </div>
-              )}
             </div>
+
+            {/* Static Quick Create Button pinned at bottom */}
+            {onQuickCreateAccount && (
+              <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleQuickCreate('')}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 min-h-11 rounded-xl text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition"
+                >
+                  <Plus className="w-4 h-4 shrink-0" />
+                  <span>Crear nueva cuenta</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
