@@ -159,7 +159,14 @@ if ($null -eq $Options) {
     foreach ($candidate in $pythonCandidates) {
         if (Get-Command $candidate -ErrorAction SilentlyContinue) {
             # Verify it is Python 3 with PyYAML available.
-            $null = & $candidate -c "import sys; import yaml; sys.exit(0 if sys.version_info[0] == 3 else 1)" 2>$null
+            $prevEap = $ErrorActionPreference
+            $ErrorActionPreference = 'SilentlyContinue'
+            try {
+                $null = & $candidate -c "import sys; import yaml; sys.exit(0 if sys.version_info[0] == 3 else 1)" 2>$null
+            } catch {
+            } finally {
+                $ErrorActionPreference = $prevEap
+            }
             if ($LASTEXITCODE -eq 0) {
                 $pythonCmd = $candidate
                 break
