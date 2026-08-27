@@ -33,6 +33,8 @@ interface AccountModalProps {
   onSuccess: (createdAccount?: Account) => void;
   parentCandidates: ParentAccount[];
   initialName?: string;
+  initialType?: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  initialParentId?: string;
   accountToEdit?: {
     id: string;
     name: string;
@@ -47,16 +49,18 @@ export default function AccountModal({
   onSuccess,
   parentCandidates,
   initialName,
+  initialType,
+  initialParentId,
   accountToEdit,
 }: AccountModalProps) {
   const [name, setName] = useState(accountToEdit?.name || initialName || '');
   const [type, setType] = useState<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>(
-    accountToEdit?.type || 'ASSET',
+    accountToEdit?.type || initialType || 'ASSET',
   );
   const [isCashOrBank, setIsCashOrBank] = useState<boolean>(accountToEdit?.isCashOrBank ?? false);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [selectedCurrencyId, setSelectedCurrencyId] = useState('');
-  const [selectedParentId, setSelectedParentId] = useState('');
+  const [selectedParentId, setSelectedParentId] = useState(initialParentId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -259,27 +263,25 @@ export default function AccountModal({
             </div>
           )}
 
-          {!isEditing &&
-            (type === 'INCOME' || type === 'EXPENSE') &&
-            filteredParents.length > 0 && (
-              <div>
-                <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
-                  Categoría Padre (Opcional)
-                </label>
-                <select
-                  value={selectedParentId}
-                  onChange={(e) => setSelectedParentId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
-                >
-                  <option value="">Ninguna (Es categoría principal)</option>
-                  {filteredParents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+          {!isEditing && filteredParents.length > 0 && (
+            <div>
+              <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                Cuenta / Categoría Padre (Opcional)
+              </label>
+              <select
+                value={selectedParentId}
+                onChange={(e) => setSelectedParentId(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
+              >
+                <option value="">Ninguna (Es cuenta principal)</option>
+                {filteredParents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Footer Actions */}
           <div className="flex space-x-2 pt-4 border-t border-slate-100 dark:border-slate-700">

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../services/api';
 import { useSearch } from '../../lib/search-context';
@@ -32,7 +33,8 @@ type Account = {
   parentId?: string | null;
 };
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
+  const searchParams = useSearchParams();
   const { searchQuery } = useSearch();
   const [view, setView] = useState<'daily' | 'calendar' | 'monthly'>('daily');
 
@@ -68,8 +70,15 @@ export default function TransactionsPage() {
     endDate: `${new Date().getFullYear()}-12-31`,
   });
 
-  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const urlAccountId = searchParams.get('accountId') || '';
+  const [selectedAccountId, setSelectedAccountId] = useState(urlAccountId);
   const [showDesktopFilters, setShowDesktopFilters] = useState(false);
+
+  useEffect(() => {
+    if (urlAccountId) {
+      setSelectedAccountId(urlAccountId);
+    }
+  }, [urlAccountId]);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<any[]>([]);
@@ -520,5 +529,22 @@ export default function TransactionsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 min-h-0 items-center justify-center p-12">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-xs text-slate-400 font-semibold">Cargando transacciones...</span>
+          </div>
+        </div>
+      }
+    >
+      <TransactionsPageContent />
+    </Suspense>
   );
 }

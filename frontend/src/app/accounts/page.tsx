@@ -2,26 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import AccountsList from '../../components/AccountsList';
+import AccountsList, { AccountSummary } from '../../components/AccountsList';
 import AccountModal from '../../components/AccountModal';
-import { Plus, Wallet, ShieldAlert, BadgeAlert } from 'lucide-react';
+import {
+  Plus,
+  Wallet,
+  ShieldAlert,
+  BadgeAlert,
+  Eye,
+  EyeOff,
+  Briefcase,
+  Tags,
+  Layers,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { useSearch } from '../../lib/search-context';
 import { AccountStatus } from '@sistema-contable/shared';
-
-type AccountSummary = {
-  id: string;
-  name: string;
-  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
-  balance: number;
-  currencyCode?: string;
-  currencySymbol?: string;
-  decimalPlaces?: number;
-  parentId?: string | null;
-  status?: 'ACTIVE' | 'INACTIVE';
-  isCashOrBank?: boolean;
-  systemRole?: string | null;
-};
 
 type SummaryData = {
   netWorth: number;
@@ -39,6 +37,10 @@ export default function AccountsPage() {
   const [deactivateSuggestedId, setDeactivateSuggestedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [accountToEdit, setAccountToEdit] = useState<AccountSummary | null>(null);
+  const [subaccountParent, setSubaccountParent] = useState<AccountSummary | null>(null);
+  const [activeTab, setActiveTab] = useState<'FINANCIAL' | 'CATEGORIES' | 'ALL'>('FINANCIAL');
+  const [showInactive, setShowInactive] = useState(false);
   const [deletingId, setDeletingId] = useState('');
   const [reactivatingId, setReactivatingId] = useState('');
   const [deactivatingId, setDeactivatingId] = useState('');
@@ -181,10 +183,26 @@ export default function AccountsPage() {
     );
   }
 
+  const inactiveCount = summary?.accounts.filter((a) => a.status === 'INACTIVE').length || 0;
+
   const filteredAccounts =
     summary?.accounts.filter((a) => {
-      if (!searchQuery.trim()) return true;
-      return a.name.toLowerCase().includes(searchQuery.toLowerCase());
+      // 1. Search Query Filter
+      if (searchQuery.trim() && !a.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      // 2. Inactive Filter
+      if (!showInactive && a.status === 'INACTIVE') {
+        return false;
+      }
+      // 3. Tab Filter
+      if (activeTab === 'FINANCIAL') {
+        return a.type === 'ASSET' || a.type === 'LIABILITY';
+      }
+      if (activeTab === 'CATEGORIES') {
+        return a.type === 'INCOME' || a.type === 'EXPENSE';
+      }
+      return true;
     }) || [];
 
   return (
@@ -201,7 +219,11 @@ export default function AccountsPage() {
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setAccountToEdit(null);
+            setSubaccountParent(null);
+            setShowAddModal(true);
+          }}
           className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
         >
           <Plus className="w-4 h-4" />
@@ -233,6 +255,12 @@ export default function AccountsPage() {
           symbol: '₲',
           decimalPlaces: 0,
         };
+        const totalA = Math.max(summary?.totalAssets || 0, 0);
+        const totalL = Math.max(summary?.totalLiabilities || 0, 0);
+        const totalSum = totalA + totalL;
+        const assetPct = totalSum > 0 ? Math.round((totalA / totalSum) * 100) : 100;
+        const liabilityPct = totalSum > 0 ? 100 - assetPct : 0;
+
         return (
           <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
             <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
@@ -241,31 +269,113 @@ export default function AccountsPage() {
             <p className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
               Patrimonio Neto
             </p>
-            <h2 className="text-3xl font-extrabold mt-1">
+            <h2 className="text-3xl font-extrabold mt-1 tabular-nums">
               {formatCurrency(summary?.netWorth || 0, baseCurrency)}
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mt-6 border-t border-indigo-500/40 pt-4 text-xs">
               <div>
-                <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-                  Total Activos
-                </p>
-                <p className="font-bold text-base mt-0.5">
+                <div className="flex items-center gap-1 text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
+                  <ArrowUpRight className="w-3 h-3 text-emerald-300" />
+                  <span>Total Activos</span>
+                </div>
+                <p className="font-bold text-base mt-0.5 tabular-nums text-emerald-100">
                   {formatCurrency(summary?.totalAssets || 0, baseCurrency)}
                 </p>
               </div>
               <div>
-                <p className="text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-                  Total Pasivos
-                </p>
-                <p className="font-bold text-base mt-0.5">
+                <div className="flex items-center gap-1 text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
+                  <ArrowDownRight className="w-3 h-3 text-red-300" />
+                  <span>Total Pasivos</span>
+                </div>
+                <p className="font-bold text-base mt-0.5 tabular-nums text-red-100">
                   {formatCurrency(summary?.totalLiabilities || 0, baseCurrency)}
                 </p>
               </div>
             </div>
+
+            {totalSum > 0 && (
+              <div className="mt-4 pt-3 border-t border-indigo-500/30">
+                <div className="flex justify-between items-center text-4xs font-bold text-indigo-200 uppercase tracking-wider mb-1.5">
+                  <span>Solvencia ({assetPct}%)</span>
+                  <span>Endeudamiento ({liabilityPct}%)</span>
+                </div>
+                <div className="w-full bg-indigo-900/50 rounded-full h-1.5 overflow-hidden flex">
+                  <div
+                    style={{ width: `${assetPct}%` }}
+                    className="bg-emerald-400 h-full rounded-l-full transition-all duration-500"
+                  />
+                  <div
+                    style={{ width: `${liabilityPct}%` }}
+                    className="bg-red-400 h-full rounded-r-full transition-all duration-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
+
+      {/* Segmented Controls & Inactive Filter */}
+      {summary && summary.accounts.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold w-full sm:w-auto overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('FINANCIAL')}
+              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
+                activeTab === 'FINANCIAL'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Cuentas de Dinero</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('CATEGORIES')}
+              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
+                activeTab === 'CATEGORIES'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Tags className="w-3.5 h-3.5" />
+              <span>Categorías (PyG)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('ALL')}
+              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
+                activeTab === 'ALL'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Plan Completo</span>
+            </button>
+          </div>
+
+          {inactiveCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowInactive(!showInactive)}
+              className={`self-start sm:self-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-3xs font-bold border transition ${
+                showInactive
+                  ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              {showInactive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{showInactive ? 'Ocultar inactivas' : `Ver inactivas (${inactiveCount})`}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* If no accounts exist */}
       {summary?.accounts.length === 0 && (
@@ -297,6 +407,7 @@ export default function AccountsPage() {
         (filteredAccounts.length > 0 ? (
           <AccountsList
             accounts={filteredAccounts}
+            activeTab={activeTab}
             onDelete={handleDeleteAccount}
             deletingId={deletingId}
             onToggleCashOrBank={handleToggleCashOrBank}
@@ -304,6 +415,14 @@ export default function AccountsPage() {
             onDeactivate={handleDeactivateAccount}
             reactivatingId={reactivatingId}
             deactivatingId={deactivatingId}
+            onEdit={(acc) => {
+              setAccountToEdit(acc);
+              setShowAddModal(true);
+            }}
+            onAddSubaccount={(parent) => {
+              setSubaccountParent(parent);
+              setShowAddModal(true);
+            }}
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
@@ -311,17 +430,39 @@ export default function AccountsPage() {
               No se encontraron cuentas que coincidan con &quot;{searchQuery}&quot;
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              Prueba buscando con otros términos
+              Prueba buscando con otros términos o cambia de pestaña
             </p>
           </div>
         ))}
 
-      {/* Account Add Modal */}
+      {/* Account Add / Edit Modal */}
       {showAddModal && (
         <AccountModal
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setAccountToEdit(null);
+            setSubaccountParent(null);
+          }}
           onSuccess={loadSummary}
           parentCandidates={summary?.accounts || []}
+          accountToEdit={
+            accountToEdit
+              ? {
+                  id: accountToEdit.id,
+                  name: accountToEdit.name,
+                  type: accountToEdit.type,
+                  isCashOrBank: accountToEdit.isCashOrBank,
+                }
+              : undefined
+          }
+          initialType={
+            subaccountParent
+              ? subaccountParent.type
+              : activeTab === 'CATEGORIES'
+                ? 'EXPENSE'
+                : 'ASSET'
+          }
+          initialParentId={subaccountParent ? subaccountParent.id : undefined}
         />
       )}
     </div>

@@ -18,6 +18,12 @@ jest.mock('../services/api', () => ({
   },
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  usePathname: () => '/accounts',
+  useSearchParams: () => ({ get: jest.fn() }),
+}));
+
 jest.mock('../lib/search-context', () => ({
   useSearch: () => ({ searchQuery: '' }),
 }));
@@ -31,6 +37,13 @@ jest.mock('lucide-react', () => ({
   Trash2: () => <span data-testid="trash-icon">Trash</span>,
   Edit2: () => <span data-testid="edit-icon">Edit</span>,
   Banknote: () => <span data-testid="banknote-icon">Banknote</span>,
+  Eye: () => <span data-testid="eye-icon">Eye</span>,
+  EyeOff: () => <span data-testid="eyeoff-icon">EyeOff</span>,
+  Briefcase: () => <span data-testid="briefcase-icon">Briefcase</span>,
+  Tags: () => <span data-testid="tags-icon">Tags</span>,
+  Layers: () => <span data-testid="layers-icon">Layers</span>,
+  ArrowUpRight: () => <span data-testid="arrow-up-icon">ArrowUp</span>,
+  ArrowDownRight: () => <span data-testid="arrow-down-icon">ArrowDown</span>,
 }));
 
 describe('Default Accounts Creation (US1)', () => {
