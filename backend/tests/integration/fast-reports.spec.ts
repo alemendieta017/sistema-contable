@@ -171,17 +171,49 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.liabilities).toEqual([
         { accountId: 'acc-liability-1', name: 'Accounts Payable', balance: 5000.2 },
       ]);
-      expect(result.equity).toEqual([
-        { accountId: 'acc-equity-1', name: 'Common Stock', balance: 10000.3 },
-      ]);
+      expect(result.equity).toEqual([]);
 
       expect(result.totalAssets).toBe(15000.5);
       expect(result.totalLiabilities).toBe(5000.2);
       expect(result.totalEquity).toBe(10000.3);
+      expect(result.netWorth).toBe(10000.3);
       expect(result.balanced).toBe(true);
+      expect(result.isBalanced).toBe(true);
     });
 
-    it('should return balanced false if assets != liabilities + equity', async () => {
+    it('should resolve period by YYYY-MM name string if periodId is passed as name', async () => {
+      const mockPeriod = {
+        id: 'uuid-2026-08',
+        name: '2026-08',
+        userId,
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
+
+      mockPeriodRepo.findOne!.mockResolvedValue(mockPeriod);
+      mockAccountRepo.find!.mockResolvedValue([
+        { id: 'acc-1', name: 'Banco', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
+      ]);
+      mockBalanceRepo.find!.mockResolvedValue([
+        {
+          accountId: 'acc-1',
+          periodId: 'uuid-2026-08',
+          closingBalance: 5000,
+        } as AccountPeriodBalanceEntity,
+      ]);
+
+      const result = (await balanceSheetUseCase.execute(userId, {
+        mode: 'period',
+        periodId: '2026-08',
+      })) as any;
+
+      expect(result.period).toBe('2026-08');
+      expect(result.totalAssets).toBe(5000);
+      expect(result.netWorth).toBe(5000);
+    });
+
+    it('should compute netWorth and totalEquity directly as totalAssets - totalLiabilities in period mode', async () => {
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
@@ -228,8 +260,9 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
 
       expect(result.totalAssets).toBe(100.0);
       expect(result.totalLiabilities).toBe(80.0);
-      expect(result.totalEquity).toBe(0.0);
-      expect(result.balanced).toBe(false);
+      expect(result.totalEquity).toBe(20.0);
+      expect(result.netWorth).toBe(20.0);
+      expect(result.balanced).toBe(true);
     });
 
     it('should collapse child accounts by depth level correctly', async () => {
@@ -382,13 +415,13 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
           id: 'period-1',
           name: '2026-01',
           startDate: '2026-01-01',
-          fiscalYearId: 'fy-uuid',
+          userId,
         } as unknown as PeriodEntity,
         {
           id: 'period-2',
           name: '2026-02',
           startDate: '2026-02-01',
-          fiscalYearId: 'fy-uuid',
+          userId,
         } as unknown as PeriodEntity,
       ];
 
@@ -460,7 +493,9 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       ]);
       expect(result.totalAssets).toEqual([1200, 1500]);
       expect(result.totalLiabilities).toEqual([400, 500]);
-      expect(result.balanced).toEqual([false, false]); // Equity is 0, so 1200 != 400 + 0
+      expect(result.totalEquity).toEqual([800, 1000]);
+      expect(result.netWorth).toEqual([800, 1000]);
+      expect(result.balanced).toEqual([true, true]);
     });
 
     it('should calculate Resultados Acumulados and Resultado del Ejercicio correctly in date mode when previous years are unclosed', async () => {
@@ -503,7 +538,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
             { accountId: 'acc-cash', entryType: 'DEBIT', total: '20000' },
             { accountId: 'acc-ap', entryType: 'CREDIT', total: '9000' },
           ])
-          .mockResolvedValueOnce([])
           .mockResolvedValueOnce([
             { entryType: 'CREDIT', total: '15000' },
             { entryType: 'DEBIT', total: '4000' },
@@ -529,13 +563,8 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.liabilities).toEqual([
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
-      expect(result.equity).toEqual([
-        {
-          accountId: 'acc-retained',
-          name: 'Resultados Acumulados',
-          balance: 11000.0,
-        },
-      ]);
+      expect(result.equity).toEqual([]);
+      expect(result.totalEquity).toBe(11000.0);
       expect(result.balanced).toBe(true);
     });
 
@@ -591,14 +620,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.totalLiabilities).toBe(0);
       expect(result.totalEquity).toBe(131000);
       expect(result.balanced).toBe(true);
-      expect(result.equity).toEqual([
-        { accountId: 'acc-capital', name: 'Capital', balance: 120000 },
-        {
-          accountId: 'acc-retained',
-          name: 'Resultados Acumulados',
-          balance: 11000,
-        },
-      ]);
+      expect(result.equity).toEqual([]);
     });
 
     it('should use pre-calculated opening balance for date mode when current period exists', async () => {
@@ -612,11 +634,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         name: '2026-08',
         startDate: '2026-08-01',
         endDate: '2026-08-31',
-        fiscalYear: {
-          id: 'fy-2026',
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-        },
+        userId,
       } as unknown as PeriodEntity;
 
       mockPeriodRepo.findOne!.mockResolvedValue(mockCurrentPeriod);
@@ -735,13 +753,8 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       expect(result.liabilities).toEqual([
         { accountId: 'acc-ap', name: 'Accounts Payable', balance: 9000.0 },
       ]);
-      expect(result.equity).toEqual([
-        {
-          accountId: 'acc-retained',
-          name: 'Resultados Acumulados',
-          balance: 11000.0,
-        },
-      ]);
+      expect(result.equity).toEqual([]);
+      expect(result.totalEquity).toBe(11000.0);
       expect(result.balanced).toBe(true);
     });
 
@@ -798,11 +811,9 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         periodId,
       })) as any;
 
-      expect(result.equity).toEqual([
-        { accountId: 'acc-stock', name: 'Common Stock', balance: 1000.0 },
-      ]);
-      expect(result.equity.some((e: any) => e.accountId === 'acc-ni')).toBe(false);
-      expect(result.equity.some((e: any) => e.accountId === 'acc-re')).toBe(false);
+      expect(result.equity).toEqual([]);
+      expect(result.totalEquity).toBe(1000.0);
+      expect(result.balanced).toBe(true);
     });
 
     it('should include inactive accounts with non-zero balances and balance the balance sheet', async () => {

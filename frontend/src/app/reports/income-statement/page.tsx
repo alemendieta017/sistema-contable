@@ -56,7 +56,12 @@ export default function IncomeStatementPage() {
       setCurrencies(currencyData || []);
 
       if (sortedPeriods.length > 0) {
-        setSelectedPeriodId(sortedPeriods[0].id);
+        const todayStr = new Date().toISOString().substring(0, 7);
+        const currentPeriod = sortedPeriods.find((p: any) => p.name === todayStr);
+        const pastOrCurrentPeriods = sortedPeriods.filter((p: any) => p.name <= todayStr);
+        const defaultPeriod = currentPeriod || pastOrCurrentPeriods[0] || sortedPeriods[0];
+
+        setSelectedPeriodId(defaultPeriod.id);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar los períodos contables.');
@@ -177,7 +182,7 @@ export default function IncomeStatementPage() {
       {reportLoading && (
         <div className="text-center py-12">
           <div className="w-6 h-6 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <span className="text-[11px] text-slate-400 font-semibold">
+          <span className="text-xs text-slate-400 font-semibold">
             Consolidando flujos de ingresos y egresos...
           </span>
         </div>
@@ -213,29 +218,29 @@ export default function IncomeStatementPage() {
               )}
             </div>
 
-            <span className="text-3xs font-extrabold uppercase tracking-widest text-white/80 flex items-center gap-1.5">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-white/80 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               <span>{isProfit ? 'Resultado Neto (Utilidad)' : 'Resultado Neto (Pérdida)'}</span>
             </span>
 
-            <h2 className="text-3xl font-extrabold mt-1 whitespace-nowrap">
+            <h2 className="text-3xl font-extrabold mt-1 whitespace-nowrap tabular-nums">
               {formatCurrency(report.netProfit, baseCurrency)}
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mt-6 border-t border-white/20 pt-4 text-xs">
               <div>
-                <p className="text-white/70 font-semibold text-3xs uppercase tracking-wider">
+                <p className="text-white/70 font-semibold text-xs uppercase tracking-wider">
                   Total Ingresos
                 </p>
-                <p className="font-bold text-base mt-0.5 whitespace-nowrap">
+                <p className="font-bold text-base mt-0.5 whitespace-nowrap tabular-nums">
                   {formatCurrency(report.totalIncome, baseCurrency)}
                 </p>
               </div>
               <div>
-                <p className="text-white/70 font-semibold text-3xs uppercase tracking-wider">
+                <p className="text-white/70 font-semibold text-xs uppercase tracking-wider">
                   Total Gastos
                 </p>
-                <p className="font-bold text-base mt-0.5 whitespace-nowrap">
+                <p className="font-bold text-base mt-0.5 whitespace-nowrap tabular-nums">
                   {formatCurrency(report.totalExpenses, baseCurrency)}
                 </p>
               </div>
@@ -256,7 +261,7 @@ export default function IncomeStatementPage() {
                   No se registraron ingresos en este período.
                 </p>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 print:max-h-full">
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1 print:max-h-full">
                   {report.income.map((item) => (
                     <div
                       key={item.accountId}
@@ -265,7 +270,7 @@ export default function IncomeStatementPage() {
                       <span className="text-slate-600 dark:text-slate-300 font-semibold">
                         {item.name}
                       </span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
                         {formatCurrency(item.amount, baseCurrency)}
                       </span>
                     </div>
@@ -275,7 +280,7 @@ export default function IncomeStatementPage() {
 
               <div className="flex justify-between items-center pt-3 mt-4 border-t border-slate-100 dark:border-slate-700 font-extrabold text-xs">
                 <span className="text-slate-700 dark:text-slate-300">TOTAL INGRESOS</span>
-                <span className="text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap">
+                <span className="text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap tabular-nums">
                   {formatCurrency(report.totalIncome, baseCurrency)}
                 </span>
               </div>
@@ -294,7 +299,7 @@ export default function IncomeStatementPage() {
                   No se registraron gastos en este período.
                 </p>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 print:max-h-full">
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1 print:max-h-full">
                   {report.expenses.map((item) => (
                     <div
                       key={item.accountId}
@@ -303,7 +308,7 @@ export default function IncomeStatementPage() {
                       <span className="text-slate-600 dark:text-slate-300 font-semibold">
                         {item.name}
                       </span>
-                      <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                      <span className="font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap tabular-nums">
                         {formatCurrency(item.amount, baseCurrency)}
                       </span>
                     </div>
@@ -313,7 +318,7 @@ export default function IncomeStatementPage() {
 
               <div className="flex justify-between items-center pt-3 mt-4 border-t border-slate-100 dark:border-slate-700 font-extrabold text-xs">
                 <span className="text-slate-700 dark:text-slate-300">TOTAL GASTOS</span>
-                <span className="text-rose-600 dark:text-rose-400 text-sm whitespace-nowrap">
+                <span className="text-rose-600 dark:text-rose-400 text-sm whitespace-nowrap tabular-nums">
                   {formatCurrency(report.totalExpenses, baseCurrency)}
                 </span>
               </div>

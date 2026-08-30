@@ -538,7 +538,7 @@ export default function BudgetMatrixPage() {
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            <span className="px-1.5 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tracking-tight select-none truncate text-center min-w-[70px] sm:min-w-[120px]">
+            <span className="px-1.5 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tracking-tight select-none truncate text-center min-w-20 sm:min-w-32">
               {navigatorLabel}
             </span>
 
@@ -573,7 +573,7 @@ export default function BudgetMatrixPage() {
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              1 Mes
+              Mensual
             </button>
             <button
               type="button"
@@ -606,7 +606,7 @@ export default function BudgetMatrixPage() {
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              Mensual
+              Anual
             </button>
           </div>
         )}
@@ -618,7 +618,7 @@ export default function BudgetMatrixPage() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate max-w-[90px] sm:max-w-none"
+              className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate max-w-24 sm:max-w-none"
             >
               <option value="">{isMobile ? 'Todas' : 'Todas las Partidas'}</option>
               <option value="INGRESOS">Ingresos</option>

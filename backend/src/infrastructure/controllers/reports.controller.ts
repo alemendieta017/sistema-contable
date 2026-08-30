@@ -81,36 +81,55 @@ export class ReportsController {
   }
 
   @Get('income-statement')
-  async getIncomeStatement(@CurrentUser() user: UserEntity, @Query('periodId') periodId: string) {
+  async getIncomeStatement(
+    @CurrentUser() user: UserEntity,
+    @Query('periodId') periodId: string,
+    @Query('mode') mode?: 'real' | 'projected',
+  ) {
     if (!periodId) {
       throw new BadRequestException('periodId is required');
     }
-    return this.incomeStatementUseCase.execute(user.id, periodId);
+    const activeMode = mode === 'projected' ? 'projected' : 'real';
+    return this.incomeStatementUseCase.execute(user.id, periodId, activeMode);
   }
 
   @Get('income-statement/real-vs-projected')
   async getIncomeStatementRealVsProjected(
     @CurrentUser() user: UserEntity,
-    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('startPeriod') startPeriod?: string,
+    @Query('fiscalYearId') fiscalYearId?: string,
     @Query('rolling') rolling?: string,
+    @Query('months') months?: string,
   ) {
-    if (!fiscalYearId) {
-      throw new BadRequestException('fiscalYearId is required');
-    }
-    const isRolling = rolling === 'true';
-    return this.incomeStatementForecastUseCase.execute(user.id, fiscalYearId, isRolling);
+    const targetStart = startPeriod || fiscalYearId;
+    const isRolling = rolling === undefined || rolling === 'true';
+    const parsedMonths = months ? Math.min(24, Math.max(1, parseInt(months, 10))) : 12;
+    return this.incomeStatementForecastUseCase.execute(
+      user.id,
+      targetStart,
+      isRolling,
+      undefined,
+      parsedMonths,
+    );
   }
 
   @Get('cash-flow/real-vs-projected')
   async getCashFlowRealVsProjected(
     @CurrentUser() user: UserEntity,
-    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('startPeriod') startPeriod?: string,
+    @Query('fiscalYearId') fiscalYearId?: string,
     @Query('rolling') rolling?: string,
+    @Query('months') months?: string,
   ) {
-    if (!fiscalYearId) {
-      throw new BadRequestException('fiscalYearId is required');
-    }
-    const isRolling = rolling === 'true';
-    return this.cashFlowStatementForecastUseCase.execute(user.id, fiscalYearId, isRolling);
+    const targetStart = startPeriod || fiscalYearId;
+    const isRolling = rolling === undefined || rolling === 'true';
+    const parsedMonths = months ? Math.min(24, Math.max(1, parseInt(months, 10))) : 12;
+    return this.cashFlowStatementForecastUseCase.execute(
+      user.id,
+      targetStart,
+      isRolling,
+      undefined,
+      parsedMonths,
+    );
   }
 }

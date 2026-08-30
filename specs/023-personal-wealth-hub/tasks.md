@@ -98,18 +98,18 @@
 
 ### Tests for User Story 3 (Strict TDD - Write and ensure FAIL first) ⚠️
 
-- [ ] T028 [P] [US3] Unit and integration tests for instant Balance General from snapshots in `backend/tests/integration/fast-reports.spec.ts`
-- [ ] T029 [P] [US3] Unit tests for Real Cash Flow Statement in `backend/src/application/reports/get-cash-flow.use-case.spec.ts`
-- [ ] T030 [P] [US3] Unit tests for Projected Estado de Resultados and budget variance control in `backend/tests/unit/budget-control.spec.ts`
+- [x] T028 [P] [US3] Unit and integration tests for instant Balance General from snapshots in `backend/tests/integration/fast-reports.spec.ts`
+- [x] T029 [P] [US3] Unit tests for Real Cash Flow Statement in `backend/src/application/reports/get-cash-flow.use-case.spec.ts`
+- [x] T030 [P] [US3] Unit tests for Projected Estado de Resultados and budget variance control in `backend/tests/unit/budget-control.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Refactor `BalanceSheetUseCase` in `backend/src/application/periods/balance-sheet.use-case.ts` to query `AccountPeriodBalanceEntity` directly by user and monthly period/date range, computing Net Worth directly as Total Assets - Total Liabilities without synthetic corporate equity tree injections
-- [ ] T032 [US3] Implement `CashFlowStatementUseCase` in `backend/src/application/reports/cash-flow-statement.use-case.ts` for actual historical cash movements across operational, investing, and financing categories
-- [ ] T033 [US3] Refactor Income Statement use case in `backend/src/application/periods/income-statement.use-case.ts` to support Real and Projected modes by period
-- [ ] T034 [US3] Update `ReportsController` in `backend/src/infrastructure/controllers/reports.controller.ts` for balance sheet, cash flow, and income statement endpoints
-- [ ] T035 [P] [US3] Refactor Balance Sheet and Cash Flow pages in `frontend/src/app/reports/balance-sheet/page.tsx` and `frontend/src/app/reports/cash-flow/page.tsx` for streamlined executive presentation (Total Assets, Total Liabilities, Net Worth) and monthly period selectors without fiscal year constraints
-- [ ] T036 [P] [US3] Refactor Forecast and Budget Control pages in `frontend/src/app/reports/forecast/page.tsx` and `frontend/src/app/budgets/control/page.tsx` to consume rolling matrix and budget execution data
+- [x] T031 [US3] Refactor `BalanceSheetUseCase` in `backend/src/application/periods/balance-sheet.use-case.ts` to query `AccountPeriodBalanceEntity` directly by user and monthly period/date range, computing Net Worth directly as Total Assets - Total Liabilities without synthetic corporate equity tree injections
+- [x] T032 [US3] Implement `CashFlowStatementUseCase` in `backend/src/application/reports/cash-flow-statement.use-case.ts` for actual historical cash movements across operational, investing, and financing categories
+- [x] T033 [US3] Refactor Income Statement use case in `backend/src/application/periods/income-statement.use-case.ts` to support Real and Projected modes by period
+- [x] T034 [US3] Update `ReportsController` in `backend/src/infrastructure/controllers/reports.controller.ts` for balance sheet, cash flow, and income statement endpoints
+- [x] T035 [P] [US3] Refactor Balance Sheet and Cash Flow pages in `frontend/src/app/reports/balance-sheet/page.tsx` and `frontend/src/app/reports/cash-flow/page.tsx` for streamlined executive presentation (Total Assets, Total Liabilities, Net Worth) and monthly period selectors without fiscal year constraints
+- [x] T036 [P] [US3] Refactor Forecast and Budget Control pages in `frontend/src/app/reports/forecast/page.tsx` and `frontend/src/app/budgets/control/page.tsx` to consume rolling matrix and budget execution data
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 are all independently testable and operational.
 

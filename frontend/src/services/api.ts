@@ -536,18 +536,10 @@ export const api = {
       return handleResponse(res);
     },
 
-    async incomeStatement(periodId: string) {
-      const res = await fetch(`${API_BASE_URL}/reports/income-statement?periodId=${periodId}`, {
-        method: 'GET',
-        headers: getHeaders(),
-      });
-      return handleResponse(res);
-    },
-
-    async realVsProjectedIncomeStatement(fiscalYearId: string, rolling?: boolean) {
-      let url = `${API_BASE_URL}/reports/income-statement/real-vs-projected?fiscalYearId=${fiscalYearId}`;
-      if (rolling !== undefined) {
-        url += `&rolling=${rolling}`;
+    async incomeStatement(periodId: string, mode?: 'real' | 'projected') {
+      let url = `${API_BASE_URL}/reports/income-statement?periodId=${encodeURIComponent(periodId)}`;
+      if (mode) {
+        url += `&mode=${encodeURIComponent(mode)}`;
       }
       const res = await fetch(url, {
         method: 'GET',
@@ -556,11 +548,53 @@ export const api = {
       return handleResponse(res);
     },
 
-    async realVsProjectedCashFlow(fiscalYearId: string, rolling?: boolean) {
-      let url = `${API_BASE_URL}/reports/cash-flow/real-vs-projected?fiscalYearId=${fiscalYearId}`;
-      if (rolling !== undefined) {
-        url += `&rolling=${rolling}`;
+    async realVsProjectedIncomeStatement(
+      options?:
+        | string
+        | { startPeriod?: string; fiscalYearId?: string; rolling?: boolean; months?: number },
+      rolling?: boolean,
+    ) {
+      let url = `${API_BASE_URL}/reports/income-statement/real-vs-projected`;
+      const queryParams = new URLSearchParams();
+      if (typeof options === 'string') {
+        queryParams.append('startPeriod', options);
+        if (rolling !== undefined) queryParams.append('rolling', rolling.toString());
+      } else if (options) {
+        if (options.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+        if (options.fiscalYearId) queryParams.append('fiscalYearId', options.fiscalYearId);
+        if (options.rolling !== undefined)
+          queryParams.append('rolling', options.rolling.toString());
+        if (options.months !== undefined) queryParams.append('months', options.months.toString());
       }
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async realVsProjectedCashFlow(
+      options?:
+        | string
+        | { startPeriod?: string; fiscalYearId?: string; rolling?: boolean; months?: number },
+      rolling?: boolean,
+    ) {
+      let url = `${API_BASE_URL}/reports/cash-flow/real-vs-projected`;
+      const queryParams = new URLSearchParams();
+      if (typeof options === 'string') {
+        queryParams.append('startPeriod', options);
+        if (rolling !== undefined) queryParams.append('rolling', rolling.toString());
+      } else if (options) {
+        if (options.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+        if (options.fiscalYearId) queryParams.append('fiscalYearId', options.fiscalYearId);
+        if (options.rolling !== undefined)
+          queryParams.append('rolling', options.rolling.toString());
+        if (options.months !== undefined) queryParams.append('months', options.months.toString());
+      }
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),

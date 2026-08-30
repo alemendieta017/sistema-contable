@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../services/api';
 import { ArrowLeft, ChevronRight, ChevronDown, File, Sparkles } from 'lucide-react';
 
-type FiscalYear = {
+type Period = {
   id: string;
   name: string;
-  startDate: string;
-  endDate: string;
-  status: 'OPEN' | 'CLOSED' | 'PLANNING';
+  startDate?: string;
+  endDate?: string;
+  status: string;
 };
 
 type AccountForecastItem = {
@@ -24,8 +24,8 @@ type AccountForecastItem = {
 export default function ForecastReportPage() {
   const router = useRouter();
 
-  const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
-  const [selectedFiscalYearId, setSelectedFiscalYearId] = useState('');
+  const [periods, setPeriods] = useState<Period[]>([]);
+  const [selectedStartPeriod, setSelectedStartPeriod] = useState('');
 
   // Toggles
   const [reportType, setReportType] = useState<'CASH_FLOW' | 'INCOME_STATEMENT'>('CASH_FLOW');
@@ -43,7 +43,7 @@ export default function ForecastReportPage() {
   // Data
   const [months, setMonths] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<AccountForecastItem[]>([]);
-  const [fiscalYearName, setFiscalYearName] = useState('');
+  const [periodRangeLabel, setPeriodRangeLabel] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,33 +56,36 @@ export default function ForecastReportPage() {
         setReportType(type);
       }
     }
-    loadFiscalYears();
+    loadPeriods();
   }, []);
 
-  const loadFiscalYears = async () => {
+  const loadPeriods = async () => {
     try {
       setLoading(true);
       setError('');
-      const fyList = await api.fiscalYears.list();
-      setFiscalYears(fyList || []);
+      const pList = await api.periods.list();
+      const sorted = (pList || []).sort((a: any, b: any) => a.name.localeCompare(b.name));
+      setPeriods(sorted);
 
-      if (fyList && fyList.length > 0) {
-        const activeFy = fyList.find((fy: any) => fy.status === 'OPEN') || fyList[0];
-        setSelectedFiscalYearId(activeFy.id);
+      if (sorted.length > 0) {
+        const todayStr = new Date().toISOString().substring(0, 7);
+        const currentP = sorted.find((p: any) => p.name === todayStr) || sorted[0];
+        setSelectedStartPeriod(currentP.name);
       } else {
-        setLoading(false);
+        const todayStr = new Date().toISOString().substring(0, 7);
+        setSelectedStartPeriod(todayStr);
       }
     } catch {
-      setError('Error al cargar los ejercicios fiscales.');
+      setError('Error al cargar los períodos contables.');
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (selectedFiscalYearId) {
+    if (selectedStartPeriod) {
       loadReport();
     }
-  }, [selectedFiscalYearId, reportType, isRolling]);
+  }, [selectedStartPeriod, reportType, isRolling]);
 
   const loadReport = async () => {
     try {
@@ -90,18 +93,21 @@ export default function ForecastReportPage() {
       setError('');
 
       if (reportType === 'CASH_FLOW') {
-        const res = await api.reports.realVsProjectedCashFlow(selectedFiscalYearId, isRolling);
+        const res = await api.reports.realVsProjectedCashFlow({
+          startPeriod: selectedStartPeriod,
+          rolling: isRolling,
+        });
         setMonths(res.months || []);
         setAccounts(res.accounts || []);
-        setFiscalYearName(res.fiscalYearName || '');
+        setPeriodRangeLabel(res.periodRange || res.fiscalYearName || '');
       } else {
-        const res = await api.reports.realVsProjectedIncomeStatement(
-          selectedFiscalYearId,
-          isRolling,
-        );
+        const res = await api.reports.realVsProjectedIncomeStatement({
+          startPeriod: selectedStartPeriod,
+          rolling: isRolling,
+        });
         setMonths(res.months || []);
         setAccounts(res.accounts || []);
-        setFiscalYearName(res.fiscalYearName || '');
+        setPeriodRangeLabel(res.periodRange || res.fiscalYearName || '');
       }
     } catch (err: any) {
       setError(err.message || 'Error al generar el reporte de proyecciones.');
@@ -215,7 +221,7 @@ export default function ForecastReportPage() {
       >
         {/* Sticky left label */}
         <td
-          className="p-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300"
+          className="p-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs border-r border-slate-100 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300"
           style={{ paddingLeft: `${Math.max(12, depth * 20)}px` }}
         >
           <div className="flex items-center gap-1.5">
@@ -235,7 +241,7 @@ export default function ForecastReportPage() {
                 <File className="w-3 h-3 text-slate-400" />
               </span>
             )}
-            <span className="truncate max-w-[200px]">{acc.accountName}</span>
+            <span className="truncate max-w-48">{acc.accountName}</span>
           </div>
         </td>
 
@@ -245,7 +251,7 @@ export default function ForecastReportPage() {
           return (
             <td
               key={m.periodId}
-              className={`p-3 text-right pr-6 font-medium whitespace-nowrap ${val !== 0 ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400/80 dark:text-slate-600'}`}
+              className={`p-3 text-right pr-6 font-medium tabular-nums whitespace-nowrap ${val !== 0 ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400/80 dark:text-slate-600'}`}
             >
               {val === 0 ? '-' : formatVal(val)}
             </td>
@@ -273,28 +279,28 @@ export default function ForecastReportPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Informe consolidado Real vs. Proyectado:{' '}
               <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                {fiscalYearName}
+                {periodRangeLabel}
               </span>
             </p>
           </div>
         </div>
 
-        {/* Fiscal Year select */}
+        {/* Period start select */}
         <div className="flex items-center gap-3">
           <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            Ejercicio:
+            Período Inicial:
           </label>
           <select
-            value={selectedFiscalYearId}
-            onChange={(e) => setSelectedFiscalYearId(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200"
+            value={selectedStartPeriod}
+            onChange={(e) => setSelectedStartPeriod(e.target.value)}
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200 tabular-nums"
           >
-            {fiscalYears.map((fy) => (
-              <option key={fy.id} value={fy.id}>
-                {fy.name} (
-                {fy.status === 'OPEN'
+            {periods.map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name} (
+                {p.status === 'OPEN'
                   ? 'Abierto'
-                  : fy.status === 'CLOSED'
+                  : p.status === 'CLOSED'
                     ? 'Cerrado'
                     : 'Planificación'}
                 )
@@ -318,9 +324,7 @@ export default function ForecastReportPage() {
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Tipo de Proyección
             </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              Alternar base de caja o devengamiento
-            </p>
+            <p className="text-xs text-slate-400 mt-0.5">Alternar base de caja o devengamiento</p>
           </div>
           <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl border border-slate-100 dark:border-slate-700">
             <button
@@ -352,7 +356,7 @@ export default function ForecastReportPage() {
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Ventana Temporal
             </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Cambiar entre año calendario y 12 meses móviles
             </p>
           </div>
@@ -392,11 +396,11 @@ export default function ForecastReportPage() {
         /* Matrix Grid */
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1500px] table-fixed">
+            <table className="w-full text-left border-collapse min-w-full table-fixed">
               {/* Dynamic Header */}
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
-                  <th className="p-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 w-[260px] sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-100 dark:border-slate-800">
+                  <th className="p-4 text-xs font-extrabold uppercase tracking-wider text-slate-500 w-64 sticky left-0 bg-slate-50 dark:bg-slate-800 z-20 shadow-xs border-r border-slate-100 dark:border-slate-800">
                     Concepto / Cuenta
                   </th>
                   {months.map((m) => (
@@ -414,12 +418,12 @@ export default function ForecastReportPage() {
                       <div className="text-2xs font-extrabold text-slate-700 dark:text-slate-300">
                         {getMonthLabel(m.periodName)}
                       </div>
-                      <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">
+                      <div className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
                         {m.periodName}
                       </div>
                       <div className="mt-2 flex flex-col gap-1 items-end">
                         <span
-                          className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          className={`text-2xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                             m.isReal
                               ? 'bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400'
                               : 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400'
@@ -427,7 +431,7 @@ export default function ForecastReportPage() {
                         >
                           {m.isReal ? 'Real' : 'Proyectado'}
                         </span>
-                        <span className="text-[8px] text-indigo-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-2xs text-indigo-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                           {m.isReal ? 'Ver Asientos' : 'Ajustar Proy.'}
                         </span>
                       </div>
@@ -443,13 +447,13 @@ export default function ForecastReportPage() {
                   <>
                     {/* Saldo Inicial */}
                     <tr className="bg-slate-50/20 dark:bg-slate-800/10 font-bold border-b border-slate-100 dark:border-slate-800">
-                      <td className="p-3 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         (+) Saldo Inicial de Caja
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.initialCash)}
                         </td>
@@ -458,7 +462,7 @@ export default function ForecastReportPage() {
 
                     {/* Ingresos Operativos Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -474,7 +478,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.ingresosOperativos)}
                         </td>
@@ -489,7 +493,7 @@ export default function ForecastReportPage() {
 
                     {/* Entradas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowAssetsInflowTree(!showAssetsInflowTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -505,7 +509,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.entradasActivoPasivo)}
                         </td>
@@ -524,13 +528,13 @@ export default function ForecastReportPage() {
 
                     {/* Total Entradas */}
                     <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         (=) Total Entradas de Caja
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.totalEntradas)}
                         </td>
@@ -539,7 +543,7 @@ export default function ForecastReportPage() {
 
                     {/* Egresos Operativos Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -555,7 +559,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.egresosOperativos)}
                         </td>
@@ -570,7 +574,7 @@ export default function ForecastReportPage() {
 
                     {/* Salidas Activo/Pasivo Collapsible Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowAssetsOutflowTree(!showAssetsOutflowTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -586,7 +590,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.salidasActivoPasivo)}
                         </td>
@@ -605,13 +609,13 @@ export default function ForecastReportPage() {
 
                     {/* Total Salidas */}
                     <tr className="bg-slate-50/30 dark:bg-slate-800/10 font-bold border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 pl-6 sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         (=) Total Salidas de Caja
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-extrabold text-red-600 dark:text-red-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-extrabold text-red-600 dark:text-red-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.totalSalidas)}
                         </td>
@@ -620,13 +624,13 @@ export default function ForecastReportPage() {
 
                     {/* Flujo Neto */}
                     <tr className="hover:bg-slate-50/40 dark:hover:bg-slate-800/10 border-t border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         (=) Flujo Neto del Periodo
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className={`p-3 text-right pr-6 font-black text-sm whitespace-nowrap ${
+                          className={`p-3 text-right pr-6 font-black text-sm tabular-nums whitespace-nowrap ${
                             m.netFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'
                           }`}
                         >
@@ -638,14 +642,14 @@ export default function ForecastReportPage() {
 
                     {/* Saldo Final */}
                     <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 font-black border-t-2 border-indigo-100 dark:border-indigo-900">
-                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
+                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-xs border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>(=) SALDO FINAL DE CAJA</span>
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className={`p-3 text-right pr-6 font-black text-xs whitespace-nowrap ${
+                          className={`p-3 text-right pr-6 font-black text-xs tabular-nums whitespace-nowrap ${
                             m.finalCash >= 0
                               ? 'text-slate-900 dark:text-slate-50'
                               : 'text-red-600 dark:text-red-400'
@@ -661,7 +665,7 @@ export default function ForecastReportPage() {
                   <>
                     {/* Ingresos Devengados Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowIncomeTree(!showIncomeTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -677,7 +681,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-green-600 dark:text-green-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.income)}
                         </td>
@@ -692,7 +696,7 @@ export default function ForecastReportPage() {
 
                     {/* Gastos Devengados Header */}
                     <tr className="bg-slate-50/40 dark:bg-slate-900/40 border-t-2 border-slate-100 dark:border-slate-800">
-                      <td className="p-3 font-extrabold text-[10px] uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50 dark:border-slate-800">
+                      <td className="p-3 font-extrabold text-xs uppercase text-indigo-600 dark:text-indigo-400 tracking-wider sticky left-0 bg-slate-50/95 dark:bg-slate-900/95 z-10 flex items-center gap-1.5 shadow-xs border-r border-slate-50 dark:border-slate-800">
                         <button
                           onClick={() => setShowExpenseTree(!showExpenseTree)}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -708,7 +712,7 @@ export default function ForecastReportPage() {
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 whitespace-nowrap"
+                          className="p-3 text-right pr-6 font-bold text-red-500 dark:text-red-400 tabular-nums whitespace-nowrap"
                         >
                           {formatVal(m.expense)}
                         </td>
@@ -723,14 +727,14 @@ export default function ForecastReportPage() {
 
                     {/* Resultado Neto */}
                     <tr className="bg-indigo-50/30 dark:bg-indigo-950/20 font-black border-t-2 border-indigo-100 dark:border-indigo-900">
-                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
+                      <td className="p-3 sticky left-0 bg-indigo-50/95 dark:bg-indigo-900 z-10 text-indigo-950 dark:text-indigo-100 shadow-xs border-r border-indigo-50 dark:border-indigo-800 text-xs flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Resultado Neto (P&L)</span>
                       </td>
                       {months.map((m) => (
                         <td
                           key={m.periodId}
-                          className={`p-3 text-right pr-6 font-black text-xs whitespace-nowrap ${
+                          className={`p-3 text-right pr-6 font-black text-xs tabular-nums whitespace-nowrap ${
                             m.netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'
                           }`}
                         >
