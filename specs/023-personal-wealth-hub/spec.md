@@ -130,25 +130,9 @@ As a long-term personal wealth builder, I want to view a continuous historical c
 
 ---
 
-### User Story 5 - Tactical Short-Term Commitments & Calendar Preview (Priority: P3)
+### User Story 5 - Tactical Short-Term Commitments & Calendar Preview [DESCARTADO / REDUNDANTE CON BUDGETS]
 
-As a user managing day-to-day cash flow, I want to track recurring scheduled commitments (salaries, rent, utilities, subscriptions, credit card cutoff/due dates) in a 30-to-90-day tactical calendar view without polluting the general ledger with speculative entries, so that I can foresee immediate liquidity pinches before transactions occur.
-
-**Why this priority**: Complements the macro monthly forecast with day-to-day operational execution, bridging the gap between today's bank balance and the next paycheck or card due date.
-
-**Independent Test**: Can be tested by defining recurring commitment rules, viewing the upcoming 60-day calendar preview of virtual inflows and outflows, and confirming a due commitment to automatically generate a balanced journal entry.
-
-**Acceptance Scenarios**:
-
-1. **Virtual Projection on Calendar**:
-   - **Given** a recurring commitment rule for "Alquiler" ($800, due on the 5th of each month, payable from "Banco"),
-   - **When** viewing the cash flow calendar for the upcoming 60 days,
-   - **Then** the event appears virtually on the 5th of each month without existing as a row in `journal_entries`.
-
-2. **One-Click Settlement**:
-   - **Given** a scheduled commitment whose due date has arrived,
-   - **When** the user clicks "Confirmar y Asentar",
-   - **Then** the system creates a balanced double-entry journal entry in the ledger for that date, updates `AccountPeriodBalance`, and marks the commitment occurrence as settled for that cycle.
+> **Nota de Descarte**: Eliminado por decisión del usuario. La planificación y proyección de flujo de caja ya se encuentra resuelta integralmente en la Matriz de Presupuestos (`budgets`), tornando innecesario el módulo de compromisos tácticos diarios.
 
 ---
 

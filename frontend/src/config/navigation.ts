@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Banknote,
   BarChart3,
-  Calendar,
   Settings,
 } from 'lucide-react';
 
@@ -188,13 +187,6 @@ export const navigationRegistry: NavEntry[] = [
     href: '/stats',
     icon: BarChart3,
     mobilePlacement: 'bottom_bar',
-  },
-  {
-    id: 'periods',
-    name: 'Períodos',
-    href: '/periods',
-    icon: Calendar,
-    mobilePlacement: 'drawer',
   },
   {
     id: 'settings',

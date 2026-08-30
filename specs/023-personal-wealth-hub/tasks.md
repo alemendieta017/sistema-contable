@@ -137,29 +137,22 @@
 
 ---
 
-## Phase 7: User Story 5 - Tactical Short-Term Commitments & Calendar Preview (Priority: P3)
+## Phase 7: User Story 5 - Tactical Short-Term Commitments & Calendar Preview [DESCARTADO / REDUNDANTE CON BUDGETS]
 
-**Goal**: Track recurring scheduled commitments (rent, salaries, subscriptions, debt dues) in a 30-to-90-day virtual calendar view without polluting the ledger with speculative entries, and execute one-click double-entry settlement.
+> **Nota de Decisión**: Descartado y eliminado por solicitud del usuario. La gestión de presupuestos y flujo de caja mensual (`budgets`) ya cubre completamente la planificación financiera sin necesidad de compromisos virtuales diarios redundantes.
 
-**Independent Test**: Define recurring commitment rules, view upcoming 60-day calendar preview of virtual inflows and outflows, and confirm a due commitment to automatically generate a balanced ledger entry and update account period balances.
-
-### Tests for User Story 5 (Strict TDD - Write and ensure FAIL first) ⚠️
-
-- [ ] T043 [P] [US5] Unit and integration tests for `RecurringSchedule` CRUD and virtual 30-90 day calendar projection in `backend/tests/integration/recurring-schedule.spec.ts`
-- [ ] T044 [P] [US5] Integration tests for one-click double-entry settlement into ledger in `backend/tests/integration/recurring-schedule-settle.spec.ts`
-- [ ] T045 [P] [US5] Frontend component test for commitment calendar preview and modal in `frontend/src/tests/CommitmentCalendarPreview.test.tsx`
-
-### Implementation for User Story 5
-
-- [ ] T046 [P] [US5] Create `RecurringScheduleEntity` in `backend/src/infrastructure/database/entities/recurring-schedule.entity.ts` with check constraints on `dueDay` and `estimatedAmount`
-- [ ] T046b [US5] Create TypeORM migration for `recurring_schedules` table with foreign keys, check constraints, and composite indexes in `backend/src/infrastructure/database/migrations/`
-- [ ] T047 [P] [US5] Create `RecurringSchedule` domain model in `backend/src/domain/commitments/recurring-schedule.model.ts`
-- [ ] T048 [US5] Implement `CreateRecurringScheduleUseCase` and CRUD in `backend/src/application/commitments/create-recurring-schedule.use-case.ts`
-- [ ] T049 [US5] Implement `GetCalendarPreviewUseCase` in `backend/src/application/commitments/get-calendar-preview.use-case.ts` (virtual projection engine with zero ledger pollution)
-- [ ] T050 [US5] Implement `SettleRecurringScheduleUseCase` in `backend/src/application/commitments/settle-recurring-schedule.use-case.ts` (creates balanced double-entry transaction and updates balances)
-- [ ] T051 [US5] Create `RecurringScheduleController` in `backend/src/infrastructure/controllers/recurring-schedule.controller.ts`
-- [ ] T052 [P] [US5] Implement `CommitmentCalendarPreview.tsx` and `CommitmentModal.tsx` in `frontend/src/components/commitments/`
-- [ ] T053 [US5] Create dedicated tactical commitments page in `frontend/src/app/budgets/commitments/page.tsx`
+- [x] ~~T043 [P] [US5] Unit and integration tests for RecurringSchedule CRUD~~ [ELIMINADO]
+- [x] ~~T044 [P] [US5] Integration tests for one-click double-entry settlement~~ [ELIMINADO]
+- [x] ~~T045 [P] [US5] Frontend component test for commitment calendar preview~~ [ELIMINADO]
+- [x] ~~T046 [P] [US5] Create RecurringScheduleEntity~~ [ELIMINADO]
+- [x] ~~T046b [US5] Create TypeORM migration for recurring_schedules table~~ [ELIMINADO]
+- [x] ~~T047 [P] [US5] Create RecurringSchedule domain model~~ [ELIMINADO]
+- [x] ~~T048 [US5] Implement CreateRecurringScheduleUseCase and CRUD~~ [ELIMINADO]
+- [x] ~~T049 [US5] Implement GetCalendarPreviewUseCase~~ [ELIMINADO]
+- [x] ~~T050 [US5] Implement SettleRecurringScheduleUseCase~~ [ELIMINADO]
+- [x] ~~T051 [US5] Create RecurringScheduleController~~ [ELIMINADO]
+- [x] ~~T052 [P] [US5] Implement CommitmentCalendarPreview.tsx and CommitmentModal.tsx~~ [ELIMINADO]
+- [x] ~~T053 [US5] Create dedicated tactical commitments page~~ [ELIMINADO]
 
 **Checkpoint**: All user stories are now independently functional and integrated.
 
@@ -169,10 +162,10 @@
 
 **Purpose**: Cleanup, UI ergonomics verification, and comprehensive quality gate validation.
 
-- [ ] T054 [P] Clean up deleted test file `backend/tests/integration/annual-closing.spec.ts` and remove any lingering `fiscalYearId` references across remaining tests
-- [ ] T055 [P] Update navigation menus in `frontend/src/components/Sidebar.tsx` and `frontend/src/components/BottomNav.tsx` to link to commitments and remove annual closing references
-- [ ] T056 Execute comprehensive end-to-end validation scenarios described in `specs/023-personal-wealth-hub/quickstart.md`
-- [ ] T057 Run full monorepo quality gates (`npm run validate` which executes `npm run type-check && npm run lint && npm test`) ensuring 0 errors, 0 warnings
+- [x] T054 [P] Clean up deleted test file `backend/tests/integration/annual-closing.spec.ts` and remove any lingering `fiscalYearId` references across remaining tests
+- [x] T055 [P] Update navigation menus in `frontend/src/components/Sidebar.tsx` and `frontend/src/components/BottomNav.tsx` to link to commitments and remove annual closing references
+- [x] T056 Execute comprehensive end-to-end validation scenarios described in `specs/023-personal-wealth-hub/quickstart.md`
+- [x] T057 Run full monorepo quality gates (`npm run validate` which executes `npm run type-check && npm run lint && npm test`) ensuring 0 errors, 0 warnings
 
 ---
 

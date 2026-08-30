@@ -40,7 +40,6 @@ describe('Sidebar Component', () => {
       expect(screen.getByText('Transacciones')).toBeInTheDocument();
       expect(screen.getByText('Cuentas')).toBeInTheDocument();
       expect(screen.getByText('Estadísticas')).toBeInTheDocument();
-      expect(screen.getByText('Períodos')).toBeInTheDocument();
       expect(screen.getByText('Ajustes')).toBeInTheDocument();
 
       // Group headers

@@ -84,8 +84,8 @@ describe('BottomNav & MobileNavDrawer (US2)', () => {
     const balanceSheet = screen.getByRole('link', { name: /Balance General/i });
     expect(balanceSheet).toBeInTheDocument();
 
-    const periodsItem = screen.getByRole('link', { name: /Períodos/i });
-    expect(periodsItem).toBeInTheDocument();
+    const settingsItem = screen.getByRole('link', { name: /Ajustes/i });
+    expect(settingsItem).toBeInTheDocument();
 
     // Clicking an item closes drawer
     fireEvent.click(planItem);

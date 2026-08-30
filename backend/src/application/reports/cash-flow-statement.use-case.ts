@@ -98,44 +98,42 @@ export class CashFlowStatementForecastUseCase {
         let startPeriod: PeriodEntity | null = null;
         let pOrFy: any = null;
 
-        if (lastClosedPeriod) {
+        if (fiscalYearId && /^\d{4}-(0[1-9]|1[0-2])$/.test(fiscalYearId)) {
+          startPeriod = await entityManager.findOne(PeriodEntity, {
+            where: { userId, name: fiscalYearId },
+          });
+          if (!startPeriod) {
+            const [y, m] = fiscalYearId.split('-').map(Number);
+            const pStart = `${y}-${String(m).padStart(2, '0')}-01`;
+            const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+            const pEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            startPeriod = {
+              id: `p-${fiscalYearId}`,
+              name: fiscalYearId,
+              startDate: pStart,
+              endDate: pEnd,
+              status: 'OPEN',
+              userId,
+            } as PeriodEntity;
+          }
+        } else if (lastClosedPeriod) {
           startPeriod = lastClosedPeriod;
         } else if (fiscalYearId) {
-          if (/^\d{4}-(0[1-9]|1[0-2])$/.test(fiscalYearId)) {
-            startPeriod = await entityManager.findOne(PeriodEntity, {
-              where: { userId, name: fiscalYearId },
-            });
-            if (!startPeriod) {
-              const [y, m] = fiscalYearId.split('-').map(Number);
-              const pStart = `${y}-${String(m).padStart(2, '0')}-01`;
-              const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
-              const pEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-              startPeriod = {
-                id: `p-${fiscalYearId}`,
-                name: fiscalYearId,
-                startDate: pStart,
-                endDate: pEnd,
-                status: 'OPEN',
-                userId,
-              } as PeriodEntity;
-            }
-          } else {
-            pOrFy = await entityManager.findOne(PeriodEntity, {
-              where: [{ id: fiscalYearId }, { userId }],
-            });
-            if (!pOrFy) {
-              throw new NotFoundException('Fiscal year not found');
-            }
-            if (pOrFy.periods?.length) {
-              const fyPeriods = [...pOrFy.periods].sort((a: any, b: any) =>
-                a.startDate.localeCompare(b.startDate),
-              );
-              startPeriod = fyPeriods[0] || null;
-              fiscalYearName = pOrFy.name;
-            } else if (pOrFy.startDate) {
-              startPeriod = pOrFy;
-              fiscalYearName = pOrFy.name || '';
-            }
+          pOrFy = await entityManager.findOne(PeriodEntity, {
+            where: [{ id: fiscalYearId }, { userId }],
+          });
+          if (!pOrFy) {
+            throw new NotFoundException('Fiscal year not found');
+          }
+          if (pOrFy.periods?.length) {
+            const fyPeriods = [...pOrFy.periods].sort((a: any, b: any) =>
+              a.startDate.localeCompare(b.startDate),
+            );
+            startPeriod = fyPeriods[0] || null;
+            fiscalYearName = pOrFy.name;
+          } else if (pOrFy.startDate) {
+            startPeriod = pOrFy;
+            fiscalYearName = pOrFy.name || '';
           }
         } else {
           const userPeriods =

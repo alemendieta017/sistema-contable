@@ -42,7 +42,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     pathname === '/transactions/new' ||
     pathname?.startsWith('/transactions/new/') ||
     pathname === '/transactions/asiento-libre';
-  const isBudgetMatrixPage = pathname === '/budgets/matrix';
+  const isMatrixPage =
+    pathname === '/budgets/matrix' ||
+    pathname === '/reports/cash-flow' ||
+    pathname === '/reports/income-statement/forecast' ||
+    pathname === '/reports/forecast';
 
   if (isAuthPage) {
     return <>{children}</>;
@@ -61,14 +65,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {/* Dynamic page content scrollarea */}
         <main
           className={`flex-1 overflow-y-auto ${
-            isTransactionEntryPage || isBudgetMatrixPage
+            isTransactionEntryPage || isMatrixPage
               ? 'p-0 overflow-hidden'
               : 'px-4 py-6 sm:px-6 lg:px-8 pb-24 lg:pb-8'
           }`}
         >
           <div
             className={
-              isTransactionEntryPage || isBudgetMatrixPage
+              isTransactionEntryPage || isMatrixPage
                 ? 'h-full w-full flex flex-col'
                 : 'max-w-[1800px] w-full mx-auto'
             }
@@ -79,7 +83,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Floating Action Button */}
-      {!isTransactionEntryPage && !isBudgetMatrixPage && <FloatingActionButton />}
+      {!isTransactionEntryPage && !isMatrixPage && <FloatingActionButton />}
 
       {/* Mobile Bottom Navigation Bar */}
       {!isTransactionEntryPage && <BottomNav />}
