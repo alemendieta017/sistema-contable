@@ -7,6 +7,7 @@ This document describes the API contract updates for the date fields in request 
 ### Create Transaction (`POST /api/transactions`)
 
 **Request Payload**:
+
 ```json
 {
   "accountingDate": "2026-06-30",
@@ -27,6 +28,7 @@ This document describes the API contract updates for the date fields in request 
 ```
 
 **Response Payload**:
+
 ```json
 {
   "id": "e3f4g5h6-1111-2222-3333-444455556666",
@@ -62,6 +64,7 @@ This document describes the API contract updates for the date fields in request 
 ### Create Fiscal Year (`POST /api/fiscal-years`)
 
 **Request Payload**:
+
 ```json
 {
   "year": 2026,
@@ -71,6 +74,7 @@ This document describes the API contract updates for the date fields in request 
 ```
 
 **Response Payload**:
+
 ```json
 {
   "id": "fy-uuid-1234",

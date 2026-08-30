@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import PieChart from '../../components/PieChart';
-import NetWorthChart from '../../components/NetWorthChart';
+import NetWorthChart from '../../components/stats/NetWorthChart';
 import IncomeStatementChart from '../../components/IncomeStatementChart';
 import { ShieldAlert } from 'lucide-react';
+import { NetWorthEvolutionResponse } from '@sistema-contable/shared';
 
 type StatItem = {
   accountId: string;
@@ -19,6 +20,7 @@ export default function StatsPage() {
   const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
 
   const [stats, setStats] = useState<StatItem[]>([]);
+  const [netWorthData, setNetWorthData] = useState<NetWorthEvolutionResponse | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,60 +34,21 @@ export default function StatsPage() {
       setLoading(true);
       setError('');
 
-      // 1. Fetch category aggregates for selected month
-      const statData = await api.reports.statistics(period, type, new Date().getTimezoneOffset());
-      setStats(statData || []);
+      // Fetch statistics, high-speed net worth evolution snapshot time-series, and transactions in parallel
+      const [statData, evolutionData, txList] = await Promise.all([
+        api.reports.statistics(period, type, new Date().getTimezoneOffset()),
+        api.reports.netWorthEvolution(),
+        api.transactions.list(),
+      ]);
 
-      // 2. Fetch full transactions list to reconstruct net worth history & comparison
-      const txList = await api.transactions.list();
+      setStats(statData || []);
+      setNetWorthData(evolutionData || null);
       setTransactions(txList || []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar estadísticas contables.');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Reconstruct Net Worth History points
-  const getNetWorthHistory = () => {
-    // Sort transactions ascending by date
-    const sorted = [...transactions]
-      .filter((t) => t.status !== 'REVERSED')
-      .sort((a, b) => a.accountingDate.localeCompare(b.accountingDate));
-
-    let runningNetWorth = 0;
-    const historyPoints: { date: string; balance: number }[] = [];
-
-    // Accumulate (in base currency)
-    sorted.forEach((tx) => {
-      let assetChange = 0;
-      let liabilityChange = 0;
-
-      tx.entries.forEach((entry: any) => {
-        if (entry.account?.type === 'ASSET') {
-          assetChange +=
-            entry.entryType === 'DEBIT'
-              ? Number(entry.amountBase || entry.amount)
-              : -Number(entry.amountBase || entry.amount);
-        } else if (entry.account?.type === 'LIABILITY') {
-          liabilityChange +=
-            entry.entryType === 'CREDIT'
-              ? Number(entry.amountBase || entry.amount)
-              : -Number(entry.amountBase || entry.amount);
-        }
-      });
-
-      runningNetWorth += assetChange - liabilityChange;
-
-      const dateStr = tx.accountingDate.substring(0, 10);
-      // Group points on the same date or just add
-      historyPoints.push({
-        date: dateStr,
-        balance: runningNetWorth,
-      });
-    });
-
-    return historyPoints;
   };
 
   // Build Monthly income vs expense comparative data (last 6 months)
@@ -235,7 +198,16 @@ export default function StatsPage() {
           <span className="text-3xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
             Evolución del Patrimonio Neto
           </span>
-          <NetWorthChart data={getNetWorthHistory()} />
+          <NetWorthChart
+            data={
+              netWorthData || {
+                history: [],
+                latest: { assets: 0, liabilities: 0, netWorth: 0 },
+                change12Months: 0,
+                changePercentage: 0,
+              }
+            }
+          />
         </div>
       </div>
     </div>

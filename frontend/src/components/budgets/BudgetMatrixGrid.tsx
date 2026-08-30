@@ -1,30 +1,31 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BudgetMatrixResponse,
   BudgetMatrixRow,
-  BudgetMatrixSection,
   BudgetMatrixSectionKey,
   CashFlowDirection,
 } from '@sistema-contable/shared';
 import {
-  Wand2,
-  Lock,
   Plus,
-  Trash2,
-  Edit2,
   MoreHorizontal,
   ChevronDown,
   ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
+  History,
+  Edit2,
+  Trash2,
+  Repeat,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { BudgetAccountModal } from './BudgetAccountModal';
 
 export interface BudgetMatrixGridProps {
   matrixData: BudgetMatrixResponse;
+  viewMode?: 'monthly' | 'four_months' | 'six_months' | 'annual' | 'quarterly';
+  activePeriodId?: string;
   baseCurrency?: any;
   onCellChange: (
     accountId: string,
@@ -41,15 +42,12 @@ export interface BudgetMatrixGridProps {
     }>,
   ) => void;
   onSave?: () => void;
-  onOpenDriverModal?: (row: BudgetMatrixRow) => void;
   onOpenAutofill?: (row: BudgetMatrixRow) => void;
   onDirectionChange?: (
     accountId: string,
     subRowId: string | null,
     direction: CashFlowDirection,
   ) => void;
-  onAddSubRow?: (accountId: string, label: string, direction: CashFlowDirection) => void;
-  onDeleteSubRow?: (accountId: string, subRowId: string) => void;
   onAddBalanceRow?: (
     account: { id: string; name: string; code: string; type: string },
     label: string,
@@ -66,159 +64,120 @@ export interface BudgetMatrixGridProps {
   dirtyCells: Set<string>;
 }
 
-// Robust numeric sanitizer for currency symbols ($ , Gs.), parentheses (100), invalid text
-function parseNumericValue(valueStr: string): number {
+// Robust numeric parser supporting both zero-decimal (PYG) and decimal currencies
+function parseNumericValue(valueStr: string, decimalPlaces: number = 0): number {
   if (!valueStr) return 0;
   let str = valueStr.trim();
-
-  let isNegative = false;
-  if (/^\(.*\)$/.test(str)) {
-    isNegative = true;
-    str = str.replace(/^\((.*)\)$/, '$1');
-  } else if (str.startsWith('-')) {
-    isNegative = true;
-  }
-
-  // Strip currency symbols, spaces, letters
-  str = str.replace(/[^0-9.,-]/g, '');
   if (!str) return 0;
 
-  if (str.includes(',') && str.includes('.')) {
+  if (decimalPlaces === 0) {
+    const digitsOnly = str.replace(/[^\d]/g, '');
+    if (!digitsOnly) return 0;
+    const parsed = parseInt(digitsOnly, 10);
+    return isNaN(parsed) ? 0 : Math.max(0, parsed);
+  }
+
+  // Currencies with decimals
+  if (str.includes('.') && str.includes(',')) {
     if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
       str = str.replace(/\./g, '').replace(',', '.');
     } else {
       str = str.replace(/,/g, '');
     }
   } else if (str.includes(',')) {
-    const parts = str.split(',');
-    if (parts.length === 2 && parts[1].length <= 2) {
-      str = str.replace(',', '.');
-    } else {
-      str = str.replace(/,/g, '');
+    str = str.replace(',', '.');
+  } else if (str.includes('.')) {
+    const dotsCount = (str.match(/\./g) || []).length;
+    if (dotsCount > 1) {
+      str = str.replace(/\./g, '');
     }
   }
 
-  const num = parseFloat(str);
-  if (isNaN(num)) return 0;
-  return isNegative ? -Math.abs(num) : Math.abs(num);
+  const parsed = parseFloat(str.replace(/[^0-9.-]/g, ''));
+  return isNaN(parsed) ? 0 : Math.max(0, parsed);
+}
+
+// Format integer with thousand separator
+function formatThousandNumber(val: number | string): string {
+  if (val === '' || val === undefined || val === null) return '';
+  const digits = String(val).replace(/[^\d]/g, '');
+  if (!digits) return '';
+  const num = parseInt(digits, 10);
+  return new Intl.NumberFormat('es-PY').format(num);
+}
+
+interface CellIdentifier {
+  accountId: string;
+  subRowId: string | null;
+  periodId: string;
 }
 
 export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   matrixData,
+  viewMode = 'monthly',
+  activePeriodId,
   baseCurrency,
   onCellChange,
-  onPasteBatch,
-  onOpenDriverModal,
+  onPasteBatch: _onPasteBatch,
   onOpenAutofill,
-  onDirectionChange,
   onAddBalanceRow,
   onEditBalanceRow,
   onDeleteRow,
-  onDeleteSubRow,
   dirtyCells,
 }) => {
-  const { periods, rows, sections } = matrixData;
+  const { periods, sections } = matrixData;
 
-  // Collapsed parent account branches
-  const [collapsedParentIds, setCollapsedParentIds] = useState<Set<string>>(new Set());
+  // Selected period for monthly mode (defaults to first open period or activePeriodId)
+  const currentPeriod =
+    periods.find((p) => p.id === activePeriodId) ||
+    periods.find((p) => p.status !== 'CLOSED') ||
+    periods[0];
 
-  const toggleParentCollapse = (parentId: string) => {
-    setCollapsedParentIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(parentId)) {
-        next.delete(parentId);
-      } else {
-        next.add(parentId);
-      }
-      return next;
-    });
-  };
-
-  // 3-dots dropdown menu state
+  // Cell editing state (uniquely keyed by accountId + subRowId + periodId)
+  const [editingCell, setEditingCell] = useState<CellIdentifier | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
   const [openMenuRowKey, setOpenMenuRowKey] = useState<string | null>(null);
 
-  // Close 3-dots menu on click outside or Escape
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.row-options-menu-container')) {
-        setOpenMenuRowKey(null);
-      }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpenMenuRowKey(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  // Budget Account Modal state (Unified Modal for create and edit balance accounts)
+  // Unified modal state
   const [accountModalState, setAccountModalState] = useState<{
     isOpen: boolean;
-    targetSection?: 'ASSET' | 'LIABILITY' | null;
-    editRow?: BudgetMatrixRow | null;
+    targetSection: BudgetMatrixSectionKey | null;
+    editRow: BudgetMatrixRow | null;
   }>({
     isOpen: false,
     targetSection: null,
     editRow: null,
   });
 
-  const openCreateAccountModal = (target: 'ASSET' | 'LIABILITY') => {
-    setAccountModalState({
-      isOpen: true,
-      targetSection: target,
-      editRow: null,
+  // Collapsed sections tracking
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  const toggleSectionCollapse = (sectionKey: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionKey)) {
+        next.delete(sectionKey);
+      } else {
+        next.add(sectionKey);
+      }
+      return next;
     });
   };
-
-  const openEditAccountModal = (row: BudgetMatrixRow) => {
-    setAccountModalState({
-      isOpen: true,
-      targetSection: null,
-      editRow: row,
-    });
-  };
-
-  // Check if a row is visible based on parent collapse state
-  const isRowVisible = useCallback(
-    (row: BudgetMatrixRow) => {
-      if (!row.parentId) return true;
-      if (collapsedParentIds.has(row.parentId)) return false;
-      return true;
-    },
-    [collapsedParentIds],
-  );
-
-  // Flattened visible row list for index-based spreadsheet grid keyboard navigation
-  const allFlatRows: BudgetMatrixRow[] = useMemo(() => {
-    let rawList: BudgetMatrixRow[] = [];
-    if (sections && sections.length > 0) {
-      rawList = sections.flatMap((sec) => sec.rows);
-    } else {
-      rawList = rows || [];
-    }
-    return rawList.filter(isRowVisible);
-  }, [sections, rows, isRowVisible]);
-
-  // Selected cell tracking: { rowIndex, colIndex }
-  const [selectedCell, setSelectedCell] = useState<{ rowIndex: number; colIndex: number } | null>(
-    null,
-  );
-  const [editingCell, setEditingCell] = useState<{ rowIndex: number; colIndex: number } | null>(
-    null,
-  );
-  const [editValue, setEditValue] = useState<string>('');
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
 
-  // Focus input on edit mode
+  // Close menus on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (openMenuRowKey && !(e.target as HTMLElement).closest('.row-options-menu-container')) {
+        setOpenMenuRowKey(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openMenuRowKey]);
+
+  // Focus and select input when editing begins
   useEffect(() => {
     if (editingCell && inputRef.current) {
       inputRef.current.focus();
@@ -226,860 +185,698 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     }
   }, [editingCell]);
 
-  const commitEdit = useCallback(() => {
-    if (!editingCell) return;
-    const { rowIndex, colIndex } = editingCell;
-    const row = allFlatRows[rowIndex];
-    const period = periods[colIndex];
-    if (row && !row.isParent && period && period.status !== 'CLOSED') {
-      const numVal = parseNumericValue(editValue);
-      onCellChange(row.accountId, period.id, Math.max(0, numVal), row.subRowId);
-    }
-    setEditingCell(null);
-  }, [editingCell, editValue, allFlatRows, periods, onCellChange]);
+  const startEditing = (row: BudgetMatrixRow, periodId: string) => {
+    const targetPeriod = periods.find((p) => p.id === periodId);
+    if (!targetPeriod || targetPeriod.status === 'CLOSED' || row.isParent) return;
 
-  const cancelEdit = useCallback(() => {
-    setEditingCell(null);
-  }, []);
-
-  const startEditing = useCallback(
-    (rowIndex: number, colIndex: number) => {
-      const period = periods[colIndex];
-      if (period && period.status === 'CLOSED') return;
-      const row = allFlatRows[rowIndex];
-      if (!row || row.isParent) return; // Prevent editing parent subtotal rows
-      const val = row.amounts[period.id] ?? 0;
-      setEditingCell({ rowIndex, colIndex });
-      setEditValue(val === 0 ? '' : String(val));
-    },
-    [periods, allFlatRows],
-  );
-
-  // Fill Right handler (Ctrl+D / Cmd+D)
-  const handleFillRight = useCallback(
-    (customAmount?: number) => {
-      if (!selectedCell) return;
-      const { rowIndex, colIndex } = selectedCell;
-      if (colIndex >= periods.length - 1) return;
-
-      const row = allFlatRows[rowIndex];
-      if (!row || row.isParent) return;
-      const currentPeriod = periods[colIndex];
-      const sourceAmount =
-        customAmount !== undefined ? customAmount : (row.amounts[currentPeriod.id] ?? 0);
-
-      const updates: Array<{
-        accountId: string;
-        periodId: string;
-        amount: number;
-        subRowId?: string | null;
-      }> = [];
-
-      // If a custom amount was provided (from active editing cell), also update current cell
-      if (customAmount !== undefined) {
-        updates.push({
-          accountId: row.accountId,
-          periodId: currentPeriod.id,
-          amount: sourceAmount,
-          subRowId: row.subRowId,
-        });
-      }
-
-      for (let c = colIndex + 1; c < periods.length; c++) {
-        const targetPeriod = periods[c];
-        if (targetPeriod.status !== 'CLOSED') {
-          updates.push({
-            accountId: row.accountId,
-            periodId: targetPeriod.id,
-            amount: sourceAmount,
-            subRowId: row.subRowId,
-          });
-        }
-      }
-
-      if (updates.length > 0) {
-        if (onPasteBatch) {
-          onPasteBatch(updates);
-        } else {
-          updates.forEach((u) => onCellChange(u.accountId, u.periodId, u.amount, u.subRowId));
-        }
-      }
-    },
-    [selectedCell, periods, allFlatRows, onPasteBatch, onCellChange],
-  );
-
-  // Keyboard navigation & Shortcuts (Tab, Enter, Esc, Shift+Tab, Shift+Enter, Arrows, Ctrl+D)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Intercept Ctrl+D / Cmd+D (Fill Right / Forward Fill) globally on cell or input
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
-      e.preventDefault();
-      if (editingCell) {
-        const numVal = Math.max(0, parseNumericValue(editValue));
-        setEditingCell(null);
-        handleFillRight(numVal);
-      } else {
-        handleFillRight();
-      }
-      return;
-    }
-
-    if (editingCell) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        commitEdit();
-        if (selectedCell) {
-          if (e.shiftKey) {
-            if (selectedCell.rowIndex > 0) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex - 1,
-                colIndex: selectedCell.colIndex,
-              });
-            }
-          } else {
-            if (selectedCell.rowIndex < allFlatRows.length - 1) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex + 1,
-                colIndex: selectedCell.colIndex,
-              });
-            }
-          }
-        }
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        commitEdit();
-        if (selectedCell) {
-          if (e.shiftKey) {
-            if (selectedCell.colIndex > 0) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex,
-                colIndex: selectedCell.colIndex - 1,
-              });
-            } else if (selectedCell.rowIndex > 0) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex - 1,
-                colIndex: periods.length - 1,
-              });
-            }
-          } else {
-            if (selectedCell.colIndex < periods.length - 1) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex,
-                colIndex: selectedCell.colIndex + 1,
-              });
-            } else if (selectedCell.rowIndex < allFlatRows.length - 1) {
-              setSelectedCell({
-                rowIndex: selectedCell.rowIndex + 1,
-                colIndex: 0,
-              });
-            }
-          }
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        cancelEdit();
-      }
-      return;
-    }
-
-    if (!selectedCell) return;
-
-    switch (e.key) {
-      case 'ArrowUp':
-        e.preventDefault();
-        if (selectedCell.rowIndex > 0) {
-          setSelectedCell({ ...selectedCell, rowIndex: selectedCell.rowIndex - 1 });
-        }
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        if (selectedCell.rowIndex < allFlatRows.length - 1) {
-          setSelectedCell({ ...selectedCell, rowIndex: selectedCell.rowIndex + 1 });
-        }
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        if (selectedCell.colIndex > 0) {
-          setSelectedCell({ ...selectedCell, colIndex: selectedCell.colIndex - 1 });
-        }
-        break;
-      case 'ArrowRight':
-        e.preventDefault();
-        if (selectedCell.colIndex < periods.length - 1) {
-          setSelectedCell({ ...selectedCell, colIndex: selectedCell.colIndex + 1 });
-        }
-        break;
-      case 'Tab':
-        e.preventDefault();
-        if (e.shiftKey) {
-          if (selectedCell.colIndex > 0) {
-            setSelectedCell({ ...selectedCell, colIndex: selectedCell.colIndex - 1 });
-          } else if (selectedCell.rowIndex > 0) {
-            setSelectedCell({ rowIndex: selectedCell.rowIndex - 1, colIndex: periods.length - 1 });
-          }
-        } else {
-          if (selectedCell.colIndex < periods.length - 1) {
-            setSelectedCell({ ...selectedCell, colIndex: selectedCell.colIndex + 1 });
-          } else if (selectedCell.rowIndex < allFlatRows.length - 1) {
-            setSelectedCell({ rowIndex: selectedCell.rowIndex + 1, colIndex: 0 });
-          }
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        startEditing(selectedCell.rowIndex, selectedCell.colIndex);
-        break;
-      default:
-        if (/^[0-9.]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          e.preventDefault();
-          startEditing(selectedCell.rowIndex, selectedCell.colIndex);
-          setEditValue(e.key);
-        }
-        break;
-    }
-  };
-
-  // Clipboard paste parser with multi-cell \n / \t parsing and numeric sanitization
-  const handlePaste = (e: React.ClipboardEvent) => {
-    if (!selectedCell) return;
-    const pasteData = e.clipboardData.getData('text');
-    if (!pasteData) return;
-
-    e.preventDefault();
-
-    const pasteRows = pasteData
-      .trim()
-      .split(/\r?\n/)
-      .map((line) => line.split('\t'));
-
-    const updates: Array<{
-      accountId: string;
-      periodId: string;
-      amount: number;
-      subRowId?: string | null;
-    }> = [];
-
-    pasteRows.forEach((pRow, rOffset) => {
-      const rIdx = selectedCell.rowIndex + rOffset;
-      if (rIdx >= allFlatRows.length) return;
-      const targetRow = allFlatRows[rIdx];
-      if (targetRow.isParent) return; // Skip parent rows during paste
-
-      pRow.forEach((valStr, cOffset) => {
-        const cIdx = selectedCell.colIndex + cOffset;
-        if (cIdx >= periods.length) return;
-        const targetPeriod = periods[cIdx];
-
-        if (targetPeriod.status !== 'CLOSED') {
-          const cleanNum = parseNumericValue(valStr);
-          updates.push({
-            accountId: targetRow.accountId,
-            periodId: targetPeriod.id,
-            amount: Math.max(0, cleanNum),
-            subRowId: targetRow.subRowId,
-          });
-        }
-      });
+    const currentAmt = row.amounts[periodId] ?? 0;
+    setEditValue(currentAmt === 0 ? '' : formatThousandNumber(currentAmt));
+    setEditingCell({
+      accountId: row.accountId,
+      subRowId: row.subRowId || null,
+      periodId,
     });
+  };
 
-    if (updates.length > 0) {
-      if (onPasteBatch) {
-        onPasteBatch(updates);
-      } else {
-        updates.forEach((u) => onCellChange(u.accountId, u.periodId, u.amount, u.subRowId));
+  const commitEdit = () => {
+    if (!editingCell) return;
+    const decPlaces = baseCurrency?.decimalPlaces ?? 0;
+    const parsed = parseNumericValue(editValue, decPlaces);
+    onCellChange(editingCell.accountId, editingCell.periodId, parsed, editingCell.subRowId || null);
+    setEditingCell(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingCell(null);
+  };
+
+  // Keyboard navigation for inline table editing
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      commitEdit();
+    }
+  };
+
+  // Replicate to all open periods across the entire matrix
+  const handleReplicateAllPeriods = (row: BudgetMatrixRow, fromPeriodId?: string) => {
+    const pId = fromPeriodId || currentPeriod?.id || periods[0]?.id;
+    const fromAmount = row.amounts[pId] ?? 0;
+    periods.forEach((p) => {
+      if (p.status !== 'CLOSED') {
+        onCellChange(row.accountId, p.id, fromAmount, row.subRowId || null);
+      }
+    });
+    setOpenMenuRowKey(null);
+  };
+
+  const handleOpenEditBalanceModal = (row: BudgetMatrixRow, secKey: BudgetMatrixSectionKey) => {
+    setOpenMenuRowKey(null);
+    setAccountModalState({
+      isOpen: true,
+      targetSection: secKey,
+      editRow: row,
+    });
+  };
+
+  const handleDeleteRowClick = (row: BudgetMatrixRow) => {
+    setOpenMenuRowKey(null);
+    const itemName = row.subRowLabel || row.accountName;
+    if (confirm(`¿Desea eliminar la partida "${itemName}" de este presupuesto?`)) {
+      if (onDeleteRow) {
+        onDeleteRow(row.accountId, row.subRowId || null);
       }
     }
   };
 
-  const formatValue = (amount: number) => {
-    return formatCurrency(amount, baseCurrency);
-  };
-
-  // Section badge color helper
-  const getSectionBadge = (key: BudgetMatrixSectionKey | string) => {
-    switch (key) {
-      case BudgetMatrixSectionKey.INGRESOS:
-        return 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
-      case BudgetMatrixSectionKey.GASTOS_VIDA:
-      case BudgetMatrixSectionKey.EGRESOS:
-        return 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30';
-      case BudgetMatrixSectionKey.AHORRO_INVERSIONES:
-        return 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
-      case BudgetMatrixSectionKey.DEUDAS_FINANCIACION:
-      case BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO:
-        return 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30';
-      default:
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-    }
-  };
-
-  // Render Section Panel
-  const renderSection = (sec: BudgetMatrixSection) => {
-    const isBalanceSection =
-      sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
-      sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
-      sec.sectionKey === BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO;
-
-    const visibleSecRows = sec.rows.filter(isRowVisible);
+  // ==========================================
+  // RENDER 1: VISTA MENSUAL ENFOCADA (1 MES)
+  // ==========================================
+  if (viewMode === 'monthly') {
+    const activeP = currentPeriod;
+    const activeIdx = periods.findIndex((p) => p.id === activeP?.id);
+    const prevPeriod = activeIdx > 0 ? periods[activeIdx - 1] : null;
 
     return (
-      <React.Fragment key={sec.sectionKey}>
-        {/* Section Header Banner */}
-        <tr className="bg-slate-100 dark:bg-slate-950 font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-xs border-t-2 border-b border-slate-200 dark:border-slate-800">
-          <td
-            colSpan={periods.length + 3}
-            className="p-3 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100 font-sans tracking-wide"
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="sticky left-3 flex items-center space-x-2">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getSectionBadge(sec.sectionKey)}`}
-                >
-                  {sec.sectionTitle}
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal lowercase">
-                  ({sec.rows.filter((r) => !r.isParent).length} cuenta(s) activas)
-                </span>
-              </div>
+      <div className="flex flex-col h-full w-full space-y-4 overflow-y-auto pr-1 pb-20">
+        {(sections && sections.length > 0 ? sections : []).map((sec) => {
+          const isCollapsed = collapsedSections.has(sec.sectionKey as string);
+          const totalActive = sec.sectionTotals[activeP?.id || ''] || 0;
 
-              {/* On-Demand Budgeting Action Buttons in Section Headers (Right-Aligned) */}
-              {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES && (
-                <div className="sticky right-3 ml-auto">
-                  <button
-                    type="button"
-                    onClick={() => openCreateAccountModal('ASSET')}
-                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/30 dark:hover:bg-blue-600/50 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/40 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Presupuestar Activo</span>
-                  </button>
-                </div>
-              )}
+          // Header badge colors
+          let badgeColor = 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200';
+          let secTitle = sec.sectionTitle;
+          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) {
+            badgeColor =
+              'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            secTitle = 'Ingresos';
+          } else if (
+            sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
+            sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
+          ) {
+            badgeColor = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+            secTitle = 'Egresos';
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) {
+            badgeColor = 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30';
+            secTitle = 'Ahorros e Inversiones';
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) {
+            badgeColor =
+              'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+            secTitle = 'Deudas y Financiación';
+          }
 
-              {(sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
-                sec.sectionKey === BudgetMatrixSectionKey.FINANCIAMIENTO_AHORRO ||
-                sec.sectionKey === 'FINANCIAMIENTO_AHORRO') && (
-                <div className="sticky right-3 ml-auto">
-                  <button
-                    type="button"
-                    onClick={() => openCreateAccountModal('LIABILITY')}
-                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-600/30 dark:hover:bg-purple-600/50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Presupuestar Deuda</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-
-        {/* Empty State for Section (Sticky pinned 100cqw to remain completely immobile in the viewport center) */}
-        {visibleSecRows.length === 0 && (
-          <tr>
-            <td
-              colSpan={periods.length + 3}
-              className="p-0 bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-sans text-xs border-b border-slate-200 dark:border-slate-800/60"
-            >
-              <div className="sticky left-0 w-[100cqw] max-w-full py-8 flex flex-col items-center justify-center space-y-2.5 pointer-events-auto">
-                <span>
-                  {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
-                    ? 'No hay cuentas de activo presupuestadas para este ejercicio.'
-                    : sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION ||
-                        sec.sectionKey === 'FINANCIAMIENTO_AHORRO'
-                      ? 'No hay cuentas de pasivo o deuda presupuestadas para este ejercicio.'
-                      : 'No hay cuentas registradas en esta categoría.'}
-                </span>
-                {isBalanceSection && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openCreateAccountModal(
-                        sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
-                          ? 'ASSET'
-                          : 'LIABILITY',
-                      )
-                    }
-                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>
-                      {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
-                        ? 'Presupuestar Activo'
-                        : 'Presupuestar Deuda'}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </td>
-          </tr>
-        )}
-
-        {/* Section Rows */}
-        {visibleSecRows.map((row) => {
-          const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
-          const absoluteFlatIdx = allFlatRows.findIndex(
-            (r) => r.accountId === row.accountId && r.subRowId === row.subRowId,
-          );
-          const isAssetOrLiability =
-            isBalanceSection || ['ASSET', 'LIABILITY', 'EQUITY'].includes(row.accountType);
-          const isParent = row.isParent;
-          const isChild = !!row.parentId;
-          const isCollapsed = isParent && collapsedParentIds.has(row.accountId);
-          const isMenuOpen = openMenuRowKey === rowKey;
+          const isBalanceSec =
+            sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
+            sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION;
 
           return (
-            <tr
-              key={rowKey}
-              className={`transition-colors group ${
-                isParent
-                  ? 'bg-slate-100/80 dark:bg-slate-900/80 font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-200/70 dark:hover:bg-slate-800/60'
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-              }`}
+            <div
+              key={sec.sectionKey}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs"
             >
-              {/* Account Label (Sticky left column for desktop & mobile) */}
-              <td
-                className={`px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[250px] max-w-[340px] shadow-sm ${
-                  isParent
-                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-bold text-slate-900 dark:text-slate-100'
-                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 font-medium text-slate-800 dark:text-slate-200'
-                } ${isChild ? 'pl-7' : 'pl-3'}`}
+              {/* Section Header */}
+              <div
+                onClick={() => toggleSectionCollapse(sec.sectionKey as string)}
+                className={`flex items-center justify-between px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-slate-800 cursor-pointer select-none rounded-t-2xl ${
+                  isCollapsed ? 'rounded-b-2xl border-b-0' : ''
+                }`}
               >
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center space-x-1.5 min-w-0 truncate">
-                    {/* Collapse/Expand Chevron for Parent Categories */}
-                    {isParent && (
-                      <button
-                        type="button"
-                        onClick={() => toggleParentCollapse(row.accountId)}
-                        className="p-0.5 rounded text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors cursor-pointer shrink-0"
-                        title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
-                      >
-                        {isCollapsed ? (
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    )}
-
-                    <span
-                      className={`truncate ${
-                        isParent
-                          ? 'text-indigo-700 dark:text-indigo-300 font-bold text-xs cursor-pointer'
-                          : isChild
-                            ? 'text-slate-700 dark:text-slate-300 text-xs'
-                            : 'text-slate-800 dark:text-slate-100 text-xs'
-                      }`}
-                      title={
-                        row.subRowLabel
-                          ? `${row.accountName} (${row.subRowLabel})`
-                          : row.accountName
-                      }
-                      onClick={() => isParent && toggleParentCollapse(row.accountId)}
-                    >
-                      {row.subRowLabel
-                        ? `${row.accountName} (${row.subRowLabel})`
-                        : row.accountName}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-1 shrink-0">
-                    {isParent && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
-                        Grupo
-                      </span>
-                    )}
-
-                    {/* Discrete Cash Flow Direction Badge for Balance Accounts */}
-                    {!isParent && isAssetOrLiability && row.cashFlowDirection && (
-                      <span
-                        className={`inline-flex items-center space-x-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded border ${
-                          row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
-                        }`}
-                      >
-                        {row.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO ? (
-                          <>
-                            <ArrowUpRight className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
-                            <span className="hidden xl:inline">Entrada</span>
-                          </>
-                        ) : (
-                          <>
-                            <ArrowDownRight className="w-3 h-3 text-rose-500 dark:text-rose-400" />
-                            <span className="hidden xl:inline">Salida</span>
-                          </>
-                        )}
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center space-x-3">
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeColor}`}>
+                    {secTitle}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {sec.rows.length} {sec.rows.length === 1 ? 'partida' : 'partidas'}
+                  </span>
                 </div>
-              </td>
 
-              {/* 3-Dots Options Menu Column (•••) */}
-              <td
-                className={`p-2 text-center border-r border-slate-200 dark:border-slate-800 w-12 relative row-options-menu-container ${
-                  isParent
-                    ? 'bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800'
-                    : 'bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800'
-                }`}
-              >
-                {!isParent ? (
-                  <div className="relative inline-block">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuRowKey(isMenuOpen ? null : rowKey);
-                      }}
-                      title="Opciones de fila"
-                      className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {isMenuOpen && (
-                      <div className="absolute left-full top-0 ml-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100">
-                        {/* Option 1: Rellenar (Driver / Autofill) */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuRowKey(null);
-                            if (onOpenAutofill) {
-                              onOpenAutofill(row);
-                            } else if (onOpenDriverModal) {
-                              onOpenDriverModal(row);
-                            }
-                          }}
-                          className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
-                        >
-                          <Wand2 className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
-                          <span>Rellenar</span>
-                        </button>
-
-                        {/* Option 2: Editar (for Balance / Sub-Rows) */}
-                        {(isAssetOrLiability || row.subRowId) && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuRowKey(null);
-                              openEditAccountModal(row);
-                            }}
-                            className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-                            <span>Editar</span>
-                          </button>
-                        )}
-
-                        {/* Option 3: Eliminar (for Balance / Sub-Rows) */}
-                        {(isAssetOrLiability || row.subRowId) && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuRowKey(null);
-                              const rowTitle = row.subRowLabel
-                                ? `${row.accountName} (${row.subRowLabel})`
-                                : row.accountName;
-                              if (
-                                confirm(
-                                  `¿Está seguro de que desea eliminar la fila presupuestaria de "${rowTitle}"? Se borrarán sus valores para este ejercicio fiscal.`,
-                                )
-                              ) {
-                                if (onDeleteRow) {
-                                  onDeleteRow(row.accountId, row.subRowId || null);
-                                } else if (onDeleteSubRow && row.subRowId) {
-                                  onDeleteSubRow(row.accountId, row.subRowId);
-                                }
-                              }
-                            }}
-                            className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400 shrink-0" />
-                            <span>Eliminar</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-[10px] text-slate-400 dark:text-slate-600">—</span>
-                )}
-              </td>
-
-              {/* Monthly Period Amount Cells */}
-              {periods.map((period, cIdx) => {
-                const isSelected =
-                  absoluteFlatIdx >= 0 &&
-                  selectedCell?.rowIndex === absoluteFlatIdx &&
-                  selectedCell?.colIndex === cIdx;
-                const isEditing =
-                  absoluteFlatIdx >= 0 &&
-                  editingCell?.rowIndex === absoluteFlatIdx &&
-                  editingCell?.colIndex === cIdx;
-                const cellKey = `${period.id}_${row.accountId}${row.subRowId ? `_${row.subRowId}` : ''}`;
-                const isDirty = dirtyCells.has(cellKey);
-                const isClosed = period.status === 'CLOSED';
-                const amount = row.amounts[period.id] ?? 0;
-
-                return (
-                  <td
-                    key={period.id}
-                    onClick={() => {
-                      if (absoluteFlatIdx >= 0) {
-                        setSelectedCell({ rowIndex: absoluteFlatIdx, colIndex: cIdx });
-                      }
-                    }}
-                    onDoubleClick={() => {
-                      if (!isParent && absoluteFlatIdx >= 0) {
-                        startEditing(absoluteFlatIdx, cIdx);
-                      }
-                    }}
-                    className={`p-2.5 text-right border-r border-slate-200/60 dark:border-slate-800/50 select-none transition-all ${
-                      isClosed
-                        ? 'bg-slate-100/60 dark:bg-slate-950/60 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                        : isParent
-                          ? 'bg-slate-100/40 dark:bg-slate-950/40 text-indigo-700 dark:text-indigo-300 font-bold cursor-default'
-                          : 'cursor-pointer'
-                    } ${
-                      isSelected
-                        ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 z-10'
-                        : ''
-                    } ${isDirty ? 'bg-amber-500/15 font-bold text-amber-700 dark:text-amber-300' : ''}`}
-                  >
-                    {isEditing ? (
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onBlur={commitEdit}
-                        className="w-full bg-white dark:bg-slate-950 text-right font-mono text-xs text-slate-900 dark:text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-end space-x-1">
-                        {isClosed && (
-                          <Lock className="w-3 h-3 text-slate-400 dark:text-slate-600 inline mr-1" />
-                        )}
-                        <span
-                          className={
-                            isParent
-                              ? 'text-indigo-700 dark:text-indigo-300 font-bold'
-                              : amount === 0
-                                ? 'text-slate-400 dark:text-slate-600'
-                                : 'text-slate-800 dark:text-slate-200'
-                          }
-                        >
-                          {formatValue(amount)}
-                        </span>
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-
-              {/* Row Total */}
-              <td
-                className={`p-3 text-right font-bold ${
-                  isParent
-                    ? 'text-indigo-700 dark:text-indigo-300 bg-slate-100 group-hover:bg-slate-200/80 dark:bg-slate-900 dark:group-hover:bg-slate-800'
-                    : 'text-slate-900 dark:text-slate-100 bg-slate-50 group-hover:bg-slate-100 dark:bg-slate-900/80 dark:group-hover:bg-slate-800'
-                }`}
-              >
-                {formatValue(row.rowTotal)}
-              </td>
-            </tr>
-          );
-        })}
-
-        {/* Section Total Row */}
-        <tr className="bg-slate-100 dark:bg-slate-950 font-bold border-t border-b-2 border-slate-200 dark:border-slate-800">
-          <td className="p-3 border-r border-slate-200 dark:border-slate-800 font-sans text-indigo-700 dark:text-indigo-400 sticky left-0 z-10 bg-slate-100 dark:bg-slate-950 shadow-sm">
-            Total {sec.sectionTitle}
-          </td>
-          <td className="p-3 border-r border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950"></td>
-          {periods.map((period) => (
-            <td
-              key={period.id}
-              className="p-3 text-right border-r border-slate-200 dark:border-slate-800 text-indigo-700 dark:text-indigo-300"
-            >
-              {formatValue(sec.sectionTotals[period.id] || 0)}
-            </td>
-          ))}
-          <td className="p-3 text-right text-indigo-800 dark:text-indigo-200 bg-slate-100 dark:bg-slate-950">
-            {formatValue(sec.sectionTotals.total || 0)}
-          </td>
-        </tr>
-      </React.Fragment>
-    );
-  };
-
-  return (
-    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm dark:shadow-2xl relative">
-      {/* Spreadsheet Table with Horizontal Touch Scroll & Sticky Account Column */}
-      <div
-        ref={gridRef}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        className="flex-1 w-full overflow-auto outline-none [container-type:inline-size]"
-      >
-        <table className="w-full text-left border-collapse text-xs">
-          <thead className="sticky top-0 z-20 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider">
-            <tr>
-              <th className="p-3 min-w-[240px] max-w-[320px] border-r border-slate-200 dark:border-slate-800 sticky left-0 z-30 bg-slate-50 dark:bg-slate-950">
-                Cuenta
-              </th>
-              <th className="p-3 w-12 text-center border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950"></th>
-              {periods.map((period) => (
-                <th
-                  key={period.id}
-                  className={`p-3 min-w-[110px] text-right border-r border-slate-200 dark:border-slate-800 ${
-                    period.status === 'CLOSED'
-                      ? 'bg-slate-100/60 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500'
-                      : ''
-                  }`}
-                >
-                  <div className="flex flex-col items-end">
-                    <span className="flex items-center gap-1">
-                      {period.friendlyName || period.name}
-                      {period.status === 'CLOSED' && (
-                        <Lock className="w-3 h-3 text-rose-500 dark:text-rose-400" />
-                      )}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-1.5 font-mono">
+                    <span className="text-xs text-slate-400">Total:</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      {formatCurrency(totalActive, baseCurrency)}
                     </span>
-                    {period.status === 'CLOSED' && (
-                      <span className="text-[10px] text-rose-500 dark:text-rose-400/80 lowercase">
-                        cerrado
-                      </span>
-                    )}
                   </div>
-                </th>
-              ))}
-              <th className="p-3 min-w-[120px] text-right font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-950">
-                Total Anual
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
-            {sections && sections.length > 0
-              ? sections.map((sec) => renderSection(sec))
-              : (rows || []).map((row, rIdx) => {
-                  const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
-                  const isMenuOpen = openMenuRowKey === rowKey;
-                  return (
-                    <tr
-                      key={rowKey}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
-                    >
-                      <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 min-w-[250px] max-w-[340px] bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 shadow-sm">
-                        <div className="flex items-center min-w-0 truncate">
-                          <span
-                            className="text-slate-800 dark:text-slate-100 font-medium text-xs truncate"
-                            title={row.accountName}
-                          >
-                            {row.accountName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-2 text-center border-r border-slate-200 dark:border-slate-800 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 relative row-options-menu-container">
-                        <div className="relative inline-block">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuRowKey(isMenuOpen ? null : rowKey);
-                            }}
-                            title="Opciones de fila"
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
 
-                          {isMenuOpen && (
-                            <div className="absolute left-full top-0 ml-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100">
+                  {isCollapsed ? (
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* Section Rows (Cards style) */}
+              {!isCollapsed && (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-b-2xl">
+                  {sec.rows.map((row, rowIndex) => {
+                    const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
+                    const currentAmt = row.amounts[activeP?.id || ''] ?? 0;
+                    const prevAmt = prevPeriod ? (row.amounts[prevPeriod.id] ?? 0) : null;
+                    const isDirty = dirtyCells.has(
+                      `${activeP?.id}_${row.accountId}${row.subRowId ? `_${row.subRowId}` : ''}`,
+                    );
+                    const isMenuOpen = openMenuRowKey === rowKey;
+                    const isBalanceRow =
+                      isBalanceSec ||
+                      row.accountType === 'ASSET' ||
+                      row.accountType === 'LIABILITY' ||
+                      row.accountType === 'EQUITY' ||
+                      Boolean(row.subRowId) ||
+                      Boolean(row.cashFlowDirection);
+
+                    const isBottomRow = rowIndex >= sec.rows.length - 2 && sec.rows.length > 2;
+
+                    return (
+                      <div
+                        key={rowKey}
+                        className={`flex items-center justify-between px-5 py-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors ${
+                          row.isParent ? 'bg-slate-50/40 dark:bg-slate-900/60 font-semibold' : ''
+                        } ${isMenuOpen ? 'relative z-40' : 'relative z-0'}`}
+                      >
+                        {/* Account Name & Sub-label */}
+                        <div className="flex items-center space-x-3 min-w-0 pr-4">
+                          <div className="truncate">
+                            <div className="flex items-center space-x-1.5 truncate">
+                              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 block truncate">
+                                {row.subRowLabel || row.accountName}
+                              </span>
+                              {isBalanceSec && row.cashFlowDirection && (
+                                <span
+                                  className="inline-flex items-center shrink-0 select-none"
+                                  title={
+                                    row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                      ? 'Salida de efectivo'
+                                      : 'Entrada de efectivo'
+                                  }
+                                >
+                                  {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                    <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                  ) : (
+                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                            {row.subRowLabel && (
+                              <span className="text-xs text-slate-400 block truncate">
+                                {row.accountName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right: Comparative vs Previous Month + Amount Input + Options Menu */}
+                        <div className="flex items-center space-x-4 shrink-0">
+                          {/* Comparative Pill */}
+                          {prevAmt !== null && (
+                            <span className="hidden md:inline-flex items-center text-xs text-slate-400 font-mono">
+                              mes ant: {formatCurrency(prevAmt, baseCurrency)}
+                            </span>
+                          )}
+
+                          {/* Editable Amount Input */}
+                          {row.isParent ? (
+                            <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100 w-36 text-right px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                              {formatCurrency(currentAmt, baseCurrency)}
+                            </span>
+                          ) : (
+                            <div className="relative">
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                disabled={activeP?.status === 'CLOSED'}
+                                value={currentAmt === 0 ? '' : formatThousandNumber(currentAmt)}
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const decPlaces = baseCurrency?.decimalPlaces ?? 0;
+                                  const val = parseNumericValue(e.target.value, decPlaces);
+                                  if (activeP) {
+                                    onCellChange(
+                                      row.accountId,
+                                      activeP.id,
+                                      val,
+                                      row.subRowId || null,
+                                    );
+                                  }
+                                }}
+                                className={`w-36 text-right font-mono text-sm font-bold px-3 py-1.5 rounded-xl border transition-all outline-none ${
+                                  isDirty
+                                    ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-300'
+                                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900'
+                                }`}
+                              />
+                            </div>
+                          )}
+
+                          {/* 3-dots Menu for fast actions */}
+                          {!row.isParent && (
+                            <div className="relative row-options-menu-container">
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setOpenMenuRowKey(null);
-                                  if (onOpenAutofill) {
-                                    onOpenAutofill(row);
-                                  } else if (onOpenDriverModal) {
-                                    onOpenDriverModal(row);
-                                  }
+                                  setOpenMenuRowKey(isMenuOpen ? null : rowKey);
                                 }}
-                                className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="Acciones"
                               >
-                                <Wand2 className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
-                                <span>Rellenar</span>
+                                <MoreHorizontal className="w-4 h-4" />
                               </button>
+
+                              {isMenuOpen && (
+                                <div
+                                  className={`absolute right-0 ${
+                                    isBottomRow ? 'bottom-8 mb-1' : 'top-8 mt-1'
+                                  } w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-in fade-in duration-100`}
+                                >
+                                  {isBalanceRow && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleOpenEditBalanceModal(
+                                            row,
+                                            sec.sectionKey as BudgetMatrixSectionKey,
+                                          )
+                                        }
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors text-left cursor-pointer"
+                                      >
+                                        <Edit2 className="w-4 h-4 text-amber-500 shrink-0" />
+                                        <span>Editar cuenta / naturaleza</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRowClick(row)}
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                                        <span>Eliminar partida</span>
+                                      </button>
+
+                                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                    </>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReplicateAllPeriods(row, activeP?.id)}
+                                    className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                  >
+                                    <Repeat className="w-4 h-4 text-indigo-500 shrink-0" />
+                                    <span>Replicar a todo el año</span>
+                                  </button>
+
+                                  {onOpenAutofill && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenMenuRowKey(null);
+                                        onOpenAutofill(row);
+                                      }}
+                                      className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                    >
+                                      <History className="w-4 h-4 text-indigo-500 shrink-0" />
+                                      <span>Traer del año anterior</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      </td>
-                      {periods.map((period, cIdx) => {
-                        const isSelected =
-                          selectedCell?.rowIndex === rIdx && selectedCell?.colIndex === cIdx;
-                        const isEditing =
-                          editingCell?.rowIndex === rIdx && editingCell?.colIndex === cIdx;
-                        const isClosed = period.status === 'CLOSED';
-                        const amount = row.amounts[period.id] ?? 0;
-                        return (
-                          <td
-                            key={period.id}
-                            onClick={() => setSelectedCell({ rowIndex: rIdx, colIndex: cIdx })}
-                            onDoubleClick={() => startEditing(rIdx, cIdx)}
-                            className={`p-2.5 text-right border-r border-slate-200/60 dark:border-slate-800/50 cursor-pointer select-none ${
-                              isClosed
-                                ? 'bg-slate-100/60 dark:bg-slate-950/60 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                                : ''
-                            } ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 z-10' : ''}`}
+                      </div>
+                    );
+                  })}
+
+                  {/* Add balance account button at the bottom of the section */}
+                  {isBalanceSec && onAddBalanceRow && (
+                    <div className="p-3 bg-slate-50/40 dark:bg-slate-800/20 text-center rounded-b-2xl">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccountModalState({
+                            isOpen: true,
+                            targetSection: sec.sectionKey as BudgetMatrixSectionKey,
+                            editRow: null,
+                          })
+                        }
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>
+                          {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
+                            ? 'Presupuestar Activo'
+                            : 'Presupuestar Deuda'}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // RENDER 2: VISTA TABLA MATRICIAL (CUATRIMESTRAL, SEMESTRAL, ANUAL)
+  // =========================================================================
+  return (
+    <div className="flex flex-col h-full w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-xs text-left border-collapse table-fixed">
+          {/* Table Header */}
+          <thead className="bg-slate-100/90 dark:bg-slate-950 sticky top-0 z-20 font-sans border-b border-slate-200 dark:border-slate-800 backdrop-blur-xs">
+            <tr>
+              <th className="p-3 w-64 sm:w-80 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60 sticky left-0 bg-slate-100 dark:bg-slate-950 z-30 truncate">
+                Partida Presupuestaria
+              </th>
+              {periods.map((p) => (
+                <th
+                  key={p.id}
+                  className="p-3 w-28 sm:w-36 text-right font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60"
+                >
+                  <div className="flex items-center justify-end space-x-1 truncate">
+                    <span className="truncate">{p.friendlyName || p.name}</span>
+                    {p.status === 'CLOSED' && <span title="Cerrado">🔒</span>}
+                  </div>
+                </th>
+              ))}
+              <th className="p-3 w-28 sm:w-36 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-100/60 dark:bg-slate-900 truncate">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+            {(sections || []).map((sec) => {
+              let secBadgeColor =
+                'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
+              let secTitle = sec.sectionTitle;
+
+              if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) {
+                secBadgeColor =
+                  'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+                secTitle = 'Ingresos';
+              } else if (
+                sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
+                sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
+              ) {
+                secBadgeColor =
+                  'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30';
+                secTitle = 'Egresos';
+              } else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) {
+                secBadgeColor =
+                  'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30';
+                secTitle = 'Ahorros e Inversiones';
+              } else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) {
+                secBadgeColor =
+                  'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30';
+                secTitle = 'Deudas y Financiación';
+              }
+
+              const isBalanceSec =
+                sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
+                sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION;
+
+              return (
+                <React.Fragment key={sec.sectionKey}>
+                  {/* Section Header Row */}
+                  <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
+                    <td
+                      colSpan={periods.length + 2}
+                      className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950"
+                    >
+                      <div className="sticky left-0 px-4 py-2.5 flex items-center justify-between w-max max-w-full space-x-4 z-10">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${secBadgeColor}`}
                           >
-                            {isEditing ? (
-                              <input
-                                ref={inputRef}
-                                type="text"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                onBlur={commitEdit}
-                                className="w-full bg-white dark:bg-slate-950 text-right font-mono text-xs text-slate-900 dark:text-white border border-indigo-500 rounded px-1.5 py-0.5 outline-none"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-end">
-                                {isClosed && (
-                                  <Lock className="w-3 h-3 text-slate-400 dark:text-slate-600 inline mr-1" />
-                                )}
-                                <span
-                                  className={
-                                    amount === 0
-                                      ? 'text-slate-400 dark:text-slate-600'
-                                      : 'text-slate-800 dark:text-slate-200'
-                                  }
-                                >
-                                  {formatValue(amount)}
+                            {secTitle}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            {sec.rows.length} {sec.rows.length === 1 ? 'partida' : 'partidas'}
+                          </span>
+                        </div>
+                        {(sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
+                          sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) &&
+                          onAddBalanceRow && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAccountModalState({
+                                  isOpen: true,
+                                  targetSection: sec.sectionKey as BudgetMatrixSectionKey,
+                                  editRow: null,
+                                })
+                              }
+                              className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>
+                                {sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES
+                                  ? 'Presupuestar Activo'
+                                  : 'Presupuestar Deuda'}
+                              </span>
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Rows */}
+                  {sec.rows.map((row, rowIndex) => {
+                    const isParent = row.isParent;
+                    const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
+                    const isMenuOpen = openMenuRowKey === rowKey;
+                    const isBalanceRow =
+                      isBalanceSec ||
+                      row.accountType === 'ASSET' ||
+                      row.accountType === 'LIABILITY' ||
+                      row.accountType === 'EQUITY' ||
+                      Boolean(row.subRowId) ||
+                      Boolean(row.cashFlowDirection);
+
+                    const isBottomRow = rowIndex >= sec.rows.length - 2 && sec.rows.length > 2;
+
+                    return (
+                      <tr
+                        key={rowKey}
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors h-9 ${
+                          isParent ? 'bg-slate-50/50 dark:bg-slate-900/60 font-bold' : ''
+                        }`}
+                      >
+                        <td
+                          className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 bg-white dark:bg-slate-900 ${
+                            isMenuOpen ? 'z-40' : 'z-10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between group gap-1.5 min-w-0">
+                            <div className="truncate flex-1 min-w-0">
+                              <div className="flex items-center space-x-1.5 truncate">
+                                <span className="text-slate-800 dark:text-slate-200 truncate block font-medium">
+                                  {row.subRowLabel || row.accountName}
                                 </span>
+                                {isBalanceSec && row.cashFlowDirection && (
+                                  <span
+                                    className="inline-flex items-center shrink-0 select-none"
+                                    title={
+                                      row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                        ? 'Salida de efectivo'
+                                        : 'Entrada de efectivo'
+                                    }
+                                  >
+                                    {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                      <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                    ) : (
+                                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              {row.subRowLabel && (
+                                <span className="text-3xs text-slate-400 dark:text-slate-500 block truncate">
+                                  {row.accountName}
+                                </span>
+                              )}
+                            </div>
+
+                            {!isParent && (
+                              <div className="relative row-options-menu-container shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuRowKey(isMenuOpen ? null : rowKey);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title="Opciones de partida"
+                                >
+                                  <MoreHorizontal className="w-3.5 h-3.5" />
+                                </button>
+
+                                {isMenuOpen && (
+                                  <div
+                                    className={`absolute left-0 ${
+                                      isBottomRow ? 'bottom-8 mb-1' : 'top-8 mt-1'
+                                    } w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1.5 z-50 text-xs font-sans animate-in fade-in duration-100`}
+                                  >
+                                    {isBalanceRow && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleOpenEditBalanceModal(
+                                              row,
+                                              sec.sectionKey as BudgetMatrixSectionKey,
+                                            )
+                                          }
+                                          className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors text-left cursor-pointer"
+                                        >
+                                          <Edit2 className="w-4 h-4 text-amber-500 shrink-0" />
+                                          <span>Editar cuenta / naturaleza</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteRowClick(row)}
+                                          className="w-full flex items-center space-x-2 px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                                        >
+                                          <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                                          <span>Eliminar partida</span>
+                                        </button>
+
+                                        <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                      </>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReplicateAllPeriods(row)}
+                                      className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                    >
+                                      <Repeat className="w-4 h-4 text-indigo-500 shrink-0" />
+                                      <span>Replicar a todo el año</span>
+                                    </button>
+
+                                    {onOpenAutofill && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenMenuRowKey(null);
+                                          onOpenAutofill(row);
+                                        }}
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                      >
+                                        <History className="w-4 h-4 text-indigo-500 shrink-0" />
+                                        <span>Traer del año anterior</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             )}
-                          </td>
-                        );
-                      })}
-                      <td className="p-3 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-50 group-hover:bg-slate-100 dark:bg-slate-900/80 dark:group-hover:bg-slate-800">
-                        {formatValue(row.rowTotal)}
+                          </div>
+                        </td>
+
+                        {periods.map((p) => {
+                          const isEditing =
+                            editingCell?.accountId === row.accountId &&
+                            editingCell?.subRowId === (row.subRowId || null) &&
+                            editingCell?.periodId === p.id;
+
+                          const amt = row.amounts[p.id] ?? 0;
+                          const cellKey = `${p.id}_${row.accountId}${row.subRowId ? `_${row.subRowId}` : ''}`;
+                          const isDirty = dirtyCells.has(cellKey);
+
+                          return (
+                            <td
+                              key={p.id}
+                              onClick={() => !isParent && startEditing(row, p.id)}
+                              className={`p-1 text-right border-r border-slate-200/60 dark:border-slate-800/60 cursor-pointer h-9 overflow-hidden ${
+                                isEditing
+                                  ? 'bg-indigo-50/50 dark:bg-indigo-950/50'
+                                  : isDirty
+                                    ? 'bg-amber-500/10'
+                                    : 'hover:bg-slate-100/60 dark:hover:bg-slate-800/60'
+                              }`}
+                            >
+                              {isEditing ? (
+                                <input
+                                  ref={inputRef}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={editValue}
+                                  onChange={(e) => {
+                                    const digits = e.target.value.replace(/[^\d]/g, '');
+                                    if (!digits) {
+                                      setEditValue('');
+                                    } else {
+                                      setEditValue(formatThousandNumber(digits));
+                                    }
+                                  }}
+                                  onKeyDown={handleKeyDown}
+                                  onBlur={commitEdit}
+                                  className="w-full h-7 text-right bg-white dark:bg-slate-950 font-mono text-xs font-bold border border-indigo-500 rounded px-2 py-0 outline-none text-slate-900 dark:text-white ring-1 ring-indigo-500 box-border"
+                                />
+                              ) : (
+                                <span
+                                  className={`block w-full h-7 leading-7 px-2 rounded font-mono text-xs text-right truncate ${
+                                    isDirty
+                                      ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-500/10'
+                                      : amt === 0
+                                        ? 'text-slate-400'
+                                        : 'text-slate-800 dark:text-slate-200 font-semibold'
+                                  }`}
+                                >
+                                  {formatCurrency(amt, baseCurrency)}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+
+                        <td className="p-2 text-right font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80 truncate">
+                          {formatCurrency(row.rowTotal, baseCurrency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* Section Total Row */}
+                  <tr className="bg-slate-100/50 dark:bg-slate-950/80 font-bold border-t border-b border-slate-200 dark:border-slate-800 h-9">
+                    <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans text-indigo-700 dark:text-indigo-400 sticky left-0 bg-slate-100 dark:bg-slate-950 truncate">
+                      Total {sec.sectionTitle}
+                    </td>
+                    {periods.map((p) => (
+                      <td
+                        key={p.id}
+                        className="p-2 text-right border-r border-slate-200 dark:border-slate-800 text-indigo-700 dark:text-indigo-300 truncate"
+                      >
+                        {formatCurrency(sec.sectionTotals[p.id] || 0, baseCurrency)}
                       </td>
-                    </tr>
-                  );
-                })}
+                    ))}
+                    <td className="p-2 text-right text-indigo-800 dark:text-indigo-200 bg-slate-100 dark:bg-slate-950 truncate">
+                      {formatCurrency(sec.sectionTotals.total || 0, baseCurrency)}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Unified Budget Account Modal for Create & Edit */}
+      {/* Modal for Balance Rows */}
       {accountModalState.isOpen && (
         <BudgetAccountModal
           isOpen={accountModalState.isOpen}
@@ -1090,15 +887,9 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           }
           onSave={({ account, label, direction, subRowId }) => {
             if (accountModalState.editRow) {
-              if (onEditBalanceRow) {
-                onEditBalanceRow(account, label, direction, subRowId);
-              } else if (onDirectionChange) {
-                onDirectionChange(account.id, subRowId || null, direction);
-              }
+              if (onEditBalanceRow) onEditBalanceRow(account, label, direction, subRowId);
             } else {
-              if (onAddBalanceRow) {
-                onAddBalanceRow(account, label, direction);
-              }
+              if (onAddBalanceRow) onAddBalanceRow(account, label, direction);
             }
             setAccountModalState({ isOpen: false, targetSection: null, editRow: null });
           }}

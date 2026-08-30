@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
@@ -18,28 +18,22 @@ export class GetPriorYearActualsUseCase {
 
   async execute(
     userId: string,
-    params: { fiscalYearId: string; adjustmentPercentage?: number; accountIds?: string[] },
+    params: { fiscalYearId?: string; adjustmentPercentage?: number; accountIds?: string[] },
   ): Promise<{
     success: boolean;
     matrix: Array<{ accountId: string; amounts: Record<string, number> }>;
   }> {
-    const { fiscalYearId, adjustmentPercentage = 0, accountIds } = params;
+    const { adjustmentPercentage = 0, accountIds } = params;
 
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periods = await manager.find(PeriodEntity, {
+        where: { userId },
+        order: { startDate: 'ASC' },
       });
-
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
-      }
-
-      const periods = (fiscalYear.periods || []).sort((a, b) =>
-        a.startDate.localeCompare(b.startDate),
-      );
-      const priorYearStart = this.shiftYear(fiscalYear.startDate, -1);
-      const priorYearEnd = this.shiftYear(fiscalYear.endDate, -1);
+      const firstPeriodStart = periods[0]?.startDate || '2026-01-01';
+      const lastPeriodEnd = periods[periods.length - 1]?.endDate || '2026-12-31';
+      const priorYearStart = this.shiftYear(firstPeriodStart, -1);
+      const priorYearEnd = this.shiftYear(lastPeriodEnd, -1);
 
       // Query target accounts
       const accountsQuery = manager

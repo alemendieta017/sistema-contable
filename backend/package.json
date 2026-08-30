@@ -21,7 +21,7 @@
     "db:drop": "npm run typeorm schema:drop",
     "db:sync": "npm run typeorm schema:sync",
     "db:seed": "ts-node src/infrastructure/database/seeds/run-seeder.ts",
-    "db:reset": "npm run db:drop && npm run db:sync && npm run db:seed -- --scenario=ready-for-closing"
+    "db:reset": "npm run db:drop && npm run db:sync && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

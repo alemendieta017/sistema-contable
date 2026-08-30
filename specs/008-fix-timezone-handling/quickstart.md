@@ -16,7 +16,7 @@ This document provides step-by-step instructions to validate the timezone and da
 
 ### Scenario 1: Create Transaction in Negative Timezone (UTC-4)
 
-1. **Set Browser Timezone**: 
+1. **Set Browser Timezone**:
    Configure your operating system or browser emulation to a negative offset (e.g. `America/Asuncion` or `America/New_York`, which corresponds to UTC-4 or UTC-3 depending on daylight savings).
    - In Chrome DevTools: Press `Esc` to open Drawer $\rightarrow$ Choose `Sensors` tab $\rightarrow$ Under `Location`, choose `Custom...` and set Timezone ID to `America/Asuncion` (or search for it). Refresh the page.
 2. **Create Transaction**:
@@ -54,12 +54,14 @@ This document provides step-by-step instructions to validate the timezone and da
 ## Automated Tests
 
 Run backend tests to verify transaction validation and creation integrity:
+
 ```bash
 # In backend directory
 npm run test
 ```
 
 Run frontend tests:
+
 ```bash
 # In frontend directory
 npm run test

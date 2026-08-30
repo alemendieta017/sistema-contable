@@ -26,7 +26,7 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Double-Entry Bookkeeping & Ledger Integrity**: **PASSED**. The backend ledger validation is preserved, and the UI aids correctness via auto-balancing entry lines.
 - **Clean Architecture & SOLID Principles**: **PASSED**. UI changes are isolated in frontend component declarations.
@@ -70,29 +70,35 @@ frontend/
 ### Transactions View
 
 #### [MODIFY] [page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/page.tsx)
+
 - Remove text "Libro diario contable por partida doble" from the header text.
 - Modify the counters cards to say "Ingresos", "Egresos" (instead of "Gastos"), and "Saldo Neto".
 - Add mobile responsiveness to the metric row: make sure text sizes shrink or adapt to vertical block layout on mobile screen viewports (<640px).
 - Simplify overall class paddings and borders to follow high-density, sharp corporate look.
 
 #### [MODIFY] [TransactionFilters.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/TransactionFilters.tsx)
+
 - Integrate a monthly navigation control that allows clicking `<` and `>` to decrement/increment the current month, auto-updating date boundaries.
 - Add a toggle checkbox labeled "Rango de fechas personalizado".
 - Render the Custom Date Range input pickers (desde / hasta) only if the checkbox is checked.
 
 #### [MODIFY] [TransactionModal.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/TransactionModal.tsx)
+
 - Clean up headings, labels, and text to omit references to "Partida Doble".
 - Implement amount auto-balancing helper: when a new row is added, pre-fill its amount with the current `difference` between debit and credit totals.
 - Reduce overall padding/border radius of the modal and button edges.
 
 #### [MODIFY] [JournalEntryRow.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/JournalEntryRow.tsx)
+
 - Replace native account select dropdown with a searchable input element that lists and filters available accounts based on user text entry (autocomplete search).
 - Apply compact class tags to spacing and fonts.
 
 ## Verification Plan
 
 ### Automated Tests
+
 - Run `npm test` inside the frontend workspace to verify all components compile and unit tests pass.
 
 ### Manual Verification
+
 - Execute verification scenarios detailed in the [Verification Guide](file:///Users/ale/dev/sistema-contable/specs/004-professional-transaction-ui/quickstart.md) to inspect responsiveness, month navigation, custom date range toggling, account autocomplete search, and form balancing.

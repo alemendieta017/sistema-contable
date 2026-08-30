@@ -3,10 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { IncomeStatementForecastUseCase } from '../../src/application/reports/income-statement-forecast.use-case';
 import { CashFlowStatementForecastUseCase } from '../../src/application/reports/cash-flow-statement.use-case';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
+import { CashFlowDirection, FlowIntention } from '@sistema-contable/shared';
 
 describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
   let incomeUseCase: IncomeStatementForecastUseCase;
@@ -21,7 +22,7 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
   beforeEach(async () => {
     mockEntityManager = {
       findOne: jest.fn().mockImplementation((cls, options) => {
-        if (cls === FiscalYearEntity) {
+        if (cls === PeriodEntity) {
           return mockFiscalYearRepo.findOne(options);
         }
         if (cls === BudgetEntity) {
@@ -97,7 +98,7 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
         IncomeStatementForecastUseCase,
         CashFlowStatementForecastUseCase,
         {
-          provide: getRepositoryToken(FiscalYearEntity),
+          provide: getRepositoryToken(PeriodEntity),
           useValue: mockFiscalYearRepo,
         },
         {
@@ -604,6 +605,220 @@ describe('Financial Forecast Reports (Income Statement & Cash Flow)', () => {
       expect(result.months).toHaveLength(12);
       expect(result.months[0].periodName).toBe('Periodo 01/2026');
       expect(result.months[11].periodName).toBe('2026-12');
+    });
+  });
+
+  describe('Four-Quadrant Categorization & Rolling Cash Flow Mathematical Engine', () => {
+    // Pure mathematical function mimicking the calculation engine in GetBudgetMatrixUseCase
+    function calculateRollingCashFlow(
+      periods: Array<{ id: string; name: string }>,
+      items: Array<{
+        periodId: string;
+        accountType: 'INCOME' | 'EXPENSE' | 'ASSET' | 'LIABILITY' | 'EQUITY';
+        amount: number;
+        cashFlowDirection?: CashFlowDirection | null;
+        flowIntention?: FlowIntention | null;
+      }>,
+      initialCashBalance: number,
+    ) {
+      const totalInflows: Record<string, number> & { total: number } = { total: 0 };
+      const operatingExpenses: Record<string, number> & { total: number } = { total: 0 };
+      const operatingSurplus: Record<string, number> & { total: number } = { total: 0 };
+      const investmentsAndSavings: Record<string, number> & { total: number } = { total: 0 };
+      const debtFinancing: Record<string, number> & { total: number } = { total: 0 };
+      const netCashFlow: Record<string, number> & { total: number } = { total: 0 };
+      const openingCash: Record<string, number> = {};
+      const closingCash: Record<string, number> = {};
+      const shortfallAlerts: Record<string, { isNegative: boolean; shortfall: number }> = {};
+
+      let currentCash = initialCashBalance;
+
+      for (let i = 0; i < periods.length; i++) {
+        const p = periods[i];
+        const periodItems = items.filter((it) => it.periodId === p.id);
+
+        let inflows = 0;
+        let expenses = 0;
+        let savings = 0;
+        let debt = 0;
+
+        for (const item of periodItems) {
+          const val = Number(item.amount) || 0;
+          if (
+            item.accountType === 'INCOME' ||
+            item.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO
+          ) {
+            inflows += val;
+          } else if (item.accountType === 'EXPENSE') {
+            expenses += val;
+          } else if (
+            item.accountType === 'ASSET' ||
+            item.flowIntention === FlowIntention.INVEST ||
+            item.flowIntention === FlowIntention.SAVE
+          ) {
+            savings += val;
+          } else if (
+            item.accountType === 'LIABILITY' ||
+            item.accountType === 'EQUITY' ||
+            item.flowIntention === FlowIntention.PAY
+          ) {
+            debt += val;
+          }
+        }
+
+        totalInflows[p.id] = inflows;
+        totalInflows.total += inflows;
+
+        operatingExpenses[p.id] = expenses;
+        operatingExpenses.total += expenses;
+
+        const surplus = inflows - expenses;
+        operatingSurplus[p.id] = surplus;
+        operatingSurplus.total += surplus;
+
+        investmentsAndSavings[p.id] = savings;
+        investmentsAndSavings.total += savings;
+
+        debtFinancing[p.id] = debt;
+        debtFinancing.total += debt;
+
+        const net = surplus - savings - debt;
+        netCashFlow[p.id] = net;
+        netCashFlow.total += net;
+
+        openingCash[p.id] = currentCash;
+        const closing = currentCash + net;
+        closingCash[p.id] = closing;
+
+        shortfallAlerts[p.id] = {
+          isNegative: closing < 0,
+          shortfall: closing < 0 ? Math.abs(closing) : 0,
+        };
+
+        currentCash = closing;
+      }
+
+      return {
+        totalInflows,
+        operatingExpenses,
+        operatingSurplus,
+        investmentsAndSavings,
+        debtFinancing,
+        netCashFlow,
+        openingCash,
+        closingCash,
+        shortfallAlerts,
+      };
+    }
+
+    it('should correctly classify all 4 quadrants and compute operating surplus vs net cash flow', () => {
+      const periods = [
+        { id: 'p-1', name: '2026-08' },
+        { id: 'p-2', name: '2026-09' },
+      ];
+
+      const items = [
+        // Month 1: Salary = 3500, Expenses = 1800, Investment = 500, Debt Payment = 400
+        { periodId: 'p-1', accountType: 'INCOME' as const, amount: 3500 },
+        { periodId: 'p-1', accountType: 'EXPENSE' as const, amount: 1800 },
+        {
+          periodId: 'p-1',
+          accountType: 'ASSET' as const,
+          amount: 500,
+          flowIntention: FlowIntention.INVEST,
+        },
+        {
+          periodId: 'p-1',
+          accountType: 'LIABILITY' as const,
+          amount: 400,
+          flowIntention: FlowIntention.PAY,
+        },
+
+        // Month 2: Salary = 3500, Expenses = 2000, Investment = 800, Debt Payment = 400
+        { periodId: 'p-2', accountType: 'INCOME' as const, amount: 3500 },
+        { periodId: 'p-2', accountType: 'EXPENSE' as const, amount: 2000 },
+        {
+          periodId: 'p-2',
+          accountType: 'ASSET' as const,
+          amount: 800,
+          flowIntention: FlowIntention.INVEST,
+        },
+        {
+          periodId: 'p-2',
+          accountType: 'LIABILITY' as const,
+          amount: 400,
+          flowIntention: FlowIntention.PAY,
+        },
+      ];
+
+      const initialCash = 2500;
+      const forecast = calculateRollingCashFlow(periods, items, initialCash);
+
+      // Month 1 checks:
+      // Operating Surplus = 3500 - 1800 = 1700
+      expect(forecast.operatingSurplus['p-1']).toBe(1700);
+      // Net Cash Flow = 1700 - 500 - 400 = 800
+      expect(forecast.netCashFlow['p-1']).toBe(800);
+      // Opening Cash = 2500, Closing Cash = 2500 + 800 = 3300
+      expect(forecast.openingCash['p-1']).toBe(2500);
+      expect(forecast.closingCash['p-1']).toBe(3300);
+      expect(forecast.shortfallAlerts['p-1']).toEqual({ isNegative: false, shortfall: 0 });
+
+      // Month 2 checks:
+      // Operating Surplus = 3500 - 2000 = 1500
+      expect(forecast.operatingSurplus['p-2']).toBe(1500);
+      // Net Cash Flow = 1500 - 800 - 400 = 300
+      expect(forecast.netCashFlow['p-2']).toBe(300);
+      // Opening Cash = 3300, Closing Cash = 3300 + 300 = 3600
+      expect(forecast.openingCash['p-2']).toBe(3300);
+      expect(forecast.closingCash['p-2']).toBe(3600);
+      expect(forecast.shortfallAlerts['p-2']).toEqual({ isNegative: false, shortfall: 0 });
+
+      // Totals check
+      expect(forecast.totalInflows.total).toBe(7000);
+      expect(forecast.operatingExpenses.total).toBe(3800);
+      expect(forecast.operatingSurplus.total).toBe(3200);
+      expect(forecast.investmentsAndSavings.total).toBe(1300);
+      expect(forecast.debtFinancing.total).toBe(800);
+      expect(forecast.netCashFlow.total).toBe(1100);
+    });
+
+    it('should accurately trigger negative cash alerts and calculate shortfall when closing cash drops below zero', () => {
+      const periods = [
+        { id: 'p-1', name: '2026-08' },
+        { id: 'p-2', name: '2026-09' },
+        { id: 'p-3', name: '2026-10' },
+      ];
+
+      const items = [
+        // Month 1: Inflow 1000, Outflow 2000 -> Net -1000
+        { periodId: 'p-1', accountType: 'INCOME' as const, amount: 1000 },
+        { periodId: 'p-1', accountType: 'EXPENSE' as const, amount: 2000 },
+        // Month 2: Inflow 1000, Outflow 1500 -> Net -500
+        { periodId: 'p-2', accountType: 'INCOME' as const, amount: 1000 },
+        { periodId: 'p-2', accountType: 'EXPENSE' as const, amount: 1500 },
+        // Month 3: Inflow 3000, Outflow 1000 -> Net +2000
+        { periodId: 'p-3', accountType: 'INCOME' as const, amount: 3000 },
+        { periodId: 'p-3', accountType: 'EXPENSE' as const, amount: 1000 },
+      ];
+
+      const initialCash = 800; // Starting with 800
+      const forecast = calculateRollingCashFlow(periods, items, initialCash);
+
+      // Month 1: 800 - 1000 = -200 -> Shortfall alert
+      expect(forecast.openingCash['p-1']).toBe(800);
+      expect(forecast.closingCash['p-1']).toBe(-200);
+      expect(forecast.shortfallAlerts['p-1']).toEqual({ isNegative: true, shortfall: 200 });
+
+      // Month 2: -200 - 500 = -700 -> Shortfall alert
+      expect(forecast.openingCash['p-2']).toBe(-200);
+      expect(forecast.closingCash['p-2']).toBe(-700);
+      expect(forecast.shortfallAlerts['p-2']).toEqual({ isNegative: true, shortfall: 700 });
+
+      // Month 3: -700 + 2000 = 1300 -> Recovered
+      expect(forecast.openingCash['p-3']).toBe(-700);
+      expect(forecast.closingCash['p-3']).toBe(1300);
+      expect(forecast.shortfallAlerts['p-3']).toEqual({ isNegative: false, shortfall: 0 });
     });
   });
 });

@@ -2,7 +2,7 @@
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/022-dual-mode-transactions/plan.md
+at specs/023-personal-wealth-hub/plan.md
 
 <!-- SPECKIT END -->
 
@@ -91,7 +91,21 @@ La lógica backend se estructura en **Bounded Contexts (módulos funcionales)** 
 
 ---
 
-## 4. Quality Gates y Criterios de Aceptación (Definition of Done)
+## 4. Persistencia, Migraciones TypeORM y Mantenimiento de Seeds
+
+Cualquier cambio estructural en la base de datos (entidades TypeORM `@Entity`, columnas, relaciones, restricciones, enums o tablas eliminadas/creadas) **exige obligatoriamente**:
+
+1. **Migraciones TypeORM Versionadas:**
+   - Crear el archivo de migración TypeORM correspondiente en `backend/src/infrastructure/database/migrations/` con timestamp secuencial.
+   - Toda migración debe implementar tanto `up(queryRunner)` como `down(queryRunner)` para garantizar reversibilidad segura.
+   - **Prohibido** dejar cambios de esquema que dependan únicamente de `synchronize: true`.
+2. **Mantenimiento y Coherencia de Seeds:**
+   - Si se alteran entidades, relaciones, planes de cuentas o períodos, los seeders (`backend/src/infrastructure/database/seeds/`) deben actualizarse inmediatamente.
+   - El seed por defecto (`default.scenario.ts`) y el comando `npm run db:reset` deben ejecutarse con éxito (`exit code 0`), garantizando que cualquier desarrollador que clone el repositorio pueda inicializar la base de datos sin errores ni dependencias rotas.
+
+---
+
+## 5. Quality Gates y Criterios de Aceptación (Definition of Done)
 
 Ninguna tarea se considera completa ni entregable si no supera el 100% de estas verificaciones:
 
@@ -99,10 +113,11 @@ Ninguna tarea se considera completa ni entregable si no supera el 100% de estas 
 2. **Prettier:** Código 100% formateado con `npm run format:check` (corregir con `npm run format`).
 3. **Type-Check:** Cero errores de tipos en todos los workspaces con `npm run type-check`. Cero uso de `any` injustificado.
 4. **Tests en Verde:** Suite completa en verde con `npm test`. Cobertura obligatoria del 100% en motores de cálculo financiero y balance contable.
+5. **Migraciones y Seeds:** Si hubo cambios en entidades o esquema, migración TypeORM creada y `npm run db:reset` ejecutado exitosamente.
 
 ---
 
-## 5. Comando Único de Validación
+## 6. Comando Único de Validación
 
 Antes de reportar una tarea como completada, ejecutar obligatoriamente:
 

@@ -38,4 +38,3 @@
 - All clarifications resolved on 2026-07-02:
   1. Period UI & Recalculation: Restore period toggle UI in a "Gestión de Periodos" / "Configuración Financiera" module. Changing a past period triggers a forward cascade recalculation, showing a blocking loading overlay "Actualizando saldos históricos..." in the UI.
   2. Balance General Filters: Standard filters grouped into a top bar with three modalities (As of Date, By Period, Comparative with custom selected periods), removing the account depth filter since hierarchy configuration is not available in UI for Balance Sheet accounts.
-

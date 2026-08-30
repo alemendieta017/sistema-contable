@@ -1,11 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
-import { MatrixCellUpdate } from '@sistema-contable/shared';
+import { MatrixCellUpdate, BatchUpdateBudgetMatrixRequest } from '@sistema-contable/shared';
 
 @Injectable()
 export class UpdateBudgetMatrixUseCase {
@@ -13,39 +12,43 @@ export class UpdateBudgetMatrixUseCase {
 
   async execute(
     userId: string,
-    fiscalYearId: string,
-    updates: MatrixCellUpdate[],
+    updatesOrBodyOrFiscalYear: string | MatrixCellUpdate[] | BatchUpdateBudgetMatrixRequest,
+    maybeUpdates?: MatrixCellUpdate[],
   ): Promise<{ success: boolean; updatedCount: number }> {
+    let updates: MatrixCellUpdate[] = [];
+
+    if (Array.isArray(updatesOrBodyOrFiscalYear)) {
+      updates = updatesOrBodyOrFiscalYear;
+    } else if (
+      typeof updatesOrBodyOrFiscalYear === 'object' &&
+      updatesOrBodyOrFiscalYear !== null &&
+      'updates' in updatesOrBodyOrFiscalYear
+    ) {
+      updates = updatesOrBodyOrFiscalYear.updates || [];
+    } else if (typeof updatesOrBodyOrFiscalYear === 'string') {
+      updates = maybeUpdates || [];
+    }
+
     if (!updates || updates.length === 0) {
       return { success: true, updatedCount: 0 };
     }
 
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periods = await manager.find(PeriodEntity, {
+        where: { userId },
       });
 
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
-      }
-
       const periodMap = new Map<string, PeriodEntity>();
-      for (const p of fiscalYear.periods || []) {
+      for (const p of periods) {
         periodMap.set(p.id, p);
       }
 
-      // Validate all periods in updates belong to this FY and are OPEN/PLANNING
+      // Validate all periods in updates belong to this user
       for (const update of updates) {
         const period = periodMap.get(update.periodId);
         if (!period) {
           throw new BadRequestException(
-            `Period '${update.periodId}' does not belong to fiscal year '${fiscalYearId}'.`,
-          );
-        }
-        if (period.status === 'CLOSED') {
-          throw new BadRequestException(
-            `Cannot modify budget for closed accounting period '${period.name}'.`,
+            `Period '${update.periodId}' does not exist for this user.`,
           );
         }
       }

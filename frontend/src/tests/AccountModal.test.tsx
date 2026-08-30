@@ -31,13 +31,7 @@ describe('AccountModal (US2)', () => {
   });
 
   test('should show liquidity toggle when type is ASSET and auto-select on keywords', async () => {
-    render(
-      <AccountModal
-        onClose={jest.fn()}
-        onSuccess={jest.fn()}
-        parentCandidates={[]}
-      />,
-    );
+    render(<AccountModal onClose={jest.fn()} onSuccess={jest.fn()} parentCandidates={[]} />);
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Es cuenta de Efectivo\/Banco/i)).toBeInTheDocument();
@@ -70,13 +64,7 @@ describe('AccountModal (US2)', () => {
     const onSuccessMock = jest.fn();
     const onCloseMock = jest.fn();
 
-    render(
-      <AccountModal
-        onClose={onCloseMock}
-        onSuccess={onSuccessMock}
-        parentCandidates={[]}
-      />,
-    );
+    render(<AccountModal onClose={onCloseMock} onSuccess={onSuccessMock} parentCandidates={[]} />);
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Es cuenta de Efectivo\/Banco/i)).toBeInTheDocument();

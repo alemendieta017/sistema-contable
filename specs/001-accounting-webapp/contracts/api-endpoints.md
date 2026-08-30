@@ -7,7 +7,9 @@ This document defines the REST API contract between the NestJS backend and the N
 ## 1. Authentication
 
 ### 1.1. User Registration
+
 `POST /api/auth/register`
+
 - **Request Body**:
   ```json
   {
@@ -25,7 +27,9 @@ This document defines the REST API contract between the NestJS backend and the N
   ```
 
 ### 1.2. User Login
+
 `POST /api/auth/login`
+
 - **Request Body**:
   ```json
   {
@@ -49,7 +53,9 @@ This document defines the REST API contract between the NestJS backend and the N
 ## 2. Accounts and Categories (Chart of Accounts)
 
 ### 2.1. List Accounts
+
 `GET /api/accounts`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Response (200 OK)**:
   ```json
@@ -85,7 +91,9 @@ This document defines the REST API contract between the NestJS backend and the N
   ```
 
 ### 2.2. Create Account
+
 `POST /api/accounts`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
   ```json
@@ -115,7 +123,9 @@ This document defines the REST API contract between the NestJS backend and the N
 ## 3. Transactions (Double-Entry Ledger)
 
 ### 3.1. Register Transaction (Asiento Libre / Multi-Item)
+
 `POST /api/transactions`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
   ```json
@@ -178,7 +188,9 @@ This document defines the REST API contract between the NestJS backend and the N
   ```
 
 ### 3.2. List Transactions
+
 `GET /api/transactions`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Query Params**: `startDate`, `endDate`, `accountId` (optional)
 - **Response (200 OK)**:
@@ -195,7 +207,9 @@ This document defines the REST API contract between the NestJS backend and the N
   ```
 
 ### 3.3. Reverse/Void Transaction (Inmutabilidad)
+
 `POST /api/transactions/:id/reverse`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Response (201 Created)**:
   ```json
@@ -230,7 +244,9 @@ This document defines the REST API contract between the NestJS backend and the N
 ## 4. Budgets
 
 ### 4.1. List Budgets with Consumption
+
 `GET /api/budgets`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Query Params**: `period` (Format: `YYYYMM`, e.g. `202606`)
 - **Response (200 OK)**:
@@ -254,7 +270,9 @@ This document defines the REST API contract between the NestJS backend and the N
 ## 5. Reports and Exports
 
 ### 5.1. Excel Export
+
 `GET /api/reports/excel`
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Query Params**: `startDate`, `endDate`
 - **Response (200 OK)**: Stream of file with Content-Type `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.

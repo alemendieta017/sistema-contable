@@ -32,12 +32,14 @@ docker exec -w /app/frontend sistema-contable-frontend npm run test
 ## 2. Manual Verification Scenarios
 
 ### Scenario A: Navigating to the Dedicated Page
+
 1. Open the application in your browser (usually `http://localhost:3000`).
 2. Log in with your credentials.
 3. Click on the sidebar **Nueva Transacción** button or click **Nueva Transacción** in the page header.
 4. **Expected Outcome**: The browser redirects to `http://localhost:3000/transactions/new`. On desktop, the sidebar is visible, but the transaction form occupies the spacious main content area. On mobile viewports (< 640px), the sidebar, header, and bottom navigation bar are hidden, rendering the form in fullscreen distraction-free mode.
 
 ### Scenario B: Recording a Transaction (Create Mode)
+
 1. Navigate to `/transactions/new`.
 2. Enter a date and time (using the new date-time local input).
 3. Enter a description: `"Compra de suministros oficina"`.
@@ -49,6 +51,7 @@ docker exec -w /app/frontend sistema-contable-frontend npm run test
 9. **Expected Outcome**: The transaction is saved. You are redirected to `/transactions` showing the new entry in the list.
 
 ### Scenario C: Editing an Existing Transaction (Edit Mode)
+
 1. Go to the transaction list `/transactions`.
 2. Locate `"Compra de suministros oficina"` and click the **Editar** button.
 3. **Expected Outcome**: You are redirected to `/transactions/new?edit=<id>`. The form is populated with the transaction's description, date/time, and entries.
@@ -60,12 +63,14 @@ docker exec -w /app/frontend sistema-contable-frontend npm run test
 9. **Expected Outcome**: The transaction is updated. You are redirected to `/transactions` showing the updated description and balanced amount.
 
 ### Scenario D: Cloning a Transaction (Clone Mode)
+
 1. In `/transactions`, find the updated transaction and click **Copiar** (Clone).
 2. **Expected Outcome**: You are redirected to `/transactions/new?cloneFrom=<id>`. The description and entries are populated, but the date defaults to Today's current date/time instead of the original transaction date.
 3. Keep the values as is and click **Guardar Asiento**.
 4. **Expected Outcome**: A brand new transaction is created. The original transaction remains unaffected.
 
 ### Scenario E: Deletion Confirmation
+
 1. In `/transactions`, find the cloned transaction.
 2. Click the **Eliminar** (Delete) button.
 3. **Expected Outcome**: An explicit confirmation dialog modal appears asking if you want to permanently delete the transaction.

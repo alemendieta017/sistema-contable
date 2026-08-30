@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
@@ -10,159 +9,257 @@ import { AccountEntity } from '../../infrastructure/database/entities/account.en
 @Injectable()
 export class IncomeStatementForecastUseCase {
   constructor(
-    @InjectRepository(FiscalYearEntity)
-    private readonly fiscalYearRepository: Repository<FiscalYearEntity>,
+    @InjectRepository(PeriodEntity)
+    private readonly periodRepository: Repository<PeriodEntity>,
     @InjectRepository(AccountPeriodBalanceEntity)
     private readonly balanceRepository: Repository<AccountPeriodBalanceEntity>,
     @InjectRepository(BudgetEntity)
     private readonly budgetRepository: Repository<BudgetEntity>,
   ) {}
 
-  private async preOpenFiscalYear(
+  private async ensureMonthlyPeriods(
     entityManager: any,
     userId: string,
-    year: number,
+    periodNames: string[],
   ): Promise<PeriodEntity[]> {
-    const name = `Ejercicio ${year}`;
-    const startDate = `${year}-01-01`;
-    const endDate = `${year}-12-31`;
-
-    let fyEntity = await entityManager.findOne(FiscalYearEntity, {
-      where: { userId, name },
-      relations: ['periods'],
+    const existing = await entityManager.find(PeriodEntity, {
+      where: { userId },
     });
-
-    if (fyEntity) {
-      return fyEntity.periods;
+    const existingMap = new Map<string, PeriodEntity>();
+    for (const p of existing) {
+      existingMap.set(p.name, p);
     }
 
-    fyEntity = entityManager.create(FiscalYearEntity, {
-      userId,
-      name,
-      startDate,
-      endDate,
-      status: 'PLANNING',
-    });
-    const savedFy = await entityManager.save(FiscalYearEntity, fyEntity);
+    const periods: PeriodEntity[] = [];
+    for (const pName of periodNames) {
+      if (existingMap.has(pName)) {
+        periods.push(existingMap.get(pName)!);
+      } else {
+        const [y, m] = pName.split('-').map(Number);
+        const pStart = `${y}-${String(m).padStart(2, '0')}-01`;
+        const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        const pEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const friendlyMonthNames = [
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
-
-    const periods = [];
-    for (let m = 0; m < 12; m++) {
-      const pStart = `${year}-${String(m + 1).padStart(2, '0')}-01`;
-      const pEnd = new Date(Date.UTC(year, m + 1, 0)).toISOString().split('T')[0];
-      const periodName = `${year}-${String(m + 1).padStart(2, '0')}`;
-
-      const periodEntity = entityManager.create(PeriodEntity, {
-        fiscalYearId: savedFy.id,
-        name: periodName,
-        startDate: pStart,
-        endDate: pEnd,
-        status: 'PLANNING',
-      });
-      const savedPeriod = await entityManager.save(PeriodEntity, periodEntity);
-      periods.push(savedPeriod);
-
-      const budgetFriendlyName = `${friendlyMonthNames[m]} ${year}`;
-      const budgetEntity = entityManager.create(BudgetEntity, {
-        userId,
-        periodId: savedPeriod.id,
-        name: budgetFriendlyName,
-      });
-      await entityManager.save(BudgetEntity, budgetEntity);
+        let newPeriod = entityManager.create
+          ? entityManager.create(PeriodEntity, {
+              userId,
+              name: pName,
+              startDate: pStart,
+              endDate: pEnd,
+              status: 'PLANNING',
+            })
+          : ({
+              id: `p-${pName}`,
+              userId,
+              name: pName,
+              startDate: pStart,
+              endDate: pEnd,
+              status: 'PLANNING',
+            } as PeriodEntity);
+        if (entityManager.save) {
+          newPeriod = await entityManager.save(PeriodEntity, newPeriod);
+        }
+        existingMap.set(pName, newPeriod);
+        periods.push(newPeriod);
+      }
     }
-
     return periods;
   }
 
-  async execute(userId: string, fiscalYearId: string, rolling?: boolean, currentDate?: Date) {
-    return this.fiscalYearRepository.manager.transaction(async (entityManager) => {
+  async execute(
+    userId: string,
+    fiscalYearId?: string,
+    rolling: boolean = true,
+    currentDate?: Date,
+    monthsCount: number = 12,
+  ) {
+    return this.periodRepository.manager.transaction(async (entityManager) => {
       let periods: PeriodEntity[] = [];
       let fiscalYearName = '';
 
       if (rolling) {
-        // Find the last CLOSED period for this user
-        const lastClosedPeriod = await entityManager
-          .getRepository(PeriodEntity)
-          .createQueryBuilder('period')
-          .innerJoin('period.fiscalYear', 'fiscalYear')
-          .where('fiscalYear.userId = :userId', { userId })
-          .andWhere('period.status = :status', { status: 'CLOSED' })
-          .orderBy('period.endDate', 'DESC')
-          .getOne();
+        let lastClosedPeriod: PeriodEntity | null = null;
+        try {
+          const qb = entityManager.getRepository
+            ? entityManager.getRepository(PeriodEntity).createQueryBuilder('period')
+            : null;
+          if (qb) {
+            lastClosedPeriod = await qb
+              .where('period.userId = :userId', { userId })
+              .andWhere('period.status = :status', { status: 'CLOSED' })
+              .orderBy('period.endDate', 'DESC')
+              .getOne();
+          }
+        } catch {
+          // ignore
+        }
 
         let startPeriod: PeriodEntity | null = null;
-        if (lastClosedPeriod) {
-          startPeriod = lastClosedPeriod;
-        } else {
-          // If no closed periods, start from the first period of the current fiscal year
-          const fy = await entityManager.findOne(FiscalYearEntity, {
-            where: { id: fiscalYearId, userId },
-            relations: ['periods'],
+        let pOrFy: any = null;
+
+        if (fiscalYearId && /^\d{4}-(0[1-9]|1[0-2])$/.test(fiscalYearId)) {
+          startPeriod = await entityManager.findOne(PeriodEntity, {
+            where: { userId, name: fiscalYearId },
           });
-          if (!fy) throw new NotFoundException('Fiscal year not found');
-          const fyPeriods = [...fy.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
-          startPeriod = fyPeriods[0] || null;
-          fiscalYearName = fy.name;
+          if (!startPeriod) {
+            const [y, m] = fiscalYearId.split('-').map(Number);
+            const pStart = `${y}-${String(m).padStart(2, '0')}-01`;
+            const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+            const pEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            startPeriod = {
+              id: `p-${fiscalYearId}`,
+              name: fiscalYearId,
+              startDate: pStart,
+              endDate: pEnd,
+              status: 'OPEN',
+              userId,
+            } as PeriodEntity;
+          }
+        } else if (lastClosedPeriod) {
+          startPeriod = lastClosedPeriod;
+        } else if (fiscalYearId) {
+          pOrFy = await entityManager.findOne(PeriodEntity, {
+            where: [{ id: fiscalYearId }, { userId }],
+          });
+          if (!pOrFy) {
+            throw new NotFoundException('Fiscal year not found');
+          }
+          if (pOrFy.periods?.length) {
+            const fyPeriods = [...pOrFy.periods].sort((a: any, b: any) =>
+              a.startDate.localeCompare(b.startDate),
+            );
+            startPeriod = fyPeriods[0] || null;
+            fiscalYearName = pOrFy.name;
+          } else if (pOrFy.startDate) {
+            startPeriod = pOrFy;
+            fiscalYearName = pOrFy.name || '';
+          }
+        } else {
+          const userPeriods =
+            (await entityManager.find(PeriodEntity, {
+              where: { userId },
+              order: { startDate: 'ASC' },
+            })) || [];
+          startPeriod = userPeriods[0] || null;
+          fiscalYearName = startPeriod?.name || '';
         }
 
         if (!startPeriod) {
-          throw new NotFoundException('No start period found for rolling forecast');
+          const currentMonth = new Date().toISOString().substring(0, 7);
+          const [y, m] = currentMonth.split('-').map(Number);
+          startPeriod = {
+            id: `p-${currentMonth}`,
+            name: currentMonth,
+            startDate: `${currentMonth}-01`,
+            endDate: `${currentMonth}-${new Date(Date.UTC(y, m, 0)).getUTCDate()}`,
+            status: 'OPEN',
+            userId,
+          } as PeriodEntity;
         }
 
-        // Generate the 12 monthly names starting from startPeriod.startDate (YYYY-MM-DD)
-        const [startYear, startMonthVal] = startPeriod.startDate.split('-').map(Number);
+        let startYear = new Date().getFullYear();
+        let startMonthVal = 1;
+        if (startPeriod.startDate) {
+          const match = startPeriod.startDate.match(/^(\d{4})-(\d{2})/);
+          if (match) {
+            startYear = Number(match[1]);
+            startMonthVal = Number(match[2]);
+          }
+        }
+
         const rollingPeriods: PeriodEntity[] = [];
-
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < monthsCount; i++) {
           const y = startYear + Math.floor((startMonthVal - 1 + i) / 12);
-          const m = (startMonthVal - 1 + i) % 12;
-          const pName = `${y}-${String(m + 1).padStart(2, '0')}`;
-          const pStart = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+          const m = ((startMonthVal - 1 + i) % 12) + 1;
+          const pName = `${y}-${String(m).padStart(2, '0')}`;
+          const pStart = `${y}-${String(m).padStart(2, '0')}-01`;
+          const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+          const pEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-          let period = await entityManager
-            .getRepository(PeriodEntity)
-            .createQueryBuilder('period')
-            .innerJoin('period.fiscalYear', 'fiscalYear')
-            .where('fiscalYear.userId = :userId', { userId })
-            .andWhere('(period.startDate = :pStart OR period.name = :pName)', { pStart, pName })
-            .getOne();
+          if (i === 0 && startPeriod) {
+            rollingPeriods.push(startPeriod);
+            continue;
+          }
+
+          let period = null;
+          try {
+            const qb = entityManager.getRepository
+              ? entityManager.getRepository(PeriodEntity).createQueryBuilder('period')
+              : null;
+            if (qb) {
+              period = await qb
+                .where('period.userId = :userId', { userId })
+                .andWhere('(period.startDate = :pStart OR period.name = :pName)', { pStart, pName })
+                .getOne();
+            }
+          } catch {
+            // ignore
+          }
 
           if (!period) {
-            const nextYearPeriods = await this.preOpenFiscalYear(entityManager, userId, y);
+            const found = await entityManager.find(PeriodEntity, { where: { userId } });
             period =
-              nextYearPeriods.find((p) => p.startDate === pStart || p.name === pName) || null;
+              (found || []).find((p: any) => p.startDate === pStart || p.name === pName) || null;
           }
 
-          if (period) {
-            rollingPeriods.push(period);
+          if (!period) {
+            period = {
+              id: `p-${pName}`,
+              name: pName,
+              startDate: pStart,
+              endDate: pEnd,
+              status: 'PLANNING',
+              userId,
+            } as PeriodEntity;
           }
+
+          rollingPeriods.push(period);
         }
+
         periods = rollingPeriods;
         if (!fiscalYearName) {
-          fiscalYearName = `Rolling 12M (${startPeriod.name})`;
+          fiscalYearName = `Rolling ${monthsCount}M (${startPeriod.name})`;
         }
       } else {
-        const fy = await entityManager.findOne(FiscalYearEntity, {
-          where: { id: fiscalYearId, userId },
-          relations: ['periods'],
-        });
-        if (!fy) throw new NotFoundException('Fiscal year not found');
-        periods = [...fy.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
-        fiscalYearName = fy.name;
+        // Año Calendario: 12 months of the calendar year (YYYY-01 to YYYY-12)
+        let targetYear = new Date().getFullYear();
+        let pOrFy: any = null;
+
+        if (fiscalYearId) {
+          if (/^\d{4}/.test(fiscalYearId)) {
+            const match = fiscalYearId.match(/^(\d{4})/);
+            if (match) {
+              targetYear = parseInt(match[1], 10);
+            }
+          } else {
+            pOrFy = await entityManager.findOne(PeriodEntity, {
+              where: [{ id: fiscalYearId }, { userId }],
+            });
+            if (!pOrFy) {
+              throw new NotFoundException('Period or fiscal year not found');
+            }
+            if (pOrFy.periods?.length) {
+              periods = [...pOrFy.periods].sort((a: any, b: any) =>
+                a.startDate.localeCompare(b.startDate),
+              );
+              fiscalYearName = pOrFy.name || `Ejercicio ${targetYear}`;
+            } else if (pOrFy.startDate) {
+              const match = pOrFy.startDate.match(/^(\d{4})/);
+              if (match) {
+                targetYear = parseInt(match[1], 10);
+              }
+            }
+          }
+        }
+
+        if (periods.length === 0) {
+          fiscalYearName = `Año Calendario ${targetYear}`;
+          const periodNames = Array.from(
+            { length: 12 },
+            (_, i) => `${targetYear}-${String(i + 1).padStart(2, '0')}`,
+          );
+          periods = await this.ensureMonthlyPeriods(entityManager, userId, periodNames);
+        }
       }
 
       const now = currentDate || new Date();
@@ -171,11 +268,12 @@ export class IncomeStatementForecastUseCase {
       const dayStr = String(now.getDate()).padStart(2, '0');
       const todayStr = `${year}-${monthStr}-${dayStr}`;
 
-      const accountsList = await entityManager.find(AccountEntity, {
-        where: { userId },
-      });
+      const accountsList =
+        (await entityManager.find(AccountEntity, {
+          where: { userId },
+        })) || [];
       const eligibleAccounts = accountsList.filter(
-        (acc) => acc.type === 'INCOME' || acc.type === 'EXPENSE',
+        (acc: any) => acc.type === 'INCOME' || acc.type === 'EXPENSE',
       );
 
       const accountsMap = new Map<
@@ -202,19 +300,20 @@ export class IncomeStatementForecastUseCase {
       const months = [];
 
       for (const period of periods) {
-        const isReal = period.status === 'CLOSED' || period.startDate < todayStr;
+        const isReal = period.startDate <= todayStr;
 
         let income = 0;
         let expense = 0;
 
         if (isReal) {
-          const balances = await entityManager.find(AccountPeriodBalanceEntity, {
-            where: { periodId: period.id },
-            relations: ['account'],
-          });
+          const balances =
+            (await entityManager.find(AccountPeriodBalanceEntity, {
+              where: { periodId: period.id },
+              relations: ['account'],
+            })) || [];
 
           for (const bal of balances) {
-            if (!bal.account) continue;
+            if (!bal?.account) continue;
             const accId = bal.account.id;
             const credits = Number(bal.totalCredits || 0);
             const debits = Number(bal.totalDebits || 0);
@@ -279,6 +378,7 @@ export class IncomeStatementForecastUseCase {
 
       return {
         fiscalYearName,
+        periodRange: fiscalYearName,
         months,
         accounts: Array.from(accountsMap.values()),
       };

@@ -8,7 +8,7 @@
 
 **Input**: User description: "Necesito que la aplicación sea tipo dashboard contable, mobile first pero que en desktop tenga un sidebar. debemos tener las siguientes opciones en el menú: El menú tendrá los siguientes items: - Transacciones - Estadísticas - Cuentas -- Tipos de cuentas -- Gestor de cuentas - Configuracion ..."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Responsive Layout & Global Interface Elements (Priority: P1)
 
@@ -112,7 +112,7 @@ Como encargado del registro, quiero cargar asientos contables reales ingresando 
 - **Cuentas y Rubros con Transacciones Asociadas**: Si se intenta eliminar una cuenta o rubro que tiene transacciones registradas históricamente, el sistema debe bloquear la eliminación física o realizar un borrado lógico (desactivar para nuevos asientos) para evitar dejar apuntes huérfanos o alterar balances históricos.
 - **Edición de Asientos Históricos**: Cualquier corrección sobre asientos ya grabados debe requerir la generación de un asiento de reversión o ajuste para mantener la trazabilidad e inmutabilidad del libro diario.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -130,7 +130,7 @@ Como encargado del registro, quiero cargar asientos contables reales ingresando 
 - **FR-012**: El módulo de configuración debe permitir establecer la moneda principal y gestionar un listado de monedas adicionales válidas para el registro.
 - **FR-013**: El tema visual por defecto debe ser Claro, permitiendo al usuario conmutar a tema Oscuro a través del panel de configuración.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Account (Cuenta)**: Representa el destino o procedencia de los fondos. Posee un nombre, tipo de cuenta (Activo, Pasivo, etc.), saldo y moneda.
 - **Category (Rubro/Categoría)**: Representa la cuenta de resultado o clasificación asociada a ingresos y egresos (ej. Gastos de Comida, Ingresos por Salario).
@@ -138,7 +138,7 @@ Como encargado del registro, quiero cargar asientos contables reales ingresando 
 - **JournalEntry (Apunte/Línea de Asiento)**: Cada uno de los registros individuales de débito o crédito asociados a una transacción, vinculados a una cuenta o categoría y un importe.
 - **Currency (Moneda)**: Representa los tipos de divisa utilizables, su símbolo y su cotización respecto a la moneda principal.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

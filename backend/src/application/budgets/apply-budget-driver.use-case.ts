@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
@@ -21,34 +21,17 @@ export class ApplyBudgetDriverUseCase {
     userId: string,
     params: IBudgetDriverApplyParams,
   ): Promise<{ success: boolean; accountId: string; monthlyAmounts: Record<string, number> }> {
-    const {
-      fiscalYearId,
-      accountId,
-      subRowId,
-      driverType,
-      annualTotal,
-      growthPercentage,
-      sourcePeriodId,
-    } = params;
+    const { accountId, subRowId, driverType, annualTotal, growthPercentage, sourcePeriodId } =
+      params;
 
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periods = await manager.find(PeriodEntity, {
+        where: { userId },
+        order: { startDate: 'ASC' },
       });
-
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
-      }
-
-      const periods = (fiscalYear.periods || []).sort((a, b) =>
-        a.startDate.localeCompare(b.startDate),
-      );
-      const openPeriods = periods.filter((p) => p.status !== 'CLOSED');
-
-      if (openPeriods.length === 0) {
+      if (periods.length === 0) {
         throw new BadRequestException(
-          'No open periods available in fiscal year for driver application.',
+          'No periods available in fiscal year for driver application.',
         );
       }
 
@@ -56,13 +39,13 @@ export class ApplyBudgetDriverUseCase {
 
       if (driverType === 'FLAT_PRORATE') {
         const total = annualTotal ?? 0;
-        const perPeriod = Math.floor((total / openPeriods.length) * 100) / 100;
-        const remainder = Number((total - perPeriod * openPeriods.length).toFixed(2));
+        const perPeriod = Math.floor((total / periods.length) * 100) / 100;
+        const remainder = Number((total - perPeriod * periods.length).toFixed(2));
 
-        for (let i = 0; i < openPeriods.length; i++) {
-          const p = openPeriods[i];
+        for (let i = 0; i < periods.length; i++) {
+          const p = periods[i];
           const val =
-            i === openPeriods.length - 1 ? Number((perPeriod + remainder).toFixed(2)) : perPeriod;
+            i === periods.length - 1 ? Number((perPeriod + remainder).toFixed(2)) : perPeriod;
           monthlyAmounts[p.id] = Math.max(0, val);
         }
       } else if (driverType === 'FORWARD_FILL') {
@@ -85,9 +68,7 @@ export class ApplyBudgetDriverUseCase {
         const targetPeriods = sourceIdx >= 0 ? periods.slice(sourceIdx) : periods;
 
         for (const p of targetPeriods) {
-          if (p.status !== 'CLOSED') {
-            monthlyAmounts[p.id] = fillAmount;
-          }
+          monthlyAmounts[p.id] = fillAmount;
         }
       } else if (driverType === 'PERCENTAGE_GROWTH') {
         if (!sourcePeriodId) {
@@ -115,15 +96,15 @@ export class ApplyBudgetDriverUseCase {
         let currentVal = baseAmount;
         for (let i = 0; i < targetPeriods.length; i++) {
           const p = targetPeriods[i];
-          if (p.status !== 'CLOSED') {
-            monthlyAmounts[p.id] = Number(currentVal.toFixed(2));
-          }
+          monthlyAmounts[p.id] = Number(currentVal.toFixed(2));
           currentVal = currentVal * (1 + growthRate);
         }
       } else if (driverType === 'WEIGHTED_HISTORICAL' || driverType === 'PRIOR_YEAR_ACTUAL') {
         const account = await manager.findOne(AccountEntity, { where: { id: accountId } });
-        const priorYearStart = this.shiftYear(fiscalYear.startDate, -1);
-        const priorYearEnd = this.shiftYear(fiscalYear.endDate, -1);
+        const firstPeriod = periods[0];
+        const lastPeriod = periods[periods.length - 1];
+        const priorYearStart = this.shiftYear(firstPeriod?.startDate || '2025-01-01', -1);
+        const priorYearEnd = this.shiftYear(lastPeriod?.endDate || '2025-12-31', -1);
 
         const priorEntries = await manager
           .createQueryBuilder(JournalEntryEntity, 'entry')
@@ -162,19 +143,19 @@ export class ApplyBudgetDriverUseCase {
 
         if (driverType === 'WEIGHTED_HISTORICAL') {
           const targetTotal = annualTotal ?? 0;
-          for (let i = 0; i < openPeriods.length; i++) {
-            const p = openPeriods[i];
+          for (let i = 0; i < periods.length; i++) {
+            const p = periods[i];
             const weight =
               totalPriorActual > 0
                 ? (periodActuals[p.id] || 0) / totalPriorActual
-                : 1 / openPeriods.length;
+                : 1 / periods.length;
             monthlyAmounts[p.id] = Number((targetTotal * weight).toFixed(2));
           }
         } else {
           // PRIOR_YEAR_ACTUAL
           const mult = 1 + (growthPercentage || 0) / 100;
-          for (let i = 0; i < openPeriods.length; i++) {
-            const p = openPeriods[i];
+          for (let i = 0; i < periods.length; i++) {
+            const p = periods[i];
             const actualVal = Math.max(0, periodActuals[p.id] || 0);
             monthlyAmounts[p.id] = Number((actualVal * mult).toFixed(2));
           }

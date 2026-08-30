@@ -47,16 +47,11 @@ describe('Auth Register (E2E)', () => {
     expect(accRes.status).toBe(200);
     expect(Array.isArray(accRes.body)).toBe(true);
 
-    const netIncomeAcc = accRes.body.find((a: any) => a.systemRole === 'NET_INCOME');
-    const retainedEarningsAcc = accRes.body.find((a: any) => a.systemRole === 'RETAINED_EARNINGS');
+    const capitalAcc = accRes.body.find((a: any) => a.systemRole === 'CAPITAL');
 
-    expect(netIncomeAcc).toBeDefined();
-    expect(netIncomeAcc.name).toBe('Resultado del Ejercicio');
-    expect(netIncomeAcc.type).toBe('EQUITY');
-
-    expect(retainedEarningsAcc).toBeDefined();
-    expect(retainedEarningsAcc.name).toBe('Resultados Acumulados');
-    expect(retainedEarningsAcc.type).toBe('EQUITY');
+    expect(capitalAcc).toBeDefined();
+    expect(capitalAcc.name).toBe('Capital');
+    expect(capitalAcc.type).toBe('EQUITY');
   });
 
   it('POST /api/v1/auth/register - rejects duplicate email registration with 409 Conflict', async () => {

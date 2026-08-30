@@ -15,9 +15,7 @@ export default function ChangePasswordModal({ onClose }: ChangePasswordModalProp
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const rules = [
-    { label: 'At least 6 characters long', valid: newPassword.length >= 6 },
-  ];
+  const rules = [{ label: 'At least 6 characters long', valid: newPassword.length >= 6 }];
 
   const isNewPasswordValid = rules.every((r) => r.valid);
   const isFormValid =

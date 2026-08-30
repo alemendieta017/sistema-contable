@@ -73,7 +73,7 @@ describe('BottomNav & MobileNavDrawer (US2)', () => {
     expect(screen.getByRole('region', { name: /Gestión y Configuración/i })).toBeInTheDocument();
 
     // Items
-    const planItem = screen.getByRole('link', { name: /Planificación Presupuestaria/i });
+    const planItem = screen.getByRole('link', { name: /Planificación/i });
     expect(planItem).toBeInTheDocument();
     expect(planItem.className).toContain('min-h-[48px]');
 
@@ -84,8 +84,8 @@ describe('BottomNav & MobileNavDrawer (US2)', () => {
     const balanceSheet = screen.getByRole('link', { name: /Balance General/i });
     expect(balanceSheet).toBeInTheDocument();
 
-    const periodsItem = screen.getByRole('link', { name: /Períodos/i });
-    expect(periodsItem).toBeInTheDocument();
+    const settingsItem = screen.getByRole('link', { name: /Ajustes/i });
+    expect(settingsItem).toBeInTheDocument();
 
     // Clicking an item closes drawer
     fireEvent.click(planItem);

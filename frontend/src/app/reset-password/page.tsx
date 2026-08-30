@@ -22,9 +22,7 @@ function ResetPasswordForm() {
     }
   }, [token]);
 
-  const rules = [
-    { label: 'At least 6 characters long', valid: newPassword.length >= 6 },
-  ];
+  const rules = [{ label: 'At least 6 characters long', valid: newPassword.length >= 6 }];
 
   const isPasswordValid = rules.every((r) => r.valid);
   const isFormValid = !!token && isPasswordValid && newPassword === confirmPassword;
@@ -46,7 +44,9 @@ function ResetPasswordForm() {
         router.push('/login');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to reset password. The link may have expired or already been used.');
+      setError(
+        err.message || 'Failed to reset password. The link may have expired or already been used.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +55,7 @@ function ResetPasswordForm() {
   return (
     <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
       <div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-white">
-          Reset Your Password
-        </h2>
+        <h2 className="mt-2 text-center text-3xl font-extrabold text-white">Reset Your Password</h2>
         <p className="mt-2 text-center text-sm text-slate-400">
           Enter your new secure password below
         </p>

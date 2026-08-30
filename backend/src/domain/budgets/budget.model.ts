@@ -215,7 +215,7 @@ export type BudgetDriverDomainType =
   | 'PRIOR_YEAR_ACTUAL';
 
 export interface IBudgetDriverApplyParams {
-  fiscalYearId: string;
+  fiscalYearId?: string | null;
   accountId: string;
   subRowId?: string | null;
   driverType: BudgetDriverDomainType;

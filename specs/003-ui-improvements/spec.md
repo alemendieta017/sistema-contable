@@ -8,7 +8,7 @@
 
 **Input**: User description: "quiero que funcione el modo light y modo dark que no esta funcionando actualmente. Quiero que los counters de ingresos, egresos, y balance de la pantalla de transacciones ocupe menos lugar en mobile, como si fuese una sola barra y en una linea se muestren los 3 items ingresos egresos y balance. Además, quiero que todos los graficos que utilice la aplicacion utilicen graficos de shadcn, no svgs nativos porque algunos graficos no se ven bien actualmente como por ejemplo, la leyenda "total gasto" o "total ingreso" se desborda del grafico de torta."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Theme Toggling (Priority: P1)
 
@@ -58,7 +58,7 @@ As a user, I want the charts on the statistics and dashboard views to be rendere
 - **No Chart Data**: When a chart has empty data, the system should render a clean placeholder or informative message indicating there are no transactions.
 - **Very Large Numbers in Mobile Counters**: If the balance values are extremely large (e.g., millions), the font sizes in the single-line mobile layout should adjust/scale down gracefully to prevent wrapping or truncation.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -68,12 +68,12 @@ As a user, I want the charts on the statistics and dashboard views to be rendere
 - **FR-004**: All SVG-based charts (NetWorthChart, IncomeStatementChart, PieChart) MUST be replaced with responsive charting components utilizing Shadcn/Recharts structures.
 - **FR-005**: Doughnut charts (PieChart) MUST programmatically calculate label sizing or wrap labels in a structured legend container to prevent overflows of strings like "Total Gasto" or "Total Ingreso".
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **ThemePreference**: Represents the user's selected mode (light or dark), persisted client-side.
 - **ChartDataPoint**: Represents formatted ledger balances mapped into chart datasets.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

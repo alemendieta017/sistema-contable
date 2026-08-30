@@ -26,14 +26,18 @@ erDiagram
 ## 2. Table Specifications
 
 ### 2.1. `users` (Usuarios)
+
 Stores user credentials and workspace isolation.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `email` (VARCHAR, Unique, Not Null)
 - `password_hash` (VARCHAR, Not Null)
 - `created_at` (TIMESTAMP WITH TIME ZONE, Default: `now()`)
 
 ### 2.2. `currencies` (Monedas)
+
 Defines supported currencies and conversion rates.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `code` (VARCHAR(3), Unique, Not Null) - e.g., 'PYG', 'USD'
 - `name` (VARCHAR, Not Null) - e.g., 'Guaraní Paraguayo', 'Dólar Estadounidense'
@@ -43,7 +47,9 @@ Defines supported currencies and conversion rates.
 - `decimal_places` (INTEGER, Not Null, Default: `2`)
 
 ### 2.3. `accounts` (Cuentas y Categorías)
+
 Unifies assets, liabilities, equity, income, and expenses in a single hierarchy.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `user_id` (UUID, Foreign Key referencing `users.id`, Not Null)
 - `name` (VARCHAR, Not Null)
@@ -56,7 +62,9 @@ Unifies assets, liabilities, equity, income, and expenses in a single hierarchy.
   - For UI display settings: `{ "color": "#ff0000", "order_seq": 10 }`
 
 ### 2.4. `transactions` (Asiento Contable Cabecera)
+
 The header of a journal entry.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `user_id` (UUID, Foreign Key referencing `users.id`, Not Null)
 - `date` (TIMESTAMP WITH TIME ZONE, Not Null)
@@ -66,7 +74,9 @@ The header of a journal entry.
 - `created_at` (TIMESTAMP WITH TIME ZONE, Default: `now()`)
 
 ### 2.5. `journal_entries` (Apuntes/Detalles)
+
 The individual debit/credit lines of a transaction.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `transaction_id` (UUID, Foreign Key referencing `transactions.id`, On Delete Cascade, Not Null)
 - `account_id` (UUID, Foreign Key referencing `accounts.id`, Not Null)
@@ -76,7 +86,9 @@ The individual debit/credit lines of a transaction.
 - `rate_at_date` (NUMERIC(18, 4), Not Null) - Exchange rate used for conversion
 
 ### 2.6. `budgets` (Presupuestos Cabecera)
+
 Defines a target budget for a given expense or income account.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `user_id` (UUID, Foreign Key referencing `users.id`, Not Null)
 - `account_id` (UUID, Foreign Key referencing `accounts.id`, Not Null) - Must reference an `'EXPENSE'` or `'INCOME'` account
@@ -84,7 +96,9 @@ Defines a target budget for a given expense or income account.
 - `status` (VARCHAR(10), Not Null, Default: `'ACTIVE'`) - ENUM: `'ACTIVE'`, `'INACTIVE'`
 
 ### 2.7. `budget_amounts` (Límites Mensuales)
+
 Allows overriding budget limits for specific months, or setting a default.
+
 - `id` (UUID, Primary Key, Default: `gen_random_uuid()`)
 - `budget_id` (UUID, Foreign Key referencing `budgets.id`, On Delete Cascade, Not Null)
 - `amount` (NUMERIC(18, 4), Not Null)

@@ -5,7 +5,6 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 
 @Injectable()
 export class BalanceSheetUseCase {
@@ -40,15 +39,21 @@ export class BalanceSheetUseCase {
       if (!periodId) {
         throw new BadRequestException('periodId is required for period mode');
       }
-      const period = await this.periodRepository.findOne({
+      let period = await this.periodRepository.findOne({
         where: {
           id: periodId,
-          fiscalYear: {
+          userId,
+        },
+      });
+
+      if (!period && /^\d{4}-(0[1-9]|1[0-2])$/.test(periodId)) {
+        period = await this.periodRepository.findOne({
+          where: {
+            name: periodId,
             userId,
           },
-        },
-        relations: ['fiscalYear'],
-      });
+        });
+      }
 
       if (!period) {
         throw new NotFoundException('Period not found');
@@ -72,11 +77,10 @@ export class BalanceSheetUseCase {
       // 2. Check if a PeriodEntity exists for 'date' to use pre-calculated opening balances
       const currentPeriod = await this.periodRepository.findOne({
         where: {
-          fiscalYear: { userId },
+          userId,
           startDate: LessThanOrEqual(date),
           endDate: MoreThanOrEqual(date),
         },
-        relations: ['fiscalYear'],
       });
 
       const balanceMap = new Map<string, number>();
@@ -122,10 +126,9 @@ export class BalanceSheetUseCase {
         // Check if there is a latest prior period ending before date
         const latestPriorPeriod = await this.periodRepository.findOne({
           where: {
-            fiscalYear: { userId },
+            userId,
             endDate: LessThan(date),
           },
-          relations: ['fiscalYear'],
           order: { endDate: 'DESC' },
         });
 
@@ -202,51 +205,8 @@ export class BalanceSheetUseCase {
         }
       }
 
-      // 3. Calculate virtual Net Income for the current fiscal year up to date
-      const fiscalYear = currentPeriod
-        ? currentPeriod.fiscalYear
-        : await this.dataSource
-            .getRepository(FiscalYearEntity)
-            .createQueryBuilder('fy')
-            .where('fy.userId = :userId', { userId })
-            .andWhere('fy.startDate <= :date', { date })
-            .andWhere('fy.endDate >= :date', { date })
-            .getOne();
-
-      let cumulativeNetIncome = 0;
-      if (fiscalYear) {
-        const tempEntrySums = await this.dataSource
-          .getRepository(JournalEntryEntity)
-          .createQueryBuilder('entry')
-          .select('entry.entryType', 'entryType')
-          .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
-          .innerJoin('entry.transaction', 'transaction')
-          .innerJoin('entry.account', 'account')
-          .where('transaction.userId = :userId', { userId })
-          .andWhere('transaction.status = :status', { status: 'POSTED' })
-          .andWhere('transaction.accountingDate >= :startDate', { startDate: fiscalYear.startDate })
-          .andWhere('transaction.accountingDate <= :endDate', { endDate: date })
-          .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
-          .groupBy('entry.entryType')
-          .getRawMany();
-
-        let tempDebits = 0;
-        let tempCredits = 0;
-        for (const row of tempEntrySums) {
-          const amount = Number(row.total);
-          if (row.entryType === 'DEBIT') {
-            tempDebits += amount;
-          } else {
-            tempCredits += amount;
-          }
-        }
-        cumulativeNetIncome = tempCredits - tempDebits;
-      }
-
-      // Calculate priorNetIncome (Resultados Acumulados)
-      const priorBoundaryDate = fiscalYear ? fiscalYear.startDate : null;
-
-      const priorQuery = this.dataSource
+      // 3. Calculate cumulative earnings from Income/Expense entries up to date
+      const cumulativeEntries = await this.dataSource
         .getRepository(JournalEntryEntity)
         .createQueryBuilder('entry')
         .select('entry.entryType', 'entryType')
@@ -255,87 +215,55 @@ export class BalanceSheetUseCase {
         .innerJoin('entry.account', 'account')
         .where('transaction.userId = :userId', { userId })
         .andWhere('transaction.status = :status', { status: 'POSTED' })
-        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] });
+        .andWhere('transaction.accountingDate <= :date', { date })
+        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
+        .groupBy('entry.entryType')
+        .getRawMany();
 
-      if (priorBoundaryDate) {
-        priorQuery.andWhere('transaction.accountingDate < :boundaryDate', {
-          boundaryDate: priorBoundaryDate,
-        });
-      } else {
-        priorQuery.andWhere('transaction.accountingDate <= :boundaryDate', { boundaryDate: date });
-      }
-
-      const priorEntrySums = await priorQuery.groupBy('entry.entryType').getRawMany();
-
-      let priorDebits = 0;
-      let priorCredits = 0;
-      for (const row of priorEntrySums) {
-        const amount = Number(row.total);
-        if (row.entryType === 'DEBIT') {
-          priorDebits += amount;
+      let inc = 0;
+      let exp = 0;
+      for (const row of cumulativeEntries) {
+        const amt = Number(row.total);
+        if (row.entryType === 'CREDIT') {
+          inc += amt;
         } else {
-          priorCredits += amount;
+          exp += amt;
         }
       }
-      const priorNetIncome = priorCredits - priorDebits;
-      const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
-      const netIncomeFixed = Number(cumulativeNetIncome.toFixed(4));
+      const cumulativeEarnings = inc - exp;
 
-      // Inject outcomes into system accounts before depth collapse
-      const netIncomeAccDate = accounts.find((a) => a.systemRole === 'NET_INCOME');
-      if (netIncomeAccDate) {
-        const currentVal = balanceMap.get(netIncomeAccDate.id) ?? 0;
-        balanceMap.set(netIncomeAccDate.id, currentVal + netIncomeFixed);
-      }
-
-      const retainedAccDate = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
-      if (retainedAccDate && priorNetIncomeFixed !== 0) {
-        const currentVal = balanceMap.get(retainedAccDate.id) ?? 0;
-        balanceMap.set(retainedAccDate.id, currentVal + priorNetIncomeFixed);
-      }
-
-      // 4. Apply depth collapse to ASSET, LIABILITY, EQUITY
+      // 4. Apply depth collapse to ASSET, LIABILITY
       const collapsed = this.applyDepthCollapse(accounts, balanceMap, depth);
 
-      // Filter zero-balance system accounts
-      const accountMapDate = new Map<string, AccountEntity>();
-      for (const acc of accounts) {
-        accountMapDate.set(acc.id, acc);
+      // 5. Calculate totals and real double-entry balance check
+      const equityAccounts = accounts.filter((a) => a.type === 'EQUITY');
+      let capitalSum = 0;
+      for (const acc of equityAccounts) {
+        capitalSum += balanceMap.get(acc.id) ?? 0;
       }
-      collapsed.equity = collapsed.equity.filter((item) => {
-        const acc = accountMapDate.get(item.accountId);
-        if (acc?.systemRole && Math.abs(item.balance) < 0.0001) {
-          return false;
-        }
-        return true;
-      });
 
-      // Sort equity by name
-      collapsed.equity.sort((a, b) => a.name.localeCompare(b.name));
-
-      // 5. Calculate totals
       const totalAssets = Number(
         collapsed.assets.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
       );
       const totalLiabilities = Number(
         collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
       );
-      const totalEquity = Number(
-        collapsed.equity.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
-      );
-
-      const balanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.0001;
+      const calculatedEquity = Number((capitalSum + cumulativeEarnings).toFixed(4));
+      const netWorth = Number((totalAssets - totalLiabilities).toFixed(4));
+      const balanced = Math.abs(totalAssets - (totalLiabilities + calculatedEquity)) < 0.0001;
 
       return {
         mode: 'date',
         date,
         assets: collapsed.assets,
         liabilities: collapsed.liabilities,
-        equity: collapsed.equity,
+        equity: [],
         totalAssets,
         totalLiabilities,
-        totalEquity,
+        totalEquity: calculatedEquity,
+        netWorth,
         balanced,
+        isBalanced: balanced,
       };
     }
 
@@ -344,15 +272,27 @@ export class BalanceSheetUseCase {
         throw new BadRequestException('periodIds must be a non-empty array');
       }
 
-      const periods = await this.periodRepository.find({
+      let periods = await this.periodRepository.find({
         where: {
           id: In(periodIds),
-          fiscalYear: {
-            userId,
-          },
+          userId,
         },
-        relations: ['fiscalYear'],
       });
+
+      if (periods.length !== periodIds.length) {
+        // Try finding by name for any non-UUID entries
+        const foundIds = new Set(periods.map((p) => p.id));
+        const missingIds = periodIds.filter((id) => !foundIds.has(id));
+        if (missingIds.length > 0) {
+          const periodsByName = await this.periodRepository.find({
+            where: {
+              name: In(missingIds),
+              userId,
+            },
+          });
+          periods = [...periods, ...periodsByName];
+        }
+      }
 
       if (periods.length !== periodIds.length) {
         throw new NotFoundException('One or more periods not found');
@@ -391,18 +331,19 @@ export class BalanceSheetUseCase {
 
       const mergedAssets = mergeCategory('assets');
       const mergedLiabilities = mergeCategory('liabilities');
-      const mergedEquity = mergeCategory('equity');
 
       return {
         mode: 'comparative',
         periods: periods.map((p) => p.name),
         assets: mergedAssets,
         liabilities: mergedLiabilities,
-        equity: mergedEquity,
+        equity: [],
         totalAssets: periodResults.map((r) => r.totalAssets),
         totalLiabilities: periodResults.map((r) => r.totalLiabilities),
         totalEquity: periodResults.map((r) => r.totalEquity),
+        netWorth: periodResults.map((r) => r.netWorth),
         balanced: periodResults.map((r) => r.balanced),
+        isBalanced: periodResults.map((r) => r.isBalanced),
       };
     }
   }
@@ -427,125 +368,32 @@ export class BalanceSheetUseCase {
       balanceMap.set(bal.accountId, Number(bal.closingBalance));
     }
 
-    // 3. Compute virtual Net Income
-    const tempAccounts = accounts.filter((a) => a.type === 'INCOME' || a.type === 'EXPENSE');
-    const tempAccountIds = tempAccounts.map((a) => a.id);
-    const tempBalances =
-      tempAccountIds.length > 0
-        ? await this.balanceRepository.find({
-            where: {
-              periodId: period.id,
-              accountId: In(tempAccountIds),
-            },
-          })
-        : [];
-
-    const tempBalanceMap = new Map<string, number>();
-    for (const bal of tempBalances) {
-      tempBalanceMap.set(bal.accountId, Number(bal.closingBalance));
-    }
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-    for (const acc of tempAccounts) {
-      const bal = tempBalanceMap.get(acc.id) ?? 0.0;
-      if (acc.type === 'INCOME') {
-        totalIncome += bal;
-      } else if (acc.type === 'EXPENSE') {
-        totalExpense += bal;
-      }
-    }
-    const netIncome = Number((totalIncome - totalExpense).toFixed(4));
-
-    // Calculate priorNetIncome (Resultados Acumulados)
-    const priorBoundaryDate = period.fiscalYear?.startDate;
-    let priorNetIncome = 0;
-
-    if (priorBoundaryDate) {
-      const priorEntrySums = await this.dataSource
-        .getRepository(JournalEntryEntity)
-        .createQueryBuilder('entry')
-        .select('entry.entryType', 'entryType')
-        .addSelect('SUM(CAST(entry.amountBase AS DECIMAL))', 'total')
-        .innerJoin('entry.transaction', 'transaction')
-        .innerJoin('entry.account', 'account')
-        .where('transaction.userId = :userId', { userId })
-        .andWhere('transaction.status = :status', { status: 'POSTED' })
-        .andWhere('transaction.accountingDate < :boundaryDate', { boundaryDate: priorBoundaryDate })
-        .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
-        .groupBy('entry.entryType')
-        .getRawMany();
-
-      let priorDebits = 0;
-      let priorCredits = 0;
-      for (const row of priorEntrySums) {
-        const amount = Number(row.total);
-        if (row.entryType === 'DEBIT') {
-          priorDebits += amount;
-        } else {
-          priorCredits += amount;
-        }
-      }
-      priorNetIncome = priorCredits - priorDebits;
-    }
-
-    const priorNetIncomeFixed = Number(priorNetIncome.toFixed(4));
-
-    // Inject outcomes into system accounts before depth collapse
-    const netIncomeAcc = accounts.find((a) => a.systemRole === 'NET_INCOME');
-    if (netIncomeAcc) {
-      const currentVal = balanceMap.get(netIncomeAcc.id) ?? 0;
-      balanceMap.set(netIncomeAcc.id, currentVal + netIncome);
-    }
-
-    const retainedAcc = accounts.find((a) => a.systemRole === 'RETAINED_EARNINGS');
-    if (retainedAcc && priorNetIncomeFixed !== 0) {
-      const currentVal = balanceMap.get(retainedAcc.id) ?? 0;
-      balanceMap.set(retainedAcc.id, currentVal + priorNetIncomeFixed);
-    }
-
-    // 4. Apply depth collapse to ASSET, LIABILITY, EQUITY
+    // 3. Apply depth collapse to ASSET, LIABILITY
     const collapsed = this.applyDepthCollapse(accounts, balanceMap, targetDepth);
 
-    // Filter zero-balance system accounts
-    const accountMapPeriod = new Map<string, AccountEntity>();
-    for (const acc of accounts) {
-      accountMapPeriod.set(acc.id, acc);
-    }
-    collapsed.equity = collapsed.equity.filter((item) => {
-      const acc = accountMapPeriod.get(item.accountId);
-      if (acc?.systemRole && Math.abs(item.balance) < 0.0001) {
-        return false;
-      }
-      return true;
-    });
-
-    // Sort equity by name again
-    collapsed.equity.sort((a, b) => a.name.localeCompare(b.name));
-
-    // 5. Calculate totals
+    // 4. Calculate totals and real double-entry Net Worth directly from snapshots
     const totalAssets = Number(
       collapsed.assets.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
     );
     const totalLiabilities = Number(
       collapsed.liabilities.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
     );
-    const totalEquity = Number(
-      collapsed.equity.reduce((sum, item) => sum + item.balance, 0).toFixed(4),
-    );
-
-    const balanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.0001;
+    const netWorth = Number((totalAssets - totalLiabilities).toFixed(4));
+    const totalEquity = netWorth;
+    const balanced = true;
 
     return {
       mode: 'period',
       period: period.name,
       assets: collapsed.assets,
       liabilities: collapsed.liabilities,
-      equity: collapsed.equity,
+      equity: [],
       totalAssets,
       totalLiabilities,
       totalEquity,
+      netWorth,
       balanced,
+      isBalanced: balanced,
     };
   }
 

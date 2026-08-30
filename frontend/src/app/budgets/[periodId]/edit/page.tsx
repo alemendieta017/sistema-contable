@@ -333,7 +333,7 @@ export default function EditBudgetPage() {
       {/* Table grid */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm overflow-hidden">
         {/* Table Head */}
-        <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-800 px-6 py-3 border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase tracking-wider font-extrabold text-slate-500">
+        <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-800 px-6 py-3 border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider font-extrabold text-slate-500">
           <div className="col-span-4 sm:col-span-5">Cuenta</div>
           <div className="col-span-5 sm:col-span-4 text-right">Monto Presupuestado</div>
           <div className="col-span-3 sm:col-span-3 text-right">Acciones</div>
@@ -360,7 +360,7 @@ export default function EditBudgetPage() {
                       {item.accountName}
                     </span>
                     {activeTab === 'BALANCE' && (
-                      <span className="block text-[9px] uppercase font-bold text-slate-400 mt-0.5">
+                      <span className="block text-2xs uppercase font-bold text-slate-400 mt-0.5">
                         {item.accountType === 'ASSET' ? 'Activo (Ahorro)' : 'Pasivo (Préstamo)'}
                       </span>
                     )}
@@ -376,7 +376,7 @@ export default function EditBudgetPage() {
                           handleAssetDirectionChange(item.accountId, e.target.value as any, absVal)
                         }
                         disabled={budget?.isLocked}
-                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5 text-[10px] uppercase font-bold focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-300"
+                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5 text-xs uppercase font-bold focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-300"
                       >
                         <option value="SAVE">Ahorrar (-)</option>
                         <option value="WITHDRAW">Retirar (+)</option>
@@ -395,7 +395,7 @@ export default function EditBudgetPage() {
                           )
                         }
                         disabled={budget?.isLocked}
-                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5 text-[10px] uppercase font-bold focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-300"
+                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1.5 text-xs uppercase font-bold focus:border-indigo-500 outline-none text-slate-600 dark:text-slate-300"
                       >
                         <option value="PAY">Pagar (-)</option>
                         <option value="BORROW">Recibir (+)</option>
@@ -437,7 +437,7 @@ export default function EditBudgetPage() {
                       type="button"
                       onClick={() => handleReplicate(item.accountId, item.amount)}
                       disabled={budget?.isLocked || replicatingId === item.accountId}
-                      className="flex items-center gap-1 py-1.5 px-2 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 transition disabled:opacity-40"
+                      className="flex items-center gap-1 py-1.5 px-2 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 transition disabled:opacity-40"
                       title="Replicar monto a todo el año"
                     >
                       <Repeat

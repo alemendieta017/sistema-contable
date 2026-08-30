@@ -5,6 +5,7 @@
 `POST /api/accounts`
 
 ### Request Body
+
 ```json
 {
   "name": "Efectivo USD",
@@ -16,6 +17,7 @@
 ```
 
 ### Response (`217 Created` or `201 Created`)
+
 ```json
 {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -36,6 +38,7 @@
 `PATCH /api/accounts/:id`
 
 ### Request Body
+
 ```json
 {
   "name": "Caja Central",
@@ -44,6 +47,7 @@
 ```
 
 ### Success Response (`200 OK`)
+
 ```json
 {
   "success": true
@@ -51,6 +55,7 @@
 ```
 
 ### Error Response (`400 Bad Request`) - Immutability Triggered
+
 Occurs when `isCashOrBank` is modified on an account that has posted journal entries.
 
 ```json
@@ -68,17 +73,18 @@ Occurs when `isCashOrBank` is modified on an account that has posted journal ent
 `GET /api/accounts/summary`
 
 ### Response (`200 OK`)
+
 ```json
 {
-  "netWorth": 15000000.00,
-  "totalAssets": 20000000.00,
-  "totalLiabilities": 5000000.00,
+  "netWorth": 15000000.0,
+  "totalAssets": 20000000.0,
+  "totalLiabilities": 5000000.0,
   "accounts": [
     {
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "name": "Efectivo",
       "type": "ASSET",
-      "balance": 10000000.00,
+      "balance": 10000000.0,
       "currencyCode": "PYG",
       "currencySymbol": "₲",
       "decimalPlaces": 0,
@@ -90,7 +96,7 @@ Occurs when `isCashOrBank` is modified on an account that has posted journal ent
       "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
       "name": "Cuenta Bancaria",
       "type": "ASSET",
-      "balance": 10000000.00,
+      "balance": 10000000.0,
       "currencyCode": "PYG",
       "currencySymbol": "₲",
       "decimalPlaces": 0,

@@ -20,13 +20,11 @@ describe('Auth Login & Profile (E2E)', () => {
     await app.init();
 
     // Register test user
-    const regRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'Login Test User',
-        email: userEmail,
-        password: userPassword,
-      });
+    const regRes = await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'Login Test User',
+      email: userEmail,
+      password: userPassword,
+    });
 
     jwtToken = regRes.body.access_token;
   });
@@ -38,12 +36,10 @@ describe('Auth Login & Profile (E2E)', () => {
   });
 
   it('POST /api/v1/auth/login - authenticates user with valid credentials', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: userEmail,
-        password: userPassword,
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: userEmail,
+      password: userPassword,
+    });
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('access_token');
@@ -52,24 +48,20 @@ describe('Auth Login & Profile (E2E)', () => {
   });
 
   it('POST /api/v1/auth/login - rejects invalid password with 401 Unauthorized', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: userEmail,
-        password: 'WrongPassword999!',
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: userEmail,
+      password: 'WrongPassword999!',
+    });
 
     expect(res.status).toBe(401);
     expect(res.body.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);
   });
 
   it('POST /api/v1/auth/login - rejects non-existent email with 401 Unauthorized', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'nobody_exists@example.com',
-        password: 'Password123!',
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: 'nobody_exists@example.com',
+      password: 'Password123!',
+    });
 
     expect(res.status).toBe(401);
     expect(res.body.code).toBe(AuthErrorCode.INVALID_CREDENTIALS);

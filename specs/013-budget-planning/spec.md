@@ -14,13 +14,14 @@
 ## Clarifications
 
 ### Session 2026-07-05
+
 - Q: ¿Cómo debe comportarse el sistema si el usuario intenta modificar el flag isCashOrBank de una cuenta contable que ya tiene transacciones asociadas? → A: Bloquear la modificación del flag si la cuenta ya tiene transacciones (A) para preservar la consistencia histórica.
 - Q: ¿Cómo deben tratarse las cuentas de tipo EQUITY (Patrimonio Neto) en el Módulo de Presupuestos y en la proyección del Flujo de Caja? → A: Excluirlas por completo del módulo de presupuestos e ignorarlas en las proyecciones (A) para simplificar el modelo de finanzas familiares.
 - Q: Al mostrar la "Desviación de Caja" de las cuentas de activos y pasivos en el Dashboard de Ejecución, ¿cómo debe calcularse y señalizarse el desvío? → A: Desviación basada en impacto de liquidez corriente (A). Salidas de efectivo corriente superiores a lo planificado o cobros reales inferiores a lo planificado son desvíos negativos y se alertan en rojo.
 
 ---
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Inicialización Automática de Presupuestos (Priority: P1)
 
@@ -31,6 +32,7 @@ Como administrador del sistema, cuando inicializo un nuevo Ejercicio Fiscal (Fis
 **Independent Test**: Crear un nuevo Ejercicio Fiscal "2026". Verificar en la base de datos o en la interfaz que se crearon los 12 periodos mensuales correspondientes y que cada uno posee un registro de Presupuesto asociado con montos presupuestados inicializados en cero.
 
 **Acceptance Scenarios**:
+
 1. **Given** que un usuario crea un Ejercicio Fiscal válido, **When** el sistema genera sus periodos mensuales, **Then** también crea un registro de Presupuesto para cada periodo.
 2. **Given** un presupuesto recién inicializado, **When** se consulta su detalle por primera vez, **Then** todas las cuentas de resultado y de balance tienen asignado un monto presupuestado inicial de `0`.
 
@@ -45,6 +47,7 @@ Como administrador financiero o usuario hogareño, quiero presupuestar mensualme
 **Independent Test**: Ir a la edición de un presupuesto mensual, verificar que la tabla se inicie limpia (mostrando únicamente las partidas presupuestadas existentes) y permita agregar un nuevo rubro (cuenta contable) de forma dinámica, asignarle un monto y guardarlo correctamente.
 
 **Acceptance Scenarios**:
+
 1. **Given** la pantalla de edición de presupuesto, **When** se visualiza el control maestro, **Then** se disponen selectores de Año Fiscal, Mes/Periodo, un botón "Copiar del mes anterior" (para duplicar de forma masiva los montos planificados del periodo N-1 al periodo actual) y un resumen de KPIs.
 2. **Given** el presupuesto mensual, **When** se visualiza su contenido, **Then** se presenta en una estructura tabular limpia de tres secciones/pestañas:
    - **Ingresos**: Cuentas de tipo `INCOME` presupuestadas.
@@ -65,6 +68,7 @@ Como planificador, quiero ver el presupuesto consolidado de todas las cuentas de
 **Independent Test**: Acceder a la matriz anual de presupuestos para el año "2026". Confirmar que la tabla tiene 12 columnas correspondientes a los meses y que al hacer clic sobre el nombre del mes "Marzo" se navega al formulario de edición de presupuesto de Marzo 2026.
 
 **Acceptance Scenarios**:
+
 1. **Given** la vista matricial anual, **When** se selecciona un Ejercicio Fiscal, **Then** se renderiza una tabla donde las filas corresponden al árbol de cuentas contables (Ingresos y Gastos) y las columnas corresponden a los 12 meses.
 2. **Given** las cabeceras de columna de la matriz mensual, **When** el usuario hace clic sobre el nombre de un mes, **Then** es redirigido a la Pantalla 1 (Carga Mensual) posicionada en ese periodo.
 
@@ -79,6 +83,7 @@ Como administrador financiero, quiero contrastar en tiempo real las cuentas plan
 **Independent Test**: Registrar una transacción real en una cuenta contable en el mes actual. Consultar el Reporte de Control del mes actual y verificar que la columna "Ejecutado Real" incrementa por el monto respectivo y la columna "Variación" se recalcula correctamente.
 
 **Acceptance Scenarios**:
+
 1. **Given** el reporte de control de un periodo mensual `ABIERTO` o `CERRADO`, **When** se consulta la tabla, **Then** se listan las columnas: Cuenta | Presupuestado | Ejecutado Real (acumulado del libro diario) | Variación Absoluta ($) | Variación Porcentual (%) | Alertas visuales.
 2. **Given** el reporte de control, **When** se evalúa la desviación, **Then**:
    - Para gastos/consumos, se destaca en rojo (alerta de desvío crítico) si el Ejecutado Real es mayor al Presupuestado (sobregasto).
@@ -95,6 +100,7 @@ Como tomador de decisiones, quiero ver un reporte consolidado plurimensual con u
 **Independent Test**: Seleccionar la vista de reporte proyectado, validar la ventana móvil por defecto (último mes real + actual + 10 meses proyectados). Alternar entre Flujo de Caja y Estado de Resultados, y verificar que el arrastre del saldo de caja inicial coincide exactamente con el saldo final del último mes real.
 
 **Acceptance Scenarios**:
+
 1. **Given** el reporte de proyecciones, **When** se despliega la pantalla, **Then** se muestran dos controles clave:
    - Selector de Vista: [Flujo de Caja] / [Estado de Resultados].
    - Selector de Rango: [Año Calendario Completo] o [Ventana Móvil de 12 Meses (Rolling Forecast)].
@@ -119,7 +125,7 @@ Como tomador de decisiones, quiero ver un reporte consolidado plurimensual con u
 
 ---
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -161,7 +167,7 @@ Como tomador de decisiones, quiero ver un reporte consolidado plurimensual con u
 
 ---
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **FiscalYear (Ejercicio Fiscal)**: Entidad contable extendida.
   - Atributos: ID, Año (ej: 2026), Estado (Enum: `CERRADO`, `ABIERTO`, `PLANIFICACION`).
@@ -176,7 +182,7 @@ Como tomador de decisiones, quiero ver un reporte consolidado plurimensual con u
 
 ---
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

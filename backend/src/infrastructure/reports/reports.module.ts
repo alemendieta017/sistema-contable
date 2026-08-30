@@ -4,7 +4,6 @@ import { JournalEntryEntity } from '../database/entities/journal-entry.entity';
 import { TransactionEntity } from '../database/entities/transaction.entity';
 import { AccountEntity } from '../database/entities/account.entity';
 import { PeriodEntity } from '../database/entities/period.entity';
-import { FiscalYearEntity } from '../database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../database/entities/budget.entity';
 import { GetCategoryStatisticsUseCase } from '../../application/reports/get-category-statistics.use-case';
@@ -14,6 +13,7 @@ import { BalanceSheetUseCase } from '../../application/periods/balance-sheet.use
 import { IncomeStatementUseCase } from '../../application/periods/income-statement.use-case';
 import { IncomeStatementForecastUseCase } from '../../application/reports/income-statement-forecast.use-case';
 import { CashFlowStatementForecastUseCase } from '../../application/reports/cash-flow-statement.use-case';
+import { NetWorthEvolutionUseCase } from '../../application/reports/net-worth-evolution.use-case';
 import { ReportsController } from '../controllers/reports.controller';
 import { AuthModule } from '../auth/auth.module';
 
@@ -24,7 +24,6 @@ import { AuthModule } from '../auth/auth.module';
       TransactionEntity,
       AccountEntity,
       PeriodEntity,
-      FiscalYearEntity,
       AccountPeriodBalanceEntity,
       BudgetEntity,
     ]),
@@ -38,6 +37,7 @@ import { AuthModule } from '../auth/auth.module';
     IncomeStatementUseCase,
     IncomeStatementForecastUseCase,
     CashFlowStatementForecastUseCase,
+    NetWorthEvolutionUseCase,
   ],
   controllers: [ReportsController],
   exports: [
@@ -48,6 +48,7 @@ import { AuthModule } from '../auth/auth.module';
     IncomeStatementUseCase,
     IncomeStatementForecastUseCase,
     CashFlowStatementForecastUseCase,
+    NetWorthEvolutionUseCase,
   ],
 })
 export class ReportsModule {}

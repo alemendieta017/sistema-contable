@@ -8,25 +8,26 @@ import {
   OneToOne,
   Index,
 } from 'typeorm';
-import { FiscalYearEntity } from './fiscal-year.entity';
+import { UserEntity } from './user.entity';
 import { AccountPeriodBalanceEntity } from './account-period-balance.entity';
 import { BudgetEntity } from './budget.entity';
 
 @Entity('periods')
-@Index(['fiscalYearId', 'name'], { unique: true })
+@Index(['userId', 'name'], { unique: true })
+@Index(['userId', 'startDate'])
 export class PeriodEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'fiscal_year_id' })
-  fiscalYearId: string;
+  @Column({ name: 'user_id' })
+  userId: string;
 
-  @ManyToOne(() => FiscalYearEntity, (fiscalYear) => fiscalYear.periods, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'fiscal_year_id' })
-  fiscalYear: FiscalYearEntity;
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 
-  @Column()
-  name: string; // e.g. "2026-03"
+  @Column({ length: 7 })
+  name: string; // e.g. "2026-08"
 
   @Column({ name: 'start_date', type: 'date' })
   startDate: string;

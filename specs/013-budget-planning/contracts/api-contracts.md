@@ -7,6 +7,7 @@ This document specifies the REST API endpoints and data transfer objects (DTOs) 
 ## 1. Budget Management
 
 ### Get Budget Details for Editing
+
 Retrieves the budget metadata and a list of budgeted items, paired with a list of remaining accounts eligible for budgeting in this period.
 
 - **Endpoint**: `GET /api/budgets/by-period/:periodId`
@@ -28,7 +29,7 @@ Retrieves the budget metadata and a list of budgeted items, paired with a list o
         "accountType": "ASSET",
         "parentId": "assets-parent-uuid",
         "isCashOrBank": false,
-        "amount": -500000.00
+        "amount": -500000.0
       }
     ],
     "eligibleAccounts": [
@@ -46,6 +47,7 @@ Retrieves the budget metadata and a list of budgeted items, paired with a list o
 ---
 
 ### Update Budget Items
+
 Saves/updates the budgeted amounts. Synchronizes the list: deletes items missing from the request body, and creates/updates the rest.
 
 - **Endpoint**: `PUT /api/budgets/by-period/:periodId/items`
@@ -56,11 +58,11 @@ Saves/updates the budgeted amounts. Synchronizes the list: deletes items missing
     "items": [
       {
         "accountId": "account-uuid-1",
-        "amount": 3000000.00
+        "amount": 3000000.0
       },
       {
         "accountId": "account-uuid-2",
-        "amount": -500000.00
+        "amount": -500000.0
       }
     ]
   }
@@ -76,6 +78,7 @@ Saves/updates the budgeted amounts. Synchronizes the list: deletes items missing
 ---
 
 ### Copy Previous Period Budget
+
 Clones all budget items from period N-1 to the current period.
 
 - **Endpoint**: `POST /api/budgets/by-period/:periodId/copy-previous`
@@ -91,6 +94,7 @@ Clones all budget items from period N-1 to the current period.
 ---
 
 ### Replicate Budget Item to Fiscal Year
+
 Propagates a budgeted amount for a single account across all 12 periods of the current fiscal year.
 
 - **Endpoint**: `POST /api/budgets/replicate`
@@ -100,7 +104,7 @@ Propagates a budgeted amount for a single account across all 12 periods of the c
   {
     "periodId": "period-uuid",
     "accountId": "account-uuid-1",
-    "amount": 3000000.00
+    "amount": 3000000.0
   }
   ```
 - **Response** (`200 OK`):
@@ -108,8 +112,18 @@ Propagates a budgeted amount for a single account across all 12 periods of the c
   {
     "success": true,
     "replicatedPeriods": [
-      "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06",
-      "2026-07", "2026-08", "2026-09", "2026-10", "2026-11", "2026-12"
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11",
+      "2026-12"
     ]
   }
   ```
@@ -119,6 +133,7 @@ Propagates a budgeted amount for a single account across all 12 periods of the c
 ## 2. Dashboard & Execution Reports
 
 ### Get Budget Execution Report
+
 Retrieves the execution dashboard comparing plan vs. actual spending, savings, and debt servicing.
 
 - **Endpoint**: `GET /api/budgets/execution-report`
@@ -135,9 +150,9 @@ Retrieves the execution dashboard comparing plan vs. actual spending, savings, a
         {
           "accountId": "inc-1",
           "accountName": "Salario",
-          "budgeted": 10000000.00,
-          "real": 10000000.00,
-          "deviation": 0.00,
+          "budgeted": 10000000.0,
+          "real": 10000000.0,
+          "deviation": 0.0,
           "isNegativeDeviation": false
         }
       ],
@@ -145,24 +160,24 @@ Retrieves the execution dashboard comparing plan vs. actual spending, savings, a
         {
           "accountId": "exp-1",
           "accountName": "Alquiler",
-          "budgeted": 3000000.00,
-          "real": 3200000.00,
-          "available": -200000.00,
+          "budgeted": 3000000.0,
+          "real": 3200000.0,
+          "available": -200000.0,
           "isNegativeDeviation": true
         }
       ],
-      "totalBudgetedIncome": 10000000.00,
-      "totalRealIncome": 10000000.00,
-      "totalBudgetedExpense": 3000000.00,
-      "totalRealExpense": 3200000.00
+      "totalBudgetedIncome": 10000000.0,
+      "totalRealIncome": 10000000.0,
+      "totalBudgetedExpense": 3000000.0,
+      "totalRealExpense": 3200000.0
     },
     "ahorrosInversiones": [
       {
         "accountId": "ast-inv",
         "accountName": "Fondo Mutuo",
-        "budgeted": -500000.00,
-        "real": -600000.00,
-        "deviation": -100000.00,
+        "budgeted": -500000.0,
+        "real": -600000.0,
+        "deviation": -100000.0,
         "isNegativeDeviation": true
       }
     ],
@@ -170,29 +185,29 @@ Retrieves the execution dashboard comparing plan vs. actual spending, savings, a
       {
         "accountId": "lbl-debt",
         "accountName": "Préstamo Vehículo",
-        "budgeted": -1000000.00,
-        "real": -1000000.00,
-        "deviation": 0.00,
+        "budgeted": -1000000.0,
+        "real": -1000000.0,
+        "deviation": 0.0,
         "isNegativeDeviation": false
       }
     ],
     "resumenLiquidez": {
-      "saldoCajaInicialReal": 5000000.00,
+      "saldoCajaInicialReal": 5000000.0,
       "flujoNetoConsumos": {
-        "budgeted": 7000000.00,
-        "real": 6800000.00
+        "budgeted": 7000000.0,
+        "real": 6800000.0
       },
       "flujoNetoFinanciero": {
-        "budgeted": -1500000.00,
-        "real": -1600000.00
+        "budgeted": -1500000.0,
+        "real": -1600000.0
       },
       "flujoCajaNetoMes": {
-        "budgeted": 5500000.00,
-        "real": 5200000.00
+        "budgeted": 5500000.0,
+        "real": 5200000.0
       },
       "saldoCajaFinal": {
-        "projected": 10500000.00,
-        "real": 10200000.00
+        "projected": 10500000.0,
+        "real": 10200000.0
       }
     }
   }
@@ -203,6 +218,7 @@ Retrieves the execution dashboard comparing plan vs. actual spending, savings, a
 ## 3. Financial Forecast Reports
 
 ### Get Income Statement (Real vs. Projected)
+
 Retrieves monthly income statement data. Supports calendar year range or rolling 12-month window.
 
 - **Endpoint**: `GET /api/reports/income-statement/real-vs-projected`
@@ -216,18 +232,18 @@ Retrieves monthly income statement data. Supports calendar year range or rolling
         "periodId": "period-jan-uuid",
         "periodName": "2026-01",
         "status": "CLOSED",
-        "income": 10000000.00,
-        "expense": 2800000.00,
-        "netProfit": 7200000.00,
+        "income": 10000000.0,
+        "expense": 2800000.0,
+        "netProfit": 7200000.0,
         "isReal": true
       },
       {
         "periodId": "period-feb-uuid",
         "periodName": "2026-02",
         "status": "OPEN",
-        "income": 10000000.00,
-        "expense": 3000000.00,
-        "netProfit": 7000000.00,
+        "income": 10000000.0,
+        "expense": 3000000.0,
+        "netProfit": 7000000.0,
         "isReal": false
       }
     ]
@@ -237,6 +253,7 @@ Retrieves monthly income statement data. Supports calendar year range or rolling
 ---
 
 ### Get Cash Flow Statement (Real vs. Projected)
+
 Retrieves monthly cash flow data. Supports calendar year range or rolling 12-month window.
 
 - **Endpoint**: `GET /api/reports/cash-flow/real-vs-projected`
@@ -250,18 +267,18 @@ Retrieves monthly cash flow data. Supports calendar year range or rolling 12-mon
         "periodId": "period-jan-uuid",
         "periodName": "2026-01",
         "status": "CLOSED",
-        "initialCash": 5000000.00,
-        "netFlow": 5500000.00,
-        "finalCash": 10500000.00,
+        "initialCash": 5000000.0,
+        "netFlow": 5500000.0,
+        "finalCash": 10500000.0,
         "isReal": true
       },
       {
         "periodId": "period-feb-uuid",
         "periodName": "2026-02",
         "status": "OPEN",
-        "initialCash": 10500000.00,
-        "netFlow": 5200000.00,
-        "finalCash": 15700000.00,
+        "initialCash": 10500000.0,
+        "netFlow": 5200000.0,
+        "finalCash": 15700000.0,
         "isReal": false
       }
     ]
@@ -273,6 +290,7 @@ Retrieves monthly cash flow data. Supports calendar year range or rolling 12-mon
 ## 4. Accounts Configuration
 
 ### Update Account
+
 Updates account details, notably the `isCashOrBank` flag.
 
 - **Endpoint**: `PATCH /api/accounts/:id`

@@ -6,6 +6,7 @@ import { JournalEntryEntity } from '../../src/infrastructure/database/entities/j
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 
 describe('Reverse Transaction Integration Tests', () => {
   let useCase: ReverseTransactionUseCase;
@@ -54,6 +55,18 @@ describe('Reverse Transaction Integration Tests', () => {
           provide: BalanceUpdateService,
           useValue: {
             updateBalances: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: EnsurePeriodService,
+          useValue: {
+            ensurePeriod: jest.fn().mockResolvedValue({
+              id: 'period-1',
+              name: '2026-07',
+              startDate: '2026-07-01',
+              endDate: '2026-07-31',
+              status: 'OPEN',
+            }),
           },
         },
       ],

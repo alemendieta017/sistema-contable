@@ -7,6 +7,7 @@
 ## Summary
 
 This feature addresses UI/UX clutter, inconsistency, and bugs on the Transactions page:
+
 1. **Header Reorganization**: Groups page title, view selection (Diario/Calendario/Mensual), and summary counters into a unified, card-style header component.
 2. **Mobile Optimizations**: Constrains summary counters to a single row using a CSS grid (`grid-cols-3`) with reduced padding and text truncation to ensure cards fit perfectly without horizontal scroll or overflow.
 3. **Date Filters Refactoring & Independence**: Hides standard date range picker filters in `TransactionFilters` for Calendar and Monthly views. Implements independent date state objects (`dailyDates`, `calendarDates`, `monthlyDates`) in `TransactionsPage` so that switching between views preserves each view's date context without overwriting them. Reacts to changes by calculating `activeStartDate`/`activeEndDate` and refetching.
@@ -24,7 +25,7 @@ This feature addresses UI/UX clutter, inconsistency, and bugs on the Transaction
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Rule compliance**: ESLint and Prettier rules must be followed. Standard Tailwind colors must be used to ensure full compliance with the theme system.
 - **Ledger Integrity**: No changes are made to ledger logic; purely UI enhancements.
@@ -45,7 +46,7 @@ specs/009-improve-transactions-ui/
 
 ### Source Code
 
-```text
+````text
 frontend/
 ├── src/
 │   ├── app/
@@ -98,3 +99,4 @@ frontend/
 ## Complexity Tracking
 
 *No violations.*
+````

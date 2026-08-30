@@ -7,6 +7,7 @@ import { AccountEntity } from '../../src/infrastructure/database/entities/accoun
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 
 describe('Multi-Item Split Ledger Validation Tests', () => {
   let useCase: CreateTransactionUseCase;
@@ -25,11 +26,13 @@ describe('Multi-Item Split Ledger Validation Tests', () => {
 
   beforeEach(async () => {
     mockEntityManager = {
-      findOne: jest.fn(),
-      create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       save: jest
         .fn()
-        .mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: 'saved-id' })),
+        .mockImplementation((cls, entity) =>
+          Promise.resolve({ ...(entity || cls), id: 'saved-id' }),
+        ),
+      create: jest.fn().mockImplementation((entityClass, data) => data),
+      findOne: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -41,6 +44,12 @@ describe('Multi-Item Split Ledger Validation Tests', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateTransactionUseCase,
+        {
+          provide: EnsurePeriodService,
+          useValue: {
+            ensurePeriod: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
+          },
+        },
         {
           provide: getRepositoryToken(TransactionEntity),
           useValue: mockTransactionRepo,

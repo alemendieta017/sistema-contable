@@ -63,6 +63,7 @@ frontend/
 ### Frontend Components
 
 #### [MODIFY] [MonthlyView.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/MonthlyView.tsx)
+
 - Replace the monthly card grid (`<div className="grid grid-cols-1 md:grid-cols-2 gap-2">...`) with a responsive table container `<div className="w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">`.
 - Inside the container, render a semantic HTML `<table className="w-full min-w-[600px] border-collapse text-xs">`.
 - Create a Table Header (`<thead>`) with columns:
@@ -82,6 +83,7 @@ frontend/
 ## Verification Plan
 
 ### Manual Verification
+
 - Start Next.js frontend and local backend.
 - Go to the Libro Diario page (`/transactions`) and toggle the view to "Mensual".
 - Verify that a clean, well-aligned table displays all 12 months.

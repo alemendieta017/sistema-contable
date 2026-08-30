@@ -58,6 +58,7 @@ frontend/
 ### Frontend Components
 
 #### [MODIFY] [page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/asiento-libre/page.tsx)
+
 - Increase container limit from `max-w-md` to `max-w-3xl` (or `max-w-4xl`) for a spacious layout.
 - Fetch currencies on mount via `api.currencies.list()` and find the base currency.
 - Replace card loops with a clean row-based layout.
@@ -69,12 +70,14 @@ frontend/
 - Align typography and borders to be premium and clean.
 
 #### [MODIFY] [JournalEntryRow.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/JournalEntryRow.tsx)
+
 - Accept `baseCurrency` prop to format placeholders and symbol indicators.
 - Clean up borders, inputs, and toggle sizes.
 - Decrease text sizes for "DEBE" / "HABER" labels and active state styling to feel balanced.
 - Ensure proper alignment in the flex/grid columns.
 
 #### [MODIFY] [TransactionModal.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/TransactionModal.tsx)
+
 - Fetch currencies if not already loaded, find base currency, and pass it down to `JournalEntryRow`.
 - Check spacing and verify layout aligns perfectly with the updated `JournalEntryRow`.
 - Format modal totals and difference labels with the correct currency symbol and decimals.
@@ -84,6 +87,7 @@ frontend/
 ## Verification Plan
 
 ### Manual Verification
+
 - Start Next.js server and open `/transactions/asiento-libre`.
 - Verify the line-based design and the proportion of "Debe" / "Haber" indicators.
 - Verify placeholders display correct decimals based on base currency configuration (e.g. 0 decimals for PYG, 2 for USD).

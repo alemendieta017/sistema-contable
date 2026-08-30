@@ -9,17 +9,18 @@
 
 Represents a registered account in the system.
 
-| Attribute | Type | Constraints | Description |
-|-----------|------|-------------|-------------|
-| `id` | UUID | Primary Key, Generated | Unique user identifier |
-| `fullName` | String | NOT NULL, Max 100 | User's full name |
-| `email` | String | NOT NULL, Unique, Indexed | User's primary email address |
-| `passwordHash` | String | NOT NULL | Bcrypt hashed password string |
-| `isActive` | Boolean | DEFAULT true, NOT NULL | Account active flag |
-| `createdAt` | TimestampTZ | DEFAULT NOW(), NOT NULL | Creation timestamp |
-| `updatedAt` | TimestampTZ | DEFAULT NOW(), NOT NULL | Last modification timestamp |
+| Attribute      | Type        | Constraints               | Description                   |
+| -------------- | ----------- | ------------------------- | ----------------------------- |
+| `id`           | UUID        | Primary Key, Generated    | Unique user identifier        |
+| `fullName`     | String      | NOT NULL, Max 100         | User's full name              |
+| `email`        | String      | NOT NULL, Unique, Indexed | User's primary email address  |
+| `passwordHash` | String      | NOT NULL                  | Bcrypt hashed password string |
+| `isActive`     | Boolean     | DEFAULT true, NOT NULL    | Account active flag           |
+| `createdAt`    | TimestampTZ | DEFAULT NOW(), NOT NULL   | Creation timestamp            |
+| `updatedAt`    | TimestampTZ | DEFAULT NOW(), NOT NULL   | Last modification timestamp   |
 
 **Validation Rules**:
+
 - `fullName`: Required, 2-100 characters, no dangerous HTML tags.
 - `email`: Required, valid email format regex, stored lowercase, unique across `users` table.
 - `password`: Validated before hashing. Minimum 8 characters, at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character (`/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/`).
@@ -30,16 +31,17 @@ Represents a registered account in the system.
 
 Represents a single-use token generated for password recovery.
 
-| Attribute | Type | Constraints | Description |
-|-----------|------|-------------|-------------|
-| `id` | UUID | Primary Key, Generated | Unique token record ID |
-| `userId` | UUID | Foreign Key -> `users(id)`, Indexed | Associated user ID |
-| `tokenHash` | String | NOT NULL, Indexed | SHA-256 hash of the plain-text reset token |
-| `expiresAt` | TimestampTZ | NOT NULL | Token expiration date (NOW() + 60 mins) |
-| `used` | Boolean | DEFAULT false, NOT NULL | Single-use status flag |
-| `createdAt` | TimestampTZ | DEFAULT NOW(), NOT NULL | Token creation timestamp |
+| Attribute   | Type        | Constraints                         | Description                                |
+| ----------- | ----------- | ----------------------------------- | ------------------------------------------ |
+| `id`        | UUID        | Primary Key, Generated              | Unique token record ID                     |
+| `userId`    | UUID        | Foreign Key -> `users(id)`, Indexed | Associated user ID                         |
+| `tokenHash` | String      | NOT NULL, Indexed                   | SHA-256 hash of the plain-text reset token |
+| `expiresAt` | TimestampTZ | NOT NULL                            | Token expiration date (NOW() + 60 mins)    |
+| `used`      | Boolean     | DEFAULT false, NOT NULL             | Single-use status flag                     |
+| `createdAt` | TimestampTZ | DEFAULT NOW(), NOT NULL             | Token creation timestamp                   |
 
 **State Transitions**:
+
 1. **Issued**: Created upon user request at `/forgot-password`, `used = false`, `expiresAt` set to +60 minutes.
 2. **Consumed**: Set `used = true` immediately when successfully validated and password reset occurs.
 3. **Expired**: Invalidated if `NOW() > expiresAt`. Reused or expired tokens result in authentication rejection.

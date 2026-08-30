@@ -41,9 +41,11 @@
 **Independent Test**: Create a new Fiscal Year and verify that 12 budgets (one for each period) are created in zero.
 
 ### Tests for User Story 1
+
 - [x] T005 [P] [US1] Create integration test `backend/tests/integration/period-creation.spec.ts` proving that saving a new Fiscal Year initializes 12 period budgets.
 
 ### Implementation for User Story 1
+
 - [x] T006 [US1] Update `CreateFiscalYearUseCase` in `backend/src/application/periods/create-fiscal-year.use-case.ts` to auto-generate the 12 `BudgetEntity` entries in database.
 
 ---
@@ -55,9 +57,11 @@
 **Independent Test**: Add, edit, and delete budget rows, save, verify sign and persistence. Duplicate from previous month.
 
 ### Tests for User Story 2
+
 - [x] T007 [P] [US2] Write unit and integration tests in `backend/tests/integration/budget-details.spec.ts` for dynamic sync updates (creating, editing, and deleting items when omitted) and copy previous month service.
 
 ### Implementation for User Story 2
+
 - [x] T008 [US2] Update `GetBudgetDetailUseCase` in `backend/src/application/budgets/get-budget-detail.use-case.ts` to return only active budgeted items and an array of `eligibleAccounts`.
 - [x] T009 [US2] Update `UpdateBudgetItemsUseCase` in `backend/src/application/budgets/update-budget-items.use-case.ts` to implement full list synchronization (deleting omitted items).
 - [x] T010 [US2] Implement `CopyPreviousBudgetUseCase` in `backend/src/application/budgets/copy-previous-budget.use-case.ts` to duplicate budgeted accounts/amounts from the previous month.
@@ -73,6 +77,7 @@
 **Independent Test**: Load the annual grid, check column counts, and click header to redirect to editor.
 
 ### Implementation for User Story 3
+
 - [x] T013 [US3] Implement and design the annual matrix page in `frontend/src/app/budgets/page.tsx` displaying accounts tree as rows and 12 months as columns.
 - [x] T014 [US3] Add month header click event in `frontend/src/app/budgets/page.tsx` to navigate to `/budgets/[periodId]/edit`.
 
@@ -85,9 +90,11 @@
 **Independent Test**: Load execution report, view real values, verify deviation alerts.
 
 ### Tests for User Story 4
+
 - [x] T015 [P] [US4] Write unit/integration tests in `backend/tests/unit/budget-execution.spec.ts` and `backend/tests/integration/budget-tracking.spec.ts` for execution comparison and cash deviation signs.
 
 ### Implementation for User Story 4
+
 - [x] T016 [US4] Update `GetBudgetExecutionUseCase` in `backend/src/application/budgets/get-budget-execution.use-case.ts` to support the new tabular format, and calculate cash-based deviations for Asset/Liability movements.
 - [x] T017 [P] [US4] Implement comparative table and KPIs, highlighting negative deviations in red, in `frontend/src/app/budgets/[periodId]/execution/page.tsx`.
 
@@ -100,9 +107,11 @@
 **Independent Test**: Open projection report, verify last closed month is base, select rolling 12 months, audit cascading cash balances.
 
 ### Tests for User Story 5
+
 - [x] T018 [P] [US5] Write unit tests in `backend/tests/unit/cash-flow-forecast.spec.ts` validating rolling 12-month window limits, automatic pre-opening of the next fiscal year, and balance cascading.
 
 ### Implementation for User Story 5
+
 - [x] T019 [US5] Update `CashFlowStatementForecastUseCase` in `backend/src/application/reports/cash-flow-statement.use-case.ts` to support the `rolling` query param and auto-pre-open next year if needed.
 - [x] T020 [US5] Update `IncomeStatementForecastUseCase` in `backend/src/application/reports/income-statement-forecast.use-case.ts` to support the `rolling` parameter.
 - [x] T021 [US5] Update `ReportsController` routes and parameter mappings in `backend/src/infrastructure/controllers/reports.controller.ts`.
@@ -131,6 +140,7 @@
 - **Polish (Final Phase)**: Depends on all user stories being complete.
 
 ### Parallel Opportunities
+
 - Foundational tasks can be worked on in parallel.
 - User Story implementation tasks (e.g. backend use cases vs frontend views) can be developed concurrently once entity schemas are settled.
 

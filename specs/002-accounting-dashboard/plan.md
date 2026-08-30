@@ -7,7 +7,7 @@
 ## Summary
 
 - **Primary Requirement**: Create a responsive mobile-first accounting dashboard with a permanent desktop sidebar, containing four views (Transactions, Stats, Accounts, Settings), global search, a floating transaction button, and a dynamic multi-item double-entry transaction creation form.
-- **Technical Approach**: 
+- **Technical Approach**:
   - Responsive layout leveraging Tailwind CSS breakpoint utilities (`hidden lg:flex`, `flex lg:hidden`).
   - Modular Next.js 15 pages mapping to `/transactions`, `/stats`, `/accounts`, and `/settings`.
   - Unified state for filters, search query, and current timeframe.
@@ -28,7 +28,7 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Double-Entry Bookkeeping & Ledger Integrity**: **PASSED**. Multi-item entries are validated mathematically before sending to backend. Entries are append-only.
 - **Clean Architecture & SOLID Principles**: **PASSED**. Separation of api services on frontend; separate domain/application/infrastructure layers on backend.

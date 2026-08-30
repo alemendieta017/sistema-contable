@@ -14,7 +14,7 @@
 
 - Q: ¿Cómo debe enviar el frontend la fecha al crear o modificar transacciones y cómo debe interpretarse? → A: El frontend debe enviar la fecha con la zona horaria (timezone offset) local del cliente (ej. `2026-06-01T00:00:00.000-04:00` para un browser en UTC-4). El backend la recibe, realiza la conversión a UTC-0, y la persiste. Para la lectura, el frontend debe respetar el timezone local del navegador (usando métodos locales de `Date` como `.getMonth()` y `.getDate()`).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Timezone-Respectful Transaction Visualization in Calendar View (Priority: P1)
 
@@ -63,7 +63,7 @@ As an accounting user, I want to input a transaction on a specific date (e.g., 2
 - **Transitions across Month/Year Boundaries**: Si una transacción está almacenada en un instante de tiempo que, al convertirse al huso horario local del cliente, cruza la frontera de un día, mes o año (por ejemplo, una transacción grabada como `2026-01-01T00:00:00.000Z` visualizada en un navegador en UTC-4), el frontend **debe** mostrarla en la fecha y mes local resultante (en este caso, 31 de Diciembre a las 20:00 del año anterior). Las agrupaciones y resúmenes mensuales deben calcularse sobre este valor local para mantener coherencia visual.
 - **Transactions with exact timestamps vs. pure dates**: Daily ledger entries might sometimes be logged with a timestamp (e.g., a reversion entry created automatically by the backend). The system must extract the absolute UTC calendar day (`2026-06-28` for `2026-06-28 23:18:32.141+00`) and treat it consistently without shifting to another date due to local timezone representation.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -72,13 +72,13 @@ As an accounting user, I want to input a transaction on a specific date (e.g., 2
 - **FR-003**: **Frontend Timezone-Respecting Parsing on Read**: The frontend MUST parse and display transaction dates respecting the browser's local timezone (using methods such as `.getFullYear()`, `.getMonth()`, `.getDate()`, `.toLocaleDateString()` on the parsed `Date` object). The daily, monthly, and calendar views must all rely on local browser time representation to place and group transactions.
 - **FR-004**: **Consistent Filtering Ranges**: Search filters and reports by date range (start date / end date) MUST be converted by the frontend to ISO timestamps containing local timezone offsets representing the boundary limits of those local days (e.g., from `2026-06-01T00:00:00.000-04:00` to `2026-06-30T23:59:59.999-04:00`) before sending them to the API.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Transaction**:
-  * **date (Timestamp with timezone)**: The primary transaction date, representing the exact instant of the transaction converted to UTC-0.
-  * **createdAt (Timestamp with timezone)**: The audit timestamp representing the exact moment the entry was inserted.
+  - **date (Timestamp with timezone)**: The primary transaction date, representing the exact instant of the transaction converted to UTC-0.
+  - **createdAt (Timestamp with timezone)**: The audit timestamp representing the exact moment the entry was inserted.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

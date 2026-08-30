@@ -16,17 +16,13 @@ export class ReconstructBalancesUseCase {
         .createQueryBuilder()
         .delete()
         .from(AccountPeriodBalanceEntity)
-        .where(
-          'periodId IN (SELECT p.id FROM periods p INNER JOIN fiscal_years fy ON p.fiscal_year_id = fy.id WHERE fy.user_id = :userId)',
-          { userId },
-        )
+        .where('periodId IN (SELECT p.id FROM periods p WHERE p.user_id = :userId)', { userId })
         .execute();
 
       // 2. Fetch all periods for the user ordered chronologically
       const periods = await entityManager
         .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoinAndSelect('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
+        .where('period.userId = :userId', { userId })
         .orderBy('period.startDate', 'ASC')
         .getMany();
 
@@ -49,26 +45,10 @@ export class ReconstructBalancesUseCase {
         order: { accountingDate: 'ASC' },
       });
 
-      // 5. Precompute first periods of all fiscal years for the user
-      const firstPeriodOfFiscalYear = new Map<string, string>(); // fiscalYearId -> periodId
-      const periodsByFy = new Map<string, PeriodEntity[]>();
-      for (const p of periods) {
-        if (!periodsByFy.has(p.fiscalYearId)) {
-          periodsByFy.set(p.fiscalYearId, []);
-        }
-        periodsByFy.get(p.fiscalYearId)!.push(p);
-      }
-      for (const [fyId, pList] of periodsByFy.entries()) {
-        pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
-        if (pList.length > 0) {
-          firstPeriodOfFiscalYear.set(fyId, pList[0].id);
-        }
-      }
-
       // Track last closing balance for each account
       const lastClosingBalances = new Map<string, number>();
 
-      // 6. Chronologically reconstruct balances period by period
+      // 5. Chronologically reconstruct balances period by period
       for (const period of periods) {
         // Group journal entries of POSTED transactions that fall inside this period's date range
         const periodEntries = transactions
@@ -98,11 +78,8 @@ export class ReconstructBalancesUseCase {
           const totalDebits = debitsMap.get(accountId) || 0;
           const totalCredits = creditsMap.get(accountId) || 0;
 
-          const isFirstPeriod = firstPeriodOfFiscalYear.get(period.fiscalYearId) === period.id;
           const isTemporary = account.type === 'INCOME' || account.type === 'EXPENSE';
-
-          const openingBalance =
-            isFirstPeriod && isTemporary ? 0 : lastClosingBalances.get(accountId) || 0;
+          const openingBalance = isTemporary ? 0 : lastClosingBalances.get(accountId) || 0;
 
           const isDebitNature = account.type === 'ASSET' || account.type === 'EXPENSE';
           let closingBalance = 0;

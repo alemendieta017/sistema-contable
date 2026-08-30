@@ -8,23 +8,33 @@ import {
   CashFlowDirection,
 } from '@sistema-contable/shared';
 import { formatCurrency } from '../../lib/utils';
-import { BudgetMonthStrip } from './BudgetMonthStrip';
-import { BudgetAccountCard } from './BudgetAccountCard';
-import { BudgetDeepDiveDrawer } from './BudgetDeepDiveDrawer';
-import { BudgetStickyActionBar } from './BudgetStickyActionBar';
 import { BudgetAccountModal } from './BudgetAccountModal';
 import {
   ChevronDown,
   ChevronUp,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
   CreditCard,
   PiggyBank,
+  Check,
+  X,
+  FastForward,
+  Lock,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 
 export interface BudgetMobileViewProps {
   matrixData: BudgetMatrixResponse;
+  summaryTotals?: {
+    ingresos: number;
+    egresos: number;
+    resultado: number;
+    ahorros: number;
+    deudas: number;
+    margenLibre: number;
+  };
   activePeriodId: string;
   onSelectPeriod: (periodId: string) => void;
   baseCurrency?: any;
@@ -71,16 +81,16 @@ const SECTION_CONFIGS: SectionConfig[] = [
   {
     key: BudgetMatrixSectionKey.INGRESOS,
     title: 'Ingresos',
-    icon: ArrowUpRight,
+    icon: TrendingUp,
     badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     textColor: 'text-emerald-600 dark:text-emerald-400',
     borderColor: 'border-emerald-500/30',
     isBalance: false,
   },
   {
-    key: BudgetMatrixSectionKey.GASTOS_VIDA,
-    title: 'Gastos de Vida / Egresos',
-    icon: ArrowDownRight,
+    key: BudgetMatrixSectionKey.EGRESOS,
+    title: 'Egresos',
+    icon: TrendingDown,
     badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
     textColor: 'text-rose-600 dark:text-rose-400',
     borderColor: 'border-rose-500/30',
@@ -88,7 +98,7 @@ const SECTION_CONFIGS: SectionConfig[] = [
   },
   {
     key: BudgetMatrixSectionKey.AHORRO_INVERSIONES,
-    title: 'Ahorro e Inversiones',
+    title: 'Ahorros e Inversiones',
     icon: PiggyBank,
     badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     textColor: 'text-blue-600 dark:text-blue-400',
@@ -112,8 +122,9 @@ const SECTION_CONFIGS: SectionConfig[] = [
 
 export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
   matrixData,
+  summaryTotals,
   activePeriodId,
-  onSelectPeriod,
+  onSelectPeriod: _onSelectPeriod,
   baseCurrency,
   onCellChange,
   onSave,
@@ -124,23 +135,35 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
   onDeleteRow,
   isSaving = false,
   dirtyCells,
-  saveSuccessMessage,
-  fiscalYearId,
+  saveSuccessMessage: _saveSuccessMessage,
 }) => {
   const { periods, sections, rows } = matrixData;
 
-  // Accordion open/collapse states (default: all 4 expanded)
+  // Selected row for bottom sheet editing
+  const [selectedRow, setSelectedRow] = useState<BudgetMatrixRow | null>(null);
+  const [editAmountStr, setEditAmountStr] = useState<string>('');
+
+  // Accordion expanded state (default all open)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     () =>
       new Set([
         BudgetMatrixSectionKey.INGRESOS,
+        BudgetMatrixSectionKey.EGRESOS,
         BudgetMatrixSectionKey.GASTOS_VIDA,
         BudgetMatrixSectionKey.AHORRO_INVERSIONES,
         BudgetMatrixSectionKey.DEUDAS_FINANCIACION,
-        'EGRESOS',
-        'FINANCIAMIENTO_AHORRO',
       ]),
   );
+
+  const [accountModalState, setAccountModalState] = useState<{
+    isOpen: boolean;
+    targetSection: BudgetMatrixSectionKey | null;
+    editRow: BudgetMatrixRow | null;
+  }>({
+    isOpen: false,
+    targetSection: null,
+    editRow: null,
+  });
 
   const toggleSection = (sectionKey: string) => {
     setExpandedSections((prev) => {
@@ -154,272 +177,575 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
     });
   };
 
-  // Deep-Dive Drawer state
-  const [deepDiveRow, setDeepDiveRow] = useState<BudgetMatrixRow | null>(null);
-  const [isDeepDiveOpen, setIsDeepDiveOpen] = useState<boolean>(false);
+  const activePeriod = periods.find((p) => p.id === activePeriodId) || periods[0];
+  const isClosed = activePeriod?.status === 'CLOSED';
 
-  // Budget Account Modal state
-  const [accountModalState, setAccountModalState] = useState<{
-    isOpen: boolean;
-    targetSection?: 'ASSET' | 'LIABILITY' | null;
-    editRow?: BudgetMatrixRow | null;
-  }>({
-    isOpen: false,
-    targetSection: null,
-    editRow: null,
-  });
+  // Compute 6 Quadrants & KPI Totals for active month if not provided by parent
+  const computedTotals = useMemo(() => {
+    if (!activePeriod) {
+      return {
+        ingresos: 0,
+        egresos: 0,
+        resultado: 0,
+        ahorros: 0,
+        deudas: 0,
+        margenLibre: 0,
+      };
+    }
 
-  const openAddAccountModal = (target: 'ASSET' | 'LIABILITY') => {
-    setAccountModalState({
-      isOpen: true,
-      targetSection: target,
-      editRow: null,
-    });
-  };
+    const pId = activePeriod.id;
+    let ing = 0;
+    let egr = 0;
+    let ahorroOutflows = 0;
+    let ahorroInflows = 0;
+    let deudaOutflows = 0;
+    let deudaInflows = 0;
 
-  const openEditAccountModal = (row: BudgetMatrixRow) => {
-    setAccountModalState({
-      isOpen: true,
-      targetSection: null,
-      editRow: row,
-    });
-  };
-
-  // Calculate dirty period IDs set for BudgetMonthStrip indicators
-  const dirtyPeriodIds = useMemo(() => {
-    const dirtySet = new Set<string>();
-    for (const cellKey of dirtyCells) {
-      const periodId = cellKey.split('_')[0];
-      if (periodId) {
-        dirtySet.add(periodId);
+    if (sections && sections.length > 0) {
+      for (const sec of sections) {
+        for (const r of sec.rows) {
+          if (r.isParent) continue;
+          const val = r.amounts[pId] || 0;
+          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) {
+            ing += val;
+          } else if (
+            sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
+            sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
+          ) {
+            egr += val;
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              ahorroInflows += val;
+            } else {
+              ahorroOutflows += val;
+            }
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              deudaInflows += val;
+            } else {
+              deudaOutflows += val;
+            }
+          }
+        }
+      }
+    } else {
+      for (const r of rows || []) {
+        if (r.isParent) continue;
+        const val = r.amounts[pId] || 0;
+        if (r.accountType === 'INCOME') {
+          ing += val;
+        } else if (r.accountType === 'EXPENSE') {
+          egr += val;
+        } else if (r.accountType === 'ASSET') {
+          if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+            ahorroInflows += val;
+          } else {
+            ahorroOutflows += val;
+          }
+        } else {
+          if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+            deudaInflows += val;
+          } else {
+            deudaOutflows += val;
+          }
+        }
       }
     }
-    return dirtySet;
-  }, [dirtyCells]);
 
-  // Current active period object
-  const activePeriod = useMemo(() => {
-    return (
-      periods.find((p) => p.id === activePeriodId) ||
-      periods[0] || { id: '', name: '', friendlyName: '', status: 'OPEN' }
+    const resultado = ing - egr;
+    const netAhorros = ahorroOutflows - ahorroInflows;
+    const netDeudas = deudaOutflows - deudaInflows;
+    const totalInflows = ing + ahorroInflows + deudaInflows;
+    const totalOutflows = egr + ahorroOutflows + deudaOutflows;
+    const margenLibre = totalInflows - totalOutflows;
+
+    return {
+      ingresos: ing,
+      egresos: egr,
+      resultado,
+      ahorros: netAhorros,
+      deudas: netDeudas,
+      margenLibre,
+    };
+  }, [activePeriod, sections, rows]);
+
+  const activeTotals = summaryTotals || computedTotals;
+
+  // Filter visible section configs matching the sections present in matrixData
+  const visibleConfigs = useMemo(() => {
+    if (!sections || sections.length === 0) return SECTION_CONFIGS;
+    return SECTION_CONFIGS.filter((config) =>
+      sections.some(
+        (s) =>
+          s.sectionKey === config.key ||
+          (config.key === BudgetMatrixSectionKey.EGRESOS &&
+            s.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA),
+      ),
     );
-  }, [periods, activePeriodId]);
+  }, [sections]);
 
-  const isPeriodLocked = activePeriod.status === 'CLOSED';
+  // Open Bottom Sheet Editor for a row
+  const handleOpenRowEditor = (row: BudgetMatrixRow) => {
+    if (isClosed) return;
+    setSelectedRow(row);
+    const currentVal = row.amounts[activePeriodId] ?? 0;
+    setEditAmountStr(currentVal === 0 ? '' : String(currentVal));
+  };
 
-  // Group rows by the 4 standard sections
-  const sectionDataMap = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        config: SectionConfig;
-        rows: BudgetMatrixRow[];
-        monthlySum: number;
-      }
-    >();
-
-    SECTION_CONFIGS.forEach((config) => {
-      // Find rows from matrixData.sections or fallback to matrixData.rows
-      let secRows: BudgetMatrixRow[] = [];
-
-      if (sections && sections.length > 0) {
-        const foundSec = sections.find(
-          (s) =>
-            s.sectionKey === config.key ||
-            (config.key === BudgetMatrixSectionKey.GASTOS_VIDA && s.sectionKey === 'EGRESOS') ||
-            (config.key === BudgetMatrixSectionKey.DEUDAS_FINANCIACION &&
-              s.sectionKey === 'FINANCIAMIENTO_AHORRO'),
-        );
-        if (foundSec) {
-          secRows = foundSec.rows.filter((r) => !r.isParent);
-        }
-      } else if (rows) {
-        secRows = rows.filter((r) => {
-          if (r.isParent) return false;
-          if (config.key === BudgetMatrixSectionKey.INGRESOS) return r.accountType === 'INCOME';
-          if (config.key === BudgetMatrixSectionKey.GASTOS_VIDA) return r.accountType === 'EXPENSE';
-          if (config.key === BudgetMatrixSectionKey.AHORRO_INVERSIONES)
-            return r.accountType === 'ASSET';
-          if (config.key === BudgetMatrixSectionKey.DEUDAS_FINANCIACION)
-            return ['LIABILITY', 'EQUITY'].includes(r.accountType);
-          return false;
-        });
-      }
-
-      // Calculate monthly sum for active period
-      let sum = 0;
-      secRows.forEach((r) => {
-        const amount = r.amounts[activePeriodId] || 0;
-        if (
-          (config.key === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
-            config.key === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) &&
-          r.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
-        ) {
-          sum -= amount;
-        } else {
-          sum += amount;
-        }
-      });
-
-      map.set(config.key, {
-        config,
-        rows: secRows,
-        monthlySum: sum,
-      });
-    });
-
-    return map;
-  }, [sections, rows, activePeriodId]);
+  // Commit Bottom Sheet Edit
+  const handleCommitEdit = () => {
+    if (!selectedRow || !activePeriod) return;
+    const cleanNum = parseFloat(editAmountStr) || 0;
+    onCellChange(selectedRow.accountId, activePeriod.id, cleanNum, selectedRow.subRowId || null);
+    setSelectedRow(null);
+  };
 
   return (
-    <div className="flex flex-col w-full min-h-full pb-24 bg-slate-50 dark:bg-slate-950 select-none">
-      {/* 1. Swipeable / Clickable Month Strip Navigation Bar */}
-      <div className="sticky top-0 z-30 shadow-sm">
-        <BudgetMonthStrip
-          periods={periods}
-          activePeriodId={activePeriodId}
-          onSelectPeriod={onSelectPeriod}
-          dirtyPeriodIds={dirtyPeriodIds}
-          baseCurrency={baseCurrency}
-        />
+    <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-950 overflow-y-auto font-sans">
+      {/* 1. Top Summary Card with all 6 KPIs */}
+      <div className="p-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline space-x-1.5 min-w-0">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                Planificación
+              </span>
+              <span className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate">
+                • {activePeriod?.friendlyName || activePeriod?.name}
+              </span>
+            </div>
+            {isClosed ? (
+              <span className="flex items-center space-x-1 text-[10px] font-semibold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md shrink-0">
+                <Lock className="w-3 h-3" />
+                <span>Cerrado</span>
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md shrink-0">
+                Presupuesto
+              </span>
+            )}
+          </div>
+
+          {/* Key Metrics Grid (6 clean metric tiles in 2 columns) */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
+            {/* Ingresos */}
+            <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <span className="text-[11px] text-slate-500">Ingresos</span>
+              <p className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-xs sm:text-sm truncate">
+                {formatCurrency(activeTotals.ingresos, baseCurrency)}
+              </p>
+            </div>
+
+            {/* Egresos */}
+            <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <span className="text-[11px] text-slate-500">Egresos</span>
+              <p className="font-bold text-slate-800 dark:text-slate-200 font-mono text-xs sm:text-sm truncate">
+                {formatCurrency(activeTotals.egresos, baseCurrency)}
+              </p>
+            </div>
+
+            {/* = Resultado */}
+            <div className="p-2 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-xl">
+              <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-semibold">
+                = Resultado
+              </span>
+              <p
+                className={`font-bold font-mono text-xs sm:text-sm truncate ${
+                  activeTotals.resultado >= 0
+                    ? 'text-indigo-700 dark:text-indigo-300'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {formatCurrency(activeTotals.resultado, baseCurrency)}
+              </p>
+            </div>
+
+            {/* Ahorros e Inversiones */}
+            <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <span className="text-[11px] text-slate-500">Ahorros e Inversiones</span>
+              <p className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs sm:text-sm truncate">
+                {formatCurrency(activeTotals.ahorros, baseCurrency)}
+              </p>
+            </div>
+
+            {/* Deudas y Financiación */}
+            <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <span className="text-[11px] text-slate-500">Deudas y Financiación</span>
+              <p className="font-bold text-purple-600 dark:text-purple-400 font-mono text-xs sm:text-sm truncate">
+                {formatCurrency(activeTotals.deudas, baseCurrency)}
+              </p>
+            </div>
+
+            {/* = Margen Libre */}
+            <div className="p-2 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-xl">
+              <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">
+                = Margen Libre
+              </span>
+              <p
+                className={`font-bold font-mono text-xs sm:text-sm truncate ${
+                  activeTotals.margenLibre >= 0
+                    ? 'text-emerald-700 dark:text-emerald-300'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {formatCurrency(activeTotals.margenLibre, baseCurrency)}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 2. Main Container with the 4 Block Accordions */}
-      <div className="flex flex-col space-y-3 p-3 w-full max-w-xl mx-auto">
-        {SECTION_CONFIGS.map((config) => {
-          const secData = sectionDataMap.get(config.key) || {
-            config,
-            rows: [],
-            monthlySum: 0,
-          };
-          const isExpanded = expandedSections.has(config.key);
-          const Icon = config.icon;
+      {/* 2. Quadrant Sections Accordions */}
+      <div className="px-3 space-y-3">
+        {visibleConfigs.map((config) => {
+          const matchingSection = sections?.find(
+            (s) =>
+              s.sectionKey === config.key ||
+              (config.key === BudgetMatrixSectionKey.EGRESOS &&
+                s.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA),
+          );
+
+          const sectionRows = matchingSection
+            ? matchingSection.rows
+            : (rows || []).filter((r) => {
+                if (config.key === BudgetMatrixSectionKey.INGRESOS)
+                  return r.accountType === 'INCOME';
+                if (config.key === BudgetMatrixSectionKey.EGRESOS)
+                  return r.accountType === 'EXPENSE';
+                if (config.key === BudgetMatrixSectionKey.AHORRO_INVERSIONES)
+                  return r.accountType === 'ASSET';
+                return ['LIABILITY', 'EQUITY'].includes(r.accountType);
+              });
+
+          const isExpanded = expandedSections.has(config.key as string);
+          const totalAmount = matchingSection
+            ? matchingSection.sectionTotals[activePeriodId] || 0
+            : sectionRows
+                .filter((r) => !r.isParent)
+                .reduce((sum, r) => sum + (r.amounts[activePeriodId] || 0), 0);
 
           return (
             <div
               key={config.key}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all duration-200"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm"
             >
-              {/* Accordion Header Bar (Touch-friendly >= 48px) */}
-              <button
-                type="button"
-                onClick={() => toggleSection(config.key)}
-                className="w-full flex items-center justify-between px-4 py-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors text-left cursor-pointer select-none"
+              {/* Accordion Header */}
+              <div
+                onClick={() => toggleSection(config.key as string)}
+                className="flex items-center justify-between p-3.5 cursor-pointer select-none bg-slate-50/60 dark:bg-slate-800/30"
               >
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center border shrink-0 ${config.badgeColor}`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="truncate">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                      {config.title}
-                    </h3>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {secData.rows.length} cuenta{secData.rows.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 shrink-0">
-                  {/* Monthly Sum in Header */}
+                <div className="flex items-center space-x-2.5">
                   <span
-                    className={`font-mono text-xs font-bold ${
-                      secData.monthlySum < 0
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : 'text-slate-900 dark:text-slate-100'
-                    }`}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${config.badgeColor}`}
                   >
-                    {formatCurrency(secData.monthlySum, baseCurrency)}
+                    {config.title}
                   </span>
-
-                  {/* Collapse / Expand Chevron */}
-                  <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </div>
+                  <span className="text-xs text-slate-400">({sectionRows.length})</span>
                 </div>
-              </button>
+
+                <div className="flex items-center space-x-2 font-mono">
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {formatCurrency(totalAmount, baseCurrency)}
+                  </span>
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
 
               {/* Accordion Content */}
               {isExpanded && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                  {/* List of Account Cards */}
-                  {secData.rows.length > 0 ? (
-                    secData.rows.map((row) => {
-                      const cellKey = `${activePeriodId}_${row.accountId}${
-                        row.subRowId ? `_${row.subRowId}` : ''
-                      }`;
-                      const isCellDirty = dirtyCells.has(cellKey);
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                  {sectionRows.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-400">
+                      No hay cuentas en este cuadrante.
+                    </div>
+                  ) : (
+                    sectionRows.map((row) => {
+                      const amount = row.amounts[activePeriodId] ?? 0;
+                      const cellKey = `${activePeriodId}_${row.accountId}${row.subRowId ? `_${row.subRowId}` : ''}`;
+                      const isDirty = dirtyCells.has(cellKey);
 
                       return (
-                        <BudgetAccountCard
+                        <div
                           key={`${row.accountId}_${row.subRowId || 'main'}`}
-                          account={row}
-                          activePeriodId={activePeriodId}
-                          baseCurrency={baseCurrency}
-                          onAmountChange={onCellChange}
-                          onOpenDeepDive={(r) => {
-                            setDeepDiveRow(r);
-                            setIsDeepDiveOpen(true);
-                          }}
-                          onOpenAutofill={onOpenAutofill}
-                          onEditBalanceRow={openEditAccountModal}
-                          onDeleteRow={onDeleteRow}
-                          isDirty={isCellDirty}
-                          isLocked={isPeriodLocked}
-                        />
+                          onClick={() => !row.isParent && handleOpenRowEditor(row)}
+                          className={`flex items-center justify-between p-3.5 ${
+                            row.isParent
+                              ? 'bg-slate-50/80 dark:bg-slate-800/40 font-bold'
+                              : 'active:bg-slate-100 dark:active:bg-slate-800 cursor-pointer'
+                          } transition-colors`}
+                        >
+                          <div className="flex-1 pr-2 min-w-0">
+                            <div className="flex items-center space-x-1.5 truncate">
+                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block truncate">
+                                {row.subRowLabel || row.accountName}
+                              </span>
+                              {config.isBalance && row.cashFlowDirection && (
+                                <span
+                                  className="inline-flex items-center shrink-0 select-none"
+                                  title={
+                                    row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                      ? 'Salida de efectivo'
+                                      : 'Entrada de efectivo'
+                                  }
+                                >
+                                  {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                    <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                  ) : (
+                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                            {row.subRowLabel && (
+                              <span className="text-2xs text-slate-400 block truncate">
+                                {row.accountName}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center space-x-2 shrink-0 font-mono">
+                            <span
+                              className={`text-xs px-2.5 py-1 rounded-lg font-bold ${
+                                isDirty
+                                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 ring-1 ring-indigo-500/20'
+                                  : amount === 0
+                                    ? 'text-slate-400 bg-slate-100/60 dark:bg-slate-800/60'
+                                    : 'text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800'
+                              }`}
+                            >
+                              {formatCurrency(amount, baseCurrency)}
+                            </span>
+                          </div>
+                        </div>
                       );
                     })
-                  ) : (
-                    <div className="py-6 px-4 text-center text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                      No hay cuentas presupuestadas en esta sección.
-                    </div>
                   )}
 
-                  {/* "+ Presupuestar Activo/Deuda" Button for Balance Sections */}
-                  {config.isBalance && config.balanceType && (
-                    <button
-                      type="button"
-                      onClick={() => openAddAccountModal(config.balanceType!)}
-                      className={`w-full min-h-[44px] flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl border border-dashed font-semibold text-xs transition-all cursor-pointer ${
-                        config.balanceType === 'ASSET'
-                          ? 'border-blue-300 dark:border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                          : 'border-purple-300 dark:border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-900/30'
-                      }`}
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>{config.addBtnText}</span>
-                    </button>
+                  {/* Add balance account button */}
+                  {config.isBalance && onAddBalanceRow && (
+                    <div className="p-3 bg-slate-50/40 dark:bg-slate-800/20 text-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccountModalState({
+                            isOpen: true,
+                            targetSection: config.key as BudgetMatrixSectionKey,
+                            editRow: null,
+                          })
+                        }
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{config.addBtnText}</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
             </div>
           );
         })}
+
+        {/* Balanced Gap Spacer at bottom so the last accordion is cleanly visible above BottomNav */}
+        <div className="h-16 w-full" aria-hidden="true" />
       </div>
 
-      {/* 3. Deep-Dive Drawer (12-Month Breakdown Sheet) */}
-      {isDeepDiveOpen && deepDiveRow && (
-        <BudgetDeepDiveDrawer
-          isOpen={isDeepDiveOpen}
-          onClose={() => {
-            setIsDeepDiveOpen(false);
-            setDeepDiveRow(null);
-          }}
-          account={deepDiveRow}
-          periods={periods}
-          baseCurrency={baseCurrency}
-          fiscalYearId={fiscalYearId}
-          onAmountChange={onCellChange}
-        />
+      {/* 3. Bottom Sheet Rapid Cell Editor */}
+      {selectedRow && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0"
+            onClick={() => setSelectedRow(null)}
+            aria-hidden="true"
+          />
+
+          <div
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl shadow-2xl p-5 space-y-4 z-10 animate-in slide-in-from-bottom duration-200"
+            style={{
+              paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+            }}
+          >
+            {/* Pull handle */}
+            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto" />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {selectedRow.subRowLabel || selectedRow.accountName}
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Presupuesto para {activePeriod?.friendlyName || activePeriod?.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRow(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Input with Currency */}
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="decimal"
+                autoFocus
+                placeholder="0"
+                value={editAmountStr}
+                onChange={(e) => setEditAmountStr(e.target.value)}
+                className="w-full text-center text-2xl font-bold font-mono bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+            </div>
+
+            {/* Fast Quick Buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const prevIdx = periods.findIndex((p) => p.id === activePeriodId) - 1;
+                  if (prevIdx >= 0) {
+                    const prevVal = selectedRow.amounts[periods[prevIdx].id] ?? 0;
+                    setEditAmountStr(String(prevVal));
+                  }
+                }}
+                className="py-2 px-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 active:bg-slate-200"
+              >
+                = Mes Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenAutofill) {
+                    const r = selectedRow;
+                    setSelectedRow(null);
+                    onOpenAutofill(r);
+                  }
+                }}
+                className="py-2 px-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1"
+              >
+                <FastForward className="w-3.5 h-3.5" />
+                <span>Rellenar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditAmountStr('0')}
+                className="py-2 px-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold text-slate-500"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            {/* Balance row actions if applicable */}
+            {(selectedRow.accountType === 'ASSET' ||
+              selectedRow.accountType === 'LIABILITY' ||
+              selectedRow.accountType === 'EQUITY' ||
+              Boolean(selectedRow.subRowId) ||
+              Boolean(selectedRow.cashFlowDirection)) && (
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = selectedRow;
+                    setSelectedRow(null);
+                    setAccountModalState({
+                      isOpen: true,
+                      targetSection:
+                        r.accountType === 'ASSET'
+                          ? BudgetMatrixSectionKey.AHORRO_INVERSIONES
+                          : BudgetMatrixSectionKey.DEUDAS_FINANCIACION,
+                      editRow: r,
+                    });
+                  }}
+                  className="flex-1 py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Editar cuenta / flujo</span>
+                </button>
+
+                {onDeleteRow && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const r = selectedRow;
+                      setSelectedRow(null);
+                      if (
+                        confirm(
+                          `¿Desea eliminar la partida "${r.subRowLabel || r.accountName}" de este presupuesto?`,
+                        )
+                      ) {
+                        onDeleteRow(r.accountId, r.subRowId || null);
+                      }
+                    }}
+                    className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Confirm button */}
+            <button
+              type="button"
+              onClick={handleCommitEdit}
+              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-600/30 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            >
+              <Check className="w-5 h-5" />
+              <span>Confirmar Monto</span>
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* 4. Unified Budget Account Modal (Create / Edit Balance Rows) */}
+      {/* 4. Sticky Bottom Action Bar when there are unsaved changes */}
+      {dirtyCells.size > 0 && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-3 shadow-2xl flex items-center justify-between"
+          style={{
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+          }}
+        >
+          <div className="flex items-center space-x-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              {dirtyCells.size} {dirtyCells.size === 1 ? 'cambio pendiente' : 'cambios pendientes'}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {onDiscard && (
+              <button
+                type="button"
+                onClick={onDiscard}
+                disabled={isSaving}
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center space-x-1"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Cancelar</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center space-x-1.5 transition-all cursor-pointer"
+            >
+              <Check className="w-4 h-4" />
+              <span>{isSaving ? 'Guardando...' : 'Guardar'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Account Modal for Balance Rows */}
       {accountModalState.isOpen && (
         <BudgetAccountModal
           isOpen={accountModalState.isOpen}
@@ -430,28 +756,14 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
           }
           onSave={({ account, label, direction, subRowId }) => {
             if (accountModalState.editRow) {
-              if (onEditBalanceRow) {
-                onEditBalanceRow(account, label, direction, subRowId);
-              }
+              if (onEditBalanceRow) onEditBalanceRow(account, label, direction, subRowId);
             } else {
-              if (onAddBalanceRow) {
-                onAddBalanceRow(account, label, direction);
-              }
+              if (onAddBalanceRow) onAddBalanceRow(account, label, direction);
             }
             setAccountModalState({ isOpen: false, targetSection: null, editRow: null });
           }}
         />
       )}
-
-      {/* 5. Sticky Bottom Action Bar (Discard / Save Todo) */}
-      <BudgetStickyActionBar
-        isDirty={dirtyCells.size > 0}
-        dirtyCount={dirtyCells.size}
-        isSaving={isSaving}
-        onSave={onSave}
-        onDiscard={onDiscard || (() => {})}
-        saveSuccessMessage={saveSuccessMessage}
-      />
     </div>
   );
 };

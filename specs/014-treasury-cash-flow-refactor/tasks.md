@@ -146,11 +146,13 @@ graph TD
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
+
 1. Complete Setup & Foundational (`T001` - `T002`).
 2. Implement User Story 1 (`T003` - `T004`).
 3. Validate default cash accounts are created as money accounts (`isCashOrBank = true`).
 
 ### Incremental Delivery
+
 1. Deliver US1 (Default Accounts Initialization).
 2. Deliver US2 (Modal Toggle & Table Badging).
 3. Deliver US3 (Backend & UI Immutability).

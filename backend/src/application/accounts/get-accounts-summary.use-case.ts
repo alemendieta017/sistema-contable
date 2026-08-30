@@ -20,8 +20,7 @@ export class GetAccountsSummaryUseCase {
       // 2. Find the latest closed accounting period for this user
       const latestClosedPeriod = await entityManager
         .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
+        .where('period.userId = :userId', { userId })
         .andWhere('period.status = :status', { status: 'CLOSED' })
         .orderBy('period.endDate', 'DESC')
         .addOrderBy('period.startDate', 'DESC')

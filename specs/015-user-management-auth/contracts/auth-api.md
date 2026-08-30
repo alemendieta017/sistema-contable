@@ -5,14 +5,14 @@
 
 ## Endpoints Summary
 
-| Method | Endpoint | Auth Required | Description |
-|--------|----------|---------------|-------------|
-| `POST` | `/api/v1/auth/register` | No | Register new user account and activate session |
-| `POST` | `/api/v1/auth/login` | No | Authenticate user with credentials |
-| `GET`  | `/api/v1/auth/me` | Yes (Bearer) | Get current authenticated user profile |
-| `POST` | `/api/v1/auth/change-password` | Yes (Bearer) | Change current user's password |
-| `POST` | `/api/v1/auth/forgot-password` | No | Request password recovery reset link email |
-| `POST` | `/api/v1/auth/reset-password` | No | Reset password using single-use recovery token |
+| Method | Endpoint                       | Auth Required | Description                                    |
+| ------ | ------------------------------ | ------------- | ---------------------------------------------- |
+| `POST` | `/api/v1/auth/register`        | No            | Register new user account and activate session |
+| `POST` | `/api/v1/auth/login`           | No            | Authenticate user with credentials             |
+| `GET`  | `/api/v1/auth/me`              | Yes (Bearer)  | Get current authenticated user profile         |
+| `POST` | `/api/v1/auth/change-password` | Yes (Bearer)  | Change current user's password                 |
+| `POST` | `/api/v1/auth/forgot-password` | No            | Request password recovery reset link email     |
+| `POST` | `/api/v1/auth/reset-password`  | No            | Reset password using single-use recovery token |
 
 ---
 
@@ -21,6 +21,7 @@
 - **URL**: `/api/v1/auth/register`
 - **Method**: `POST`
 - **Request Body**:
+
 ```json
 {
   "fullName": "Juan Pérez",
@@ -30,6 +31,7 @@
 ```
 
 - **Success Response** (`201 Created`):
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsIn...",
@@ -53,6 +55,7 @@
 - **URL**: `/api/v1/auth/login`
 - **Method**: `POST`
 - **Request Body**:
+
 ```json
 {
   "email": "juan.perez@example.com",
@@ -61,6 +64,7 @@
 ```
 
 - **Success Response** (`200 OK`):
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsIn...",
@@ -83,6 +87,7 @@
 - **Method**: `GET`
 - **Headers**: `Authorization: Bearer <token>`
 - **Success Response** (`200 OK`):
+
 ```json
 {
   "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
@@ -103,6 +108,7 @@
 - **Method**: `POST`
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
+
 ```json
 {
   "currentPassword": "Password123!",
@@ -111,6 +117,7 @@
 ```
 
 - **Success Response** (`200 OK`):
+
 ```json
 {
   "message": "Password updated successfully"
@@ -128,6 +135,7 @@
 - **URL**: `/api/v1/auth/forgot-password`
 - **Method**: `POST`
 - **Request Body**:
+
 ```json
 {
   "email": "juan.perez@example.com"
@@ -135,13 +143,14 @@
 ```
 
 - **Success Response** (`200 OK`):
+
 ```json
 {
   "message": "If the email is registered, a password reset link has been sent."
 }
 ```
 
-*(Note: Returns 200 OK regardless of whether email exists to prevent email enumeration attacks).*
+_(Note: Returns 200 OK regardless of whether email exists to prevent email enumeration attacks)._
 
 ---
 
@@ -150,6 +159,7 @@
 - **URL**: `/api/v1/auth/reset-password`
 - **Method**: `POST`
 - **Request Body**:
+
 ```json
 {
   "token": "b8f2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
@@ -158,6 +168,7 @@
 ```
 
 - **Success Response** (`200 OK`):
+
 ```json
 {
   "message": "Password reset successfully. You may now log in with your new password."

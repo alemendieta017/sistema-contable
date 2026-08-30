@@ -3,9 +3,12 @@ import {
   UpdateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  BudgetMatrixResponse,
+  RollingBudgetMatrixResponse,
   UpdateBudgetMatrixRequest,
-  UpdateBudgetMatrixResponse,
+  BatchUpdateBudgetMatrixRequest,
+  BatchUpdateBudgetMatrixResponse,
+  ExtendBudgetMatrixRequest,
+  ExtendBudgetMatrixResponse,
   MatrixCellUpdate,
   ApplyBudgetDriverRequest,
   ApplyBudgetDriverResponse,
@@ -17,6 +20,9 @@ import {
   FactoryResetRequest,
   DeleteAccountRequest,
   DangerZoneResponse,
+  EnsurePeriodResponse,
+  PeriodResponse,
+  NetWorthEvolutionResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -304,11 +310,56 @@ export const api = {
       return handleResponse(res);
     },
 
-    async getMatrix(fiscalYearId: string, categoryId?: string): Promise<BudgetMatrixResponse> {
-      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${encodeURIComponent(fiscalYearId)}`;
-      if (categoryId) {
-        url += `&categoryId=${encodeURIComponent(categoryId)}`;
+    async getRollingMatrix(
+      startPeriod?: string,
+      months?: number,
+      categoryId?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix`;
+      const params = new URLSearchParams();
+      if (startPeriod) params.append('startPeriod', startPeriod);
+      if (months) params.append('months', String(months));
+      if (categoryId) params.append('categoryId', categoryId);
+
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async getMatrix(
+      startPeriodOrFiscalYear?: string,
+      monthsOrCategory?: number | string,
+      categoryIdParam?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix`;
+      const params = new URLSearchParams();
+      if (startPeriodOrFiscalYear) {
+        if (/^\d{4}-(0[1-9]|1[0-2])$/.test(startPeriodOrFiscalYear)) {
+          params.append('startPeriod', startPeriodOrFiscalYear);
+        } else {
+          params.append('fiscalYearId', startPeriodOrFiscalYear);
+        }
       }
+      if (typeof monthsOrCategory === 'number') {
+        params.append('months', String(monthsOrCategory));
+        if (categoryIdParam) params.append('categoryId', categoryIdParam);
+      } else if (typeof monthsOrCategory === 'string') {
+        if (/^\d+$/.test(monthsOrCategory)) {
+          params.append('months', monthsOrCategory);
+          if (categoryIdParam) params.append('categoryId', categoryIdParam);
+        } else {
+          params.append('categoryId', monthsOrCategory);
+        }
+      }
+
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
@@ -317,20 +368,23 @@ export const api = {
     },
 
     async getBudgetMatrix(
-      fiscalYearId: string,
-      categoryId?: string,
-    ): Promise<BudgetMatrixResponse> {
-      return this.getMatrix(fiscalYearId, categoryId);
+      startPeriodOrFiscalYear?: string,
+      monthsOrCategory?: number | string,
+      categoryIdParam?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      return this.getMatrix(startPeriodOrFiscalYear, monthsOrCategory, categoryIdParam);
     },
 
     async updateMatrixBatch(
-      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      dataOrFiscalYear: string | BatchUpdateBudgetMatrixRequest | UpdateBudgetMatrixRequest,
       updates?: MatrixCellUpdate[],
-    ): Promise<UpdateBudgetMatrixResponse> {
+    ): Promise<BatchUpdateBudgetMatrixResponse> {
       const body =
-        typeof fiscalYearIdOrData === 'string'
-          ? { fiscalYearId: fiscalYearIdOrData, updates: updates || [] }
-          : fiscalYearIdOrData;
+        typeof dataOrFiscalYear === 'string'
+          ? { updates: updates || [] }
+          : Array.isArray((dataOrFiscalYear as any).updates)
+            ? dataOrFiscalYear
+            : { updates: [] };
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
         method: 'PUT',
         headers: getHeaders(),
@@ -340,10 +394,19 @@ export const api = {
     },
 
     async updateBudgetMatrix(
-      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      dataOrFiscalYear: string | BatchUpdateBudgetMatrixRequest | UpdateBudgetMatrixRequest,
       updates?: MatrixCellUpdate[],
-    ): Promise<UpdateBudgetMatrixResponse> {
-      return this.updateMatrixBatch(fiscalYearIdOrData, updates);
+    ): Promise<BatchUpdateBudgetMatrixResponse> {
+      return this.updateMatrixBatch(dataOrFiscalYear, updates);
+    },
+
+    async extendBudgetMatrix(data: ExtendBudgetMatrixRequest): Promise<ExtendBudgetMatrixResponse> {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/extend`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
     },
 
     async deleteMatrixRow(
@@ -436,6 +499,23 @@ export const api = {
   },
 
   reports: {
+    async netWorthEvolution(options?: {
+      startPeriod?: string;
+      endPeriod?: string;
+    }): Promise<NetWorthEvolutionResponse> {
+      let url = `${API_BASE_URL}/reports/net-worth-evolution`;
+      const queryParams = new URLSearchParams();
+      if (options?.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+      if (options?.endPeriod) queryParams.append('endPeriod', options.endPeriod);
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
     async statistics(period: string, type: 'INCOME' | 'EXPENSE', timezoneOffset?: number) {
       let url = `${API_BASE_URL}/reports/statistics?period=${period}&type=${type}`;
       if (timezoneOffset !== undefined) {
@@ -474,18 +554,10 @@ export const api = {
       return handleResponse(res);
     },
 
-    async incomeStatement(periodId: string) {
-      const res = await fetch(`${API_BASE_URL}/reports/income-statement?periodId=${periodId}`, {
-        method: 'GET',
-        headers: getHeaders(),
-      });
-      return handleResponse(res);
-    },
-
-    async realVsProjectedIncomeStatement(fiscalYearId: string, rolling?: boolean) {
-      let url = `${API_BASE_URL}/reports/income-statement/real-vs-projected?fiscalYearId=${fiscalYearId}`;
-      if (rolling !== undefined) {
-        url += `&rolling=${rolling}`;
+    async incomeStatement(periodId: string, mode?: 'real' | 'projected') {
+      let url = `${API_BASE_URL}/reports/income-statement?periodId=${encodeURIComponent(periodId)}`;
+      if (mode) {
+        url += `&mode=${encodeURIComponent(mode)}`;
       }
       const res = await fetch(url, {
         method: 'GET',
@@ -494,11 +566,53 @@ export const api = {
       return handleResponse(res);
     },
 
-    async realVsProjectedCashFlow(fiscalYearId: string, rolling?: boolean) {
-      let url = `${API_BASE_URL}/reports/cash-flow/real-vs-projected?fiscalYearId=${fiscalYearId}`;
-      if (rolling !== undefined) {
-        url += `&rolling=${rolling}`;
+    async realVsProjectedIncomeStatement(
+      options?:
+        | string
+        | { startPeriod?: string; fiscalYearId?: string; rolling?: boolean; months?: number },
+      rolling?: boolean,
+    ) {
+      let url = `${API_BASE_URL}/reports/income-statement/real-vs-projected`;
+      const queryParams = new URLSearchParams();
+      if (typeof options === 'string') {
+        queryParams.append('startPeriod', options);
+        if (rolling !== undefined) queryParams.append('rolling', rolling.toString());
+      } else if (options) {
+        if (options.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+        if (options.fiscalYearId) queryParams.append('fiscalYearId', options.fiscalYearId);
+        if (options.rolling !== undefined)
+          queryParams.append('rolling', options.rolling.toString());
+        if (options.months !== undefined) queryParams.append('months', options.months.toString());
       }
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async realVsProjectedCashFlow(
+      options?:
+        | string
+        | { startPeriod?: string; fiscalYearId?: string; rolling?: boolean; months?: number },
+      rolling?: boolean,
+    ) {
+      let url = `${API_BASE_URL}/reports/cash-flow/real-vs-projected`;
+      const queryParams = new URLSearchParams();
+      if (typeof options === 'string') {
+        queryParams.append('startPeriod', options);
+        if (rolling !== undefined) queryParams.append('rolling', rolling.toString());
+      } else if (options) {
+        if (options.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+        if (options.fiscalYearId) queryParams.append('fiscalYearId', options.fiscalYearId);
+        if (options.rolling !== undefined)
+          queryParams.append('rolling', options.rolling.toString());
+        if (options.months !== undefined) queryParams.append('months', options.months.toString());
+      }
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
@@ -515,62 +629,51 @@ export const api = {
     },
   },
 
-  fiscalYears: {
-    async list() {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'GET',
-        headers: getHeaders(),
-      });
-      return handleResponse(res);
-    },
-
-    async create(data: { year: number; startDate: string; endDate: string }) {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return handleResponse(res);
-    },
-
-    async close(id: string, data?: { retainedEarningsAccountId?: string }) {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years/${id}/close`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data || {}),
-      });
-      return handleResponse(res);
-    },
-  },
-
   periods: {
-    async list(fiscalYearId?: string) {
-      const url = new URL(`${API_BASE_URL}/periods`);
-      if (fiscalYearId) {
-        url.searchParams.append('fiscalYearId', fiscalYearId);
-      }
-      const res = await fetch(url.toString(), {
+    async list(): Promise<PeriodResponse[]> {
+      const res = await fetch(`${API_BASE_URL}/periods`, {
         method: 'GET',
         headers: getHeaders(),
       });
       return handleResponse(res);
     },
 
-    async listFiscalYears() {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'GET',
+    async ensure(period: string): Promise<EnsurePeriodResponse> {
+      const res = await fetch(`${API_BASE_URL}/periods/ensure`, {
+        method: 'POST',
         headers: getHeaders(),
+        body: JSON.stringify({ period }),
       });
       return handleResponse(res);
     },
 
-    async update(id: string, data: { status: 'OPEN' | 'CLOSED' | 'PLANNING' }) {
+    async update(
+      id: string,
+      data: { status: 'OPEN' | 'CLOSED' | 'PLANNING' },
+    ): Promise<PeriodResponse> {
       const res = await fetch(`${API_BASE_URL}/periods/${id}`, {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify(data),
       });
       return handleResponse(res);
+    },
+  },
+
+  fiscalYears: {
+    async list(): Promise<any[]> {
+      const periods = await api.periods.list();
+      const yearsSet = new Set(periods.map((p) => (p.name ? p.name.substring(0, 4) : '2026')));
+      if (yearsSet.size === 0) {
+        const currentYear = new Date().getFullYear().toString();
+        yearsSet.add(currentYear);
+      }
+      return Array.from(yearsSet).map((y) => ({
+        id: y,
+        name: y,
+        year: Number(y),
+        status: 'OPEN',
+      }));
     },
   },
 

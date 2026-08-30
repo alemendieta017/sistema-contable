@@ -10,12 +10,11 @@ import { JournalEntryEntity } from '../../src/infrastructure/database/entities/j
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../src/infrastructure/database/entities/currency.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
 
-describe('Periods Locking Integration Tests', () => {
+describe('Continuous Periods Non-Blocking Integration Tests (SCO-42)', () => {
   let createUseCase: CreateTransactionUseCase;
   let deleteUseCase: DeleteTransactionUseCase;
   let updateUseCase: UpdateTransactionUseCase;
@@ -53,6 +52,12 @@ describe('Periods Locking Integration Tests', () => {
         UpdateTransactionUseCase,
         ReverseTransactionUseCase,
         {
+          provide: EnsurePeriodService,
+          useValue: {
+            ensurePeriod: jest.fn().mockResolvedValue({ id: 'period-1', name: '2026-03' }),
+          },
+        },
+        {
           provide: BalanceUpdateService,
           useValue: {
             updateBalances: jest.fn().mockResolvedValue(undefined),
@@ -79,10 +84,6 @@ describe('Periods Locking Integration Tests', () => {
           useValue: {},
         },
         {
-          provide: getRepositoryToken(FiscalYearEntity),
-          useValue: {},
-        },
-        {
           provide: getRepositoryToken(AccountPeriodBalanceEntity),
           useValue: {},
         },
@@ -99,7 +100,7 @@ describe('Periods Locking Integration Tests', () => {
     reverseUseCase = module.get<ReverseTransactionUseCase>(ReverseTransactionUseCase);
   });
 
-  it('should block creating a transaction in a closed period', async () => {
+  it('should seamlessly create a transaction in any historical or future continuous period', async () => {
     const userId = 'user-1';
     const dto = {
       accountingDate: '2026-03-15',
@@ -110,20 +111,42 @@ describe('Periods Locking Integration Tests', () => {
       ],
     };
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    mockEntityManager.findOne.mockImplementation(async (entityClass: any, options: any) => {
+      if (entityClass === AccountEntity || entityClass?.name === 'AccountEntity') {
+        const id = options?.where?.id;
+        if (id === 'acc-cash') {
+          return {
+            id: 'acc-cash',
+            userId,
+            type: 'ASSET',
+            status: 'ACTIVE',
+            systemRole: null,
+            currencyId: 'curr-1',
+          };
+        }
+        if (id === 'acc-supplies') {
+          return {
+            id: 'acc-supplies',
+            userId,
+            type: 'EXPENSE',
+            status: 'ACTIVE',
+            systemRole: null,
+            currencyId: 'curr-1',
+          };
+        }
+      }
+      if (entityClass === CurrencyEntity || entityClass?.name === 'CurrencyEntity') {
+        return { id: 'curr-1', code: 'USD', exchangeRate: '1.0' };
+      }
+      return null;
+    });
 
-    await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the transaction date is closed'),
-    );
+    const result = await createUseCase.execute(userId, dto);
+    expect(result).toBeDefined();
+    expect(result.description).toBe('Buying supplies');
   });
 
-  it('should block deleting a transaction in a closed period', async () => {
+  it('should seamlessly delete a transaction in continuous periods', async () => {
     const userId = 'user-1';
     const txId = 'tx-1';
 
@@ -134,93 +157,68 @@ describe('Periods Locking Integration Tests', () => {
       entries: [],
     });
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(deleteUseCase.execute(userId, txId)).rejects.toThrow(
-      new BadRequestException('The accounting period for the transaction date is closed'),
-    );
+    const result = await deleteUseCase.execute(userId, txId);
+    expect(result).toEqual({ success: true, id: txId });
   });
 
-  it('should block updating a transaction if the original period is closed', async () => {
+  it('should seamlessly update a transaction across continuous periods', async () => {
     const userId = 'user-1';
     const txId = 'tx-1';
     const dto = {
-      accountingDate: '2026-03-16',
-      description: 'Buying supplies updated',
+      accountingDate: '2026-04-15',
+      description: 'Updated supplies',
       entries: [
         { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
         { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
       ],
     };
 
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      entries: [],
+    mockEntityManager.findOne.mockImplementation(async (entityClass: any, options: any) => {
+      if (entityClass === TransactionEntity || entityClass?.name === 'TransactionEntity') {
+        return {
+          id: txId,
+          userId,
+          accountingDate: '2026-03-15',
+          status: 'POSTED',
+          reversalOfId: null,
+          entries: [],
+        };
+      }
+      if (entityClass === AccountEntity || entityClass?.name === 'AccountEntity') {
+        const id = options?.where?.id;
+        if (id === 'acc-cash') {
+          return {
+            id: 'acc-cash',
+            userId,
+            type: 'ASSET',
+            status: 'ACTIVE',
+            systemRole: null,
+            currencyId: 'curr-1',
+          };
+        }
+        if (id === 'acc-supplies') {
+          return {
+            id: 'acc-supplies',
+            userId,
+            type: 'EXPENSE',
+            status: 'ACTIVE',
+            systemRole: null,
+            currencyId: 'curr-1',
+          };
+        }
+      }
+      if (entityClass === CurrencyEntity || entityClass?.name === 'CurrencyEntity') {
+        return { id: 'curr-1', code: 'USD', exchangeRate: '1.0' };
+      }
+      return null;
     });
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the original transaction date is closed'),
-    );
+    const result = await updateUseCase.execute(userId, txId, dto);
+    expect(result).toBeDefined();
+    expect(result.description).toBe('Updated supplies');
   });
 
-  it('should block updating a transaction if the new period is closed', async () => {
-    const userId = 'user-1';
-    const txId = 'tx-1';
-    const dto = {
-      accountingDate: '2026-03-16',
-      description: 'Buying supplies updated',
-      entries: [
-        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
-        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
-      ],
-    };
-
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      entries: [],
-    });
-
-    const mockQueryBuilderOpen = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
-    };
-    const mockQueryBuilderClosed = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-2', status: 'CLOSED' }),
-    };
-
-    mockEntityManager.createQueryBuilder
-      .mockReturnValueOnce(mockQueryBuilderOpen)
-      .mockReturnValueOnce(mockQueryBuilderClosed);
-
-    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the new transaction date is closed'),
-    );
-  });
-
-  it('should block reversing a transaction if reversal date is closed', async () => {
+  it('should seamlessly reverse a transaction in continuous periods', async () => {
     const userId = 'user-1';
     const txId = 'tx-1';
 
@@ -229,173 +227,15 @@ describe('Periods Locking Integration Tests', () => {
       userId,
       accountingDate: '2026-03-15',
       status: 'POSTED',
-      entries: [],
-    });
-
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
-      new BadRequestException('The accounting period for the reversal date is closed'),
-    );
-  });
-
-  it('should block creating a transaction in a planning period', async () => {
-    const userId = 'user-1';
-    const dto = {
-      accountingDate: '2026-03-15',
-      description: 'Buying supplies',
+      reversalOfId: null,
       entries: [
-        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50 },
-        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 50 },
+        { accountId: 'acc-cash', entryType: 'CREDIT', amount: '50', amountBase: '50' },
+        { accountId: 'acc-supplies', entryType: 'DEBIT', amount: '50', amountBase: '50' },
       ],
-    };
-
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException(
-        'The accounting period for the transaction date is in planning status',
-      ),
-    );
-  });
-
-  it('should block deleting a transaction in a planning period', async () => {
-    const userId = 'user-1';
-    const txId = 'tx-1';
-
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      entries: [],
     });
 
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(deleteUseCase.execute(userId, txId)).rejects.toThrow(
-      new BadRequestException(
-        'The accounting period for the transaction date is in planning status',
-      ),
-    );
-  });
-
-  it('should block updating a transaction if the original period is in planning status', async () => {
-    const userId = 'user-1';
-    const txId = 'tx-1';
-    const dto = {
-      accountingDate: '2026-03-16',
-      description: 'Buying supplies updated',
-      entries: [
-        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
-        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
-      ],
-    };
-
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      entries: [],
-    });
-
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException(
-        'The accounting period for the original transaction date is in planning status',
-      ),
-    );
-  });
-
-  it('should block updating a transaction if the new period is in planning status', async () => {
-    const userId = 'user-1';
-    const txId = 'tx-1';
-    const dto = {
-      accountingDate: '2026-03-16',
-      description: 'Buying supplies updated',
-      entries: [
-        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 60 },
-        { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 60 },
-      ],
-    };
-
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      entries: [],
-    });
-
-    const mockQueryBuilderOpen = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
-    };
-    const mockQueryBuilderPlanning = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-2', status: 'PLANNING' }),
-    };
-
-    mockEntityManager.createQueryBuilder
-      .mockReturnValueOnce(mockQueryBuilderOpen)
-      .mockReturnValueOnce(mockQueryBuilderPlanning);
-
-    await expect(updateUseCase.execute(userId, txId, dto)).rejects.toThrow(
-      new BadRequestException(
-        'The accounting period for the new transaction date is in planning status',
-      ),
-    );
-  });
-
-  it('should block reversing a transaction if reversal date is in planning status', async () => {
-    const userId = 'user-1';
-    const txId = 'tx-1';
-
-    mockEntityManager.findOne.mockResolvedValue({
-      id: txId,
-      userId,
-      accountingDate: '2026-03-15',
-      status: 'POSTED',
-      entries: [],
-    });
-
-    const mockQueryBuilder = {
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'PLANNING' }),
-    };
-    mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-    await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
-      new BadRequestException('The accounting period for the reversal date is in planning status'),
-    );
+    const result = await reverseUseCase.execute(userId, txId);
+    expect(result).toBeDefined();
+    expect(result.status).toBe('POSTED');
   });
 });

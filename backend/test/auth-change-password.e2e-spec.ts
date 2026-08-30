@@ -21,13 +21,11 @@ describe('Auth Change Password (E2E)', () => {
     await app.init();
 
     // Register user
-    const regRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/register')
-      .send({
-        fullName: 'Change Pass User',
-        email: userEmail,
-        password: oldPassword,
-      });
+    const regRes = await request(app.getHttpServer()).post('/api/v1/auth/register').send({
+      fullName: 'Change Pass User',
+      email: userEmail,
+      password: oldPassword,
+    });
 
     jwtToken = regRes.body.access_token;
   });
@@ -64,31 +62,25 @@ describe('Auth Change Password (E2E)', () => {
     expect(res.body.message).toContain('Password updated');
 
     // Login with old password fails
-    const oldLoginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: userEmail,
-        password: oldPassword,
-      });
+    const oldLoginRes = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: userEmail,
+      password: oldPassword,
+    });
     expect(oldLoginRes.status).toBe(401);
 
     // Login with new password succeeds
-    const newLoginRes = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: userEmail,
-        password: newPassword,
-      });
+    const newLoginRes = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: userEmail,
+      password: newPassword,
+    });
     expect(newLoginRes.status).toBe(200);
   });
 
   it('POST /api/v1/auth/change-password - rejects unauthenticated requests', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/change-password')
-      .send({
-        currentPassword: newPassword,
-        newPassword: 'AnotherPassword789!',
-      });
+    const res = await request(app.getHttpServer()).post('/api/v1/auth/change-password').send({
+      currentPassword: newPassword,
+      newPassword: 'AnotherPassword789!',
+    });
 
     expect(res.status).toBe(401);
   });

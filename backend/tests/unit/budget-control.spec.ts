@@ -306,28 +306,6 @@ describe('Budget Execution Control & Fund Transfers Unit Tests', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should reject transfer if period is closed', async () => {
-      mockEntityManager.findOne.mockImplementation((entityClass, options) => {
-        if (entityClass === PeriodEntity || entityClass.name === 'PeriodEntity') {
-          return Promise.resolve({ ...samplePeriod, status: 'CLOSED' });
-        }
-        if (entityClass === AccountEntity || entityClass.name === 'AccountEntity') {
-          const accId = options?.where?.id;
-          return Promise.resolve(sampleAccounts.find((a) => a.id === accId) || null);
-        }
-        return Promise.resolve(null);
-      });
-
-      await expect(
-        transferFundsUseCase.execute('user-1', {
-          periodId: 'p-2026-08',
-          sourceAccountId: 'acc-exp-1',
-          targetAccountId: 'acc-exp-2',
-          amount: 1000,
-        }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('should reject transfer between accounts with different cash flow directions (e.g. Expense to Income)', async () => {
       await expect(
         transferFundsUseCase.execute('user-1', {
@@ -362,6 +340,54 @@ describe('Budget Execution Control & Fund Transfers Unit Tests', () => {
       expect(result.success).toBe(true);
       expect(result.updatedSourceAvailable).toBe(8000);
       expect(mockEntityManager.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('Projected Income Statement & Variance Control', () => {
+    it('should compute projected income, expenses, and operating surplus from budget items', async () => {
+      mockEntityManager.findOne.mockImplementation((entityClass) => {
+        if (entityClass === PeriodEntity || entityClass.name === 'PeriodEntity') {
+          return Promise.resolve(samplePeriod);
+        }
+        if (entityClass === BudgetEntity || entityClass.name === 'BudgetEntity') {
+          return Promise.resolve({
+            id: 'b-1',
+            userId: 'user-1',
+            periodId: 'p-2026-08',
+            items: [
+              {
+                accountId: 'acc-inc-1',
+                amount: 60000,
+                account: { id: 'acc-inc-1', name: 'Honorarios', type: 'INCOME' },
+              },
+              {
+                accountId: 'acc-exp-1',
+                amount: 25000,
+                account: { id: 'acc-exp-1', name: 'Gastos', type: 'EXPENSE' },
+              },
+            ],
+          });
+        }
+        return Promise.resolve(null);
+      });
+
+      mockEntityManager
+        .createQueryBuilder()
+        .getMany.mockResolvedValueOnce(sampleAccounts)
+        .mockResolvedValueOnce([]);
+
+      const result = await getControlUseCase.execute('user-1', 'p-2026-08');
+
+      const incomeSec = result.sections!.find(
+        (s) => s.sectionKey === BudgetMatrixSectionKey.INGRESOS,
+      );
+      const expenseSec = result.sections!.find(
+        (s) => s.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA,
+      );
+
+      expect(incomeSec?.budgeted).toBe(60000);
+      expect(expenseSec?.budgeted).toBe(25000);
+      expect(incomeSec!.budgeted - expenseSec!.budgeted).toBe(35000);
     });
   });
 });

@@ -11,7 +11,6 @@ import { AccountEntity } from '../../infrastructure/database/entities/account.en
 import { CurrencyEntity } from '../../infrastructure/database/entities/currency.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 
 describe('FactoryResetUseCase (US2)', () => {
   let useCase: FactoryResetUseCase;
@@ -122,9 +121,6 @@ describe('FactoryResetUseCase (US2)', () => {
       if (entityClass === TransactionEntity) {
         return Promise.resolve([{ id: 'tx-1' }]);
       }
-      if (entityClass === FiscalYearEntity) {
-        return Promise.resolve([{ id: 'fy-1' }]);
-      }
       return Promise.resolve([]);
     });
 
@@ -151,8 +147,8 @@ describe('FactoryResetUseCase (US2)', () => {
       expect.objectContaining({ userId: 'user-1' }),
     );
 
-    // Verify starter accounts, fiscal year, periods, and budgets re-seeded in batch
-    // 1 (accounts batch) + 1 (FY) + 1 (periods batch) + 1 (budgets batch) = 4 save calls
-    expect(entityManagerMock.save).toHaveBeenCalledTimes(4);
+    // Verify starter accounts, periods, and budgets re-seeded in batch
+    // 1 (accounts batch) + 1 (periods batch) + 1 (budgets batch) = 3 save calls
+    expect(entityManagerMock.save).toHaveBeenCalledTimes(3);
   });
 });

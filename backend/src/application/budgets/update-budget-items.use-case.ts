@@ -28,20 +28,14 @@ export class UpdateBudgetItemsUseCase {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period and check if user owns it
       const period = await entityManager.findOne(PeriodEntity, {
-        where: { id: periodId },
-        relations: ['fiscalYear'],
+        where: { id: periodId, userId },
       });
 
-      if (!period || period.fiscalYear.userId !== userId) {
+      if (!period) {
         throw new NotFoundException('Period not found');
       }
 
-      // 2. Block updates if period is closed
-      if (period.status === 'CLOSED') {
-        throw new BadRequestException('Cannot update budget items for a closed period');
-      }
-
-      // 3. Find or create the budget for this period
+      // 2. Find or create the budget for this period
       let budget = await entityManager.findOne(BudgetEntity, {
         where: { userId, periodId },
       });

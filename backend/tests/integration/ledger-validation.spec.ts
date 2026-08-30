@@ -7,10 +7,12 @@ import { AccountEntity } from '../../src/infrastructure/database/entities/accoun
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 
 describe('Ledger Validation Integration Tests (Double-Entry)', () => {
   let useCase: CreateTransactionUseCase;
   let mockEntityManager: any;
+  let mockEnsurePeriodService: any;
 
   const mockTransactionRepo = {};
   const mockAccountRepo = {};
@@ -24,23 +26,34 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
   };
 
   beforeEach(async () => {
+    mockEnsurePeriodService = {
+      ensurePeriod: jest.fn().mockImplementation((em, userId, periodStr) => {
+        return Promise.resolve({
+          id: `period-${periodStr}`,
+          name: periodStr,
+          startDate: `${periodStr}-01`,
+          endDate: `${periodStr}-28`,
+          status: 'OPEN',
+          userId,
+        });
+      }),
+    };
+
     mockEntityManager = {
       findOne: jest.fn(),
       create: jest.fn().mockImplementation((cls, obj) => ({ id: 'mock-id', ...obj })),
       save: jest
         .fn()
         .mockImplementation((cls, entity) => Promise.resolve({ ...entity, id: 'saved-id' })),
-      createQueryBuilder: jest.fn().mockReturnValue({
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'OPEN' }),
-      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateTransactionUseCase,
+        {
+          provide: EnsurePeriodService,
+          useValue: mockEnsurePeriodService,
+        },
         {
           provide: getRepositoryToken(TransactionEntity),
           useValue: mockTransactionRepo,
@@ -197,5 +210,38 @@ describe('Ledger Validation Integration Tests (Double-Entry)', () => {
     // Assert
     expect(result).toBeDefined();
     expect(result.id).toBe('saved-id');
+  });
+
+  it('should allow unconstrained ledger posting across arbitrary months without boundary errors (US1)', async () => {
+    const userId = 'user-uuid';
+    const dto = {
+      accountingDate: '2028-11-20',
+      description: 'Futura compra sin restricción de ejercicio fiscal',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 1500 },
+        { accountId: 'acc-food', entryType: 'DEBIT' as const, amount: 1500 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockImplementation((cls, options) => {
+      const id = options.where.id;
+      return Promise.resolve({
+        id,
+        userId,
+        name: id === 'acc-cash' ? 'Efectivo' : 'Comida',
+        type: id === 'acc-cash' ? 'ASSET' : 'EXPENSE',
+        status: 'ACTIVE',
+        currency: { rateToBase: 1.0 },
+      });
+    });
+
+    const result = await useCase.execute(userId, dto);
+    expect(result).toBeDefined();
+    expect(result.id).toBe('saved-id');
+    expect(mockEnsurePeriodService.ensurePeriod).toHaveBeenCalledWith(
+      mockEntityManager,
+      userId,
+      '2028-11',
+    );
   });
 });

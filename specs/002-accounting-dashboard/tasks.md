@@ -54,6 +54,7 @@
 **Independent Test**: Click floating button, enter unbalanced items, verify saving is blocked. Enter balanced items, click save, verify transaction posts and details refresh in history.
 
 ### Tests for User Story 6
+
 - [x] T011 [P] [US6] Create unit test in `frontend/src/tests/TransactionModal.test.tsx` verifying that saving fails if debits do not equal credits.
 
 ### Implementation for User Story 6

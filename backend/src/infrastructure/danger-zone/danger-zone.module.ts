@@ -4,7 +4,6 @@ import { UserEntity } from '../database/entities/user.entity';
 import { AccountEntity } from '../database/entities/account.entity';
 import { TransactionEntity } from '../database/entities/transaction.entity';
 import { JournalEntryEntity } from '../database/entities/journal-entry.entity';
-import { FiscalYearEntity } from '../database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../database/entities/period.entity';
 import { AccountPeriodBalanceEntity } from '../database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../database/entities/budget.entity';
@@ -24,7 +23,6 @@ import { DeleteUserAccountUseCase } from '../../application/danger-zone/delete-a
       AccountEntity,
       TransactionEntity,
       JournalEntryEntity,
-      FiscalYearEntity,
       PeriodEntity,
       AccountPeriodBalanceEntity,
       BudgetEntity,

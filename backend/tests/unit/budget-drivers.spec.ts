@@ -1,6 +1,6 @@
 import { ApplyBudgetDriverUseCase } from '../../src/application/budgets/apply-budget-driver.use-case';
 import { GetPriorYearActualsUseCase } from '../../src/application/budgets/get-prior-year-actuals.use-case';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 
@@ -23,20 +23,9 @@ describe('Budget Distribution Drivers & Prior Year Actuals Unit Tests', () => {
     { id: 'p-4', name: '2026-04', startDate: '2026-04-01', endDate: '2026-04-30', status: 'OPEN' },
   ];
 
-  const sampleFiscalYear = {
-    id: 'fy-2026',
-    name: '2026',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    periods: samplePeriods,
-  };
-
   beforeEach(() => {
     mockEntityManager = {
       findOne: jest.fn().mockImplementation((entityClass) => {
-        if (entityClass === FiscalYearEntity || entityClass.name === 'FiscalYearEntity') {
-          return Promise.resolve(sampleFiscalYear);
-        }
         if (entityClass === AccountEntity || entityClass.name === 'AccountEntity') {
           return Promise.resolve({ id: 'acc-1', name: 'Ventas', type: 'INCOME' });
         }
@@ -50,7 +39,13 @@ describe('Budget Distribution Drivers & Prior Year Actuals Unit Tests', () => {
         }
         return Promise.resolve(null);
       }),
-      find: jest.fn().mockResolvedValue([]),
+      find: jest
+        .fn()
+        .mockImplementation((cls) =>
+          cls === PeriodEntity || cls?.name === 'PeriodEntity'
+            ? Promise.resolve(samplePeriods)
+            : Promise.resolve([]),
+        ),
       save: jest
         .fn()
         .mockImplementation((cls, entity) =>
@@ -94,9 +89,6 @@ describe('Budget Distribution Drivers & Prior Year Actuals Unit Tests', () => {
 
   describe('FLAT_PRORATE Driver', () => {
     it('should divide annual total evenly across 4 open periods', async () => {
-      mockEntityManager.findOne.mockResolvedValue(sampleFiscalYear);
-      mockEntityManager.find.mockResolvedValue([]);
-
       const result = await applyDriverUseCase.execute('user-1', {
         fiscalYearId: 'fy-2026',
         accountId: 'acc-1',

@@ -8,7 +8,7 @@
 
 **Input**: User description: "quiero implementar un sistema de usuarios, mejorar el actual. quiero que Varios usuarios puedan registrarse, darse de alta, poder cambiar su contraseña. Darle al perfil de la esquina funcionalidad. Olvide mi contraseña"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - User Self-Registration & Immediate Activation (Priority: P1)
 
@@ -92,7 +92,7 @@ As a user in a multi-user system, I want my accounting records and financial dat
 - How does the system handle concurrent active sessions across multiple devices when a password is changed?
 - What happens if a user submits a registration form with extremely long fields or invalid characters?
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -108,13 +108,13 @@ As a user in a multi-user system, I want my accounting records and financial dat
 - **FR-010**: System MUST execute password recovery by generating and emailing a single-use secure reset token link (valid for 60 minutes).
 - **FR-011**: System MUST enforce strict individual workspace isolation, ensuring each user's financial records and ledger data are completely segregated and private to their account.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **User**: Represents a registered system user (Attributes: ID, full name, email address, password hash, status [active], created timestamp, updated timestamp).
 - **PasswordResetToken**: Represents a temporary security token generated for password recovery (Attributes: ID, User ID, token string, expiration timestamp, used flag).
 - **UserSession**: Represents an active authenticated session or token payload associated with a specific user.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
