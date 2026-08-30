@@ -13,6 +13,7 @@ import { BalanceSheetUseCase } from '../../application/periods/balance-sheet.use
 import { IncomeStatementUseCase } from '../../application/periods/income-statement.use-case';
 import { IncomeStatementForecastUseCase } from '../../application/reports/income-statement-forecast.use-case';
 import { CashFlowStatementForecastUseCase } from '../../application/reports/cash-flow-statement.use-case';
+import { NetWorthEvolutionUseCase } from '../../application/reports/net-worth-evolution.use-case';
 import { ReportsController } from '../controllers/reports.controller';
 import { AuthModule } from '../auth/auth.module';
 
@@ -36,6 +37,7 @@ import { AuthModule } from '../auth/auth.module';
     IncomeStatementUseCase,
     IncomeStatementForecastUseCase,
     CashFlowStatementForecastUseCase,
+    NetWorthEvolutionUseCase,
   ],
   controllers: [ReportsController],
   exports: [
@@ -46,6 +48,7 @@ import { AuthModule } from '../auth/auth.module';
     IncomeStatementUseCase,
     IncomeStatementForecastUseCase,
     CashFlowStatementForecastUseCase,
+    NetWorthEvolutionUseCase,
   ],
 })
 export class ReportsModule {}

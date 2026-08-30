@@ -10,6 +10,7 @@ import { BalanceSheetUseCase } from '../../application/periods/balance-sheet.use
 import { IncomeStatementUseCase } from '../../application/periods/income-statement.use-case';
 import { IncomeStatementForecastUseCase } from '../../application/reports/income-statement-forecast.use-case';
 import { CashFlowStatementForecastUseCase } from '../../application/reports/cash-flow-statement.use-case';
+import { NetWorthEvolutionUseCase } from '../../application/reports/net-worth-evolution.use-case';
 
 @Controller('api/reports')
 @UseGuards(JwtAuthGuard)
@@ -22,7 +23,20 @@ export class ReportsController {
     private readonly incomeStatementUseCase: IncomeStatementUseCase,
     private readonly incomeStatementForecastUseCase: IncomeStatementForecastUseCase,
     private readonly cashFlowStatementForecastUseCase: CashFlowStatementForecastUseCase,
+    private readonly netWorthEvolutionUseCase: NetWorthEvolutionUseCase,
   ) {}
+
+  @Get('net-worth-evolution')
+  async getNetWorthEvolution(
+    @CurrentUser() user: UserEntity,
+    @Query('startPeriod') startPeriod?: string,
+    @Query('endPeriod') endPeriod?: string,
+  ) {
+    return this.netWorthEvolutionUseCase.execute(user.id, {
+      startPeriod,
+      endPeriod,
+    });
+  }
 
   @Get('statistics')
   async getStatistics(

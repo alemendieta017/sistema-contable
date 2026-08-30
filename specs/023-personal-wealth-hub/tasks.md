@@ -123,15 +123,15 @@
 
 ### Tests for User Story 4 (Strict TDD - Write and ensure FAIL first) ⚠️
 
-- [ ] T037 [P] [US4] Integration tests for high-speed Net Worth Evolution query ($<50$ms p95) in `backend/tests/integration/net-worth-evolution.spec.ts`
-- [ ] T038 [P] [US4] Component test for `NetWorthChart.tsx` in `frontend/src/tests/NetWorthChart.test.tsx`
+- [x] T037 [P] [US4] Integration tests for high-speed Net Worth Evolution query ($<50$ms p95) in `backend/tests/integration/net-worth-evolution.spec.ts`
+- [x] T038 [P] [US4] Component test for `NetWorthChart.tsx` in `frontend/src/tests/NetWorthChart.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T039 [US4] Implement `NetWorthEvolutionUseCase` in `backend/src/application/reports/net-worth-evolution.use-case.ts` executing aggregated snapshot query
-- [ ] T040 [US4] Expose `GET /api/reports/net-worth-evolution` in `backend/src/infrastructure/controllers/reports.controller.ts`
-- [ ] T041 [US4] Implement `NetWorthChart.tsx` in `frontend/src/components/stats/NetWorthChart.tsx` with tabular numbers and responsive styling
-- [ ] T042 [US4] Connect stats page in `frontend/src/app/stats/page.tsx` to the net worth evolution endpoint
+- [x] T039 [US4] Implement `NetWorthEvolutionUseCase` in `backend/src/application/reports/net-worth-evolution.use-case.ts` executing aggregated snapshot query
+- [x] T040 [US4] Expose `GET /api/reports/net-worth-evolution` in `backend/src/infrastructure/controllers/reports.controller.ts`
+- [x] T041 [US4] Implement `NetWorthChart.tsx` in `frontend/src/components/stats/NetWorthChart.tsx` with tabular numbers and responsive styling
+- [x] T042 [US4] Connect stats page in `frontend/src/app/stats/page.tsx` to the net worth evolution endpoint
 
 **Checkpoint**: At this point, User Stories 1 through 4 are fully functional.
 

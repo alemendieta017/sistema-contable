@@ -22,6 +22,7 @@ import {
   DangerZoneResponse,
   EnsurePeriodResponse,
   PeriodResponse,
+  NetWorthEvolutionResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -498,6 +499,23 @@ export const api = {
   },
 
   reports: {
+    async netWorthEvolution(options?: {
+      startPeriod?: string;
+      endPeriod?: string;
+    }): Promise<NetWorthEvolutionResponse> {
+      let url = `${API_BASE_URL}/reports/net-worth-evolution`;
+      const queryParams = new URLSearchParams();
+      if (options?.startPeriod) queryParams.append('startPeriod', options.startPeriod);
+      if (options?.endPeriod) queryParams.append('endPeriod', options.endPeriod);
+      const qs = queryParams.toString();
+      if (qs) url += `?${qs}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
     async statistics(period: string, type: 'INCOME' | 'EXPENSE', timezoneOffset?: number) {
       let url = `${API_BASE_URL}/reports/statistics?period=${period}&type=${type}`;
       if (timezoneOffset !== undefined) {
