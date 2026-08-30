@@ -22,16 +22,16 @@ Implement a full-featured user management and authentication system for the acco
 
 ## Constitution Check
 
-*GATE: Passed before Phase 0 research. Re-evaluated after Phase 1 design.*
+_GATE: Passed before Phase 0 research. Re-evaluated after Phase 1 design._
 
-| Principle | Compliance Status | Rationale |
-|-----------|-------------------|-----------|
-| **I. Double-Entry Bookkeeping & Ledger Integrity** | PASS | Multi-tenancy isolation (`user_id` foreign keys) ensures double-entry balance and ledger integrity are preserved per user ledger without cross-user leakage. |
-| **II. Clean Architecture & SOLID Principles** | PASS | Auth logic is isolated in NestJS `AuthModule`, domain entities remain framework-agnostic in `domain/`, use cases encapsulated in application services. |
-| **III. Monorepo Organization & Unified Type Safety** | PASS | All authentication request/response DTOs, schemas, types, and error enums are exported from `@sistema-contable/shared` package for end-to-end type safety. |
-| **IV. Budgetary Control and Personal/Family Domain** | PASS | Budget entities are scoped to the authenticated user ID. |
-| **V. Strict Test-Driven Development (TDD) & Quality Verification** | PASS | Tests for `AuthService`, token validation, password hashing, and endpoint authorization will be written prior to feature implementation. |
-| **VI. Prevention of Magic Strings & Strict Type Constants** | PASS | Auth error codes, token types, and route paths use strict TypeScript enums/consts in `shared`. |
+| Principle                                                          | Compliance Status | Rationale                                                                                                                                                    |
+| ------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **I. Double-Entry Bookkeeping & Ledger Integrity**                 | PASS              | Multi-tenancy isolation (`user_id` foreign keys) ensures double-entry balance and ledger integrity are preserved per user ledger without cross-user leakage. |
+| **II. Clean Architecture & SOLID Principles**                      | PASS              | Auth logic is isolated in NestJS `AuthModule`, domain entities remain framework-agnostic in `domain/`, use cases encapsulated in application services.       |
+| **III. Monorepo Organization & Unified Type Safety**               | PASS              | All authentication request/response DTOs, schemas, types, and error enums are exported from `@sistema-contable/shared` package for end-to-end type safety.   |
+| **IV. Budgetary Control and Personal/Family Domain**               | PASS              | Budget entities are scoped to the authenticated user ID.                                                                                                     |
+| **V. Strict Test-Driven Development (TDD) & Quality Verification** | PASS              | Tests for `AuthService`, token validation, password hashing, and endpoint authorization will be written prior to feature implementation.                     |
+| **VI. Prevention of Magic Strings & Strict Type Constants**        | PASS              | Auth error codes, token types, and route paths use strict TypeScript enums/consts in `shared`.                                                               |
 
 ## Project Structure
 
@@ -89,6 +89,6 @@ frontend/
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| *None* | N/A | Implementation fully complies with all project principles and clean architecture constraints. |
+| Violation | Why Needed | Simpler Alternative Rejected Because                                                          |
+| --------- | ---------- | --------------------------------------------------------------------------------------------- |
+| _None_    | N/A        | Implementation fully complies with all project principles and clean architecture constraints. |

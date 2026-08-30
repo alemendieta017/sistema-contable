@@ -9,7 +9,6 @@ import { PeriodEntity } from '../../src/infrastructure/database/entities/period.
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { JournalEntryEntity } from '../../src/infrastructure/database/entities/journal-entry.entity';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 
 describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', () => {
   let balanceSheetUseCase: BalanceSheetUseCase;
@@ -19,7 +18,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
   let mockAccountRepo: jest.Mocked<Partial<Repository<AccountEntity>>>;
   let mockBalanceRepo: jest.Mocked<Partial<Repository<AccountPeriodBalanceEntity>>>;
   let mockJournalEntryRepo: any;
-  let mockFiscalYearRepo: any;
   let mockDataSource: any;
 
   beforeEach(async () => {
@@ -30,22 +28,28 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
     mockAccountRepo = {
       find: jest.fn(),
     };
+    const createDefaultMockQueryBuilder = () => ({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    });
+
     mockBalanceRepo = {
-      find: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
     };
 
     mockJournalEntryRepo = {
-      createQueryBuilder: jest.fn(),
-    };
-    mockFiscalYearRepo = {
-      createQueryBuilder: jest.fn(),
-      find: jest.fn().mockResolvedValue([]),
+      createQueryBuilder: jest.fn().mockImplementation(createDefaultMockQueryBuilder),
     };
 
     mockDataSource = {
       getRepository: jest.fn().mockImplementation((entity) => {
         if (entity === JournalEntryEntity) return mockJournalEntryRepo;
-        if (entity === FiscalYearEntity) return mockFiscalYearRepo;
         if (entity === AccountEntity) return mockAccountRepo;
         if (entity === PeriodEntity) return mockPeriodRepo;
         if (entity === AccountPeriodBalanceEntity) return mockBalanceRepo;
@@ -95,8 +99,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         {
@@ -178,8 +185,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         {
@@ -226,8 +236,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       // Parent/child hierarchy: Cash (1) -> Petty Cash (2) -> Local Petty Cash (3)
       const mockAccounts = [
@@ -332,13 +345,7 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       };
       mockJournalEntryRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      // Mock Fiscal Year query builder returning null
-      const mockFyBuilder = {
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(null),
-      };
-      mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockFyBuilder);
+      mockPeriodRepo.findOne!.mockResolvedValue(null);
 
       const result = (await balanceSheetUseCase.execute(userId, {
         mode: 'date',
@@ -367,16 +374,6 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
         'transaction.accountingDate <= :date',
         { date: '2026-07-02' },
       );
-
-      // Verify fiscal year query checks are date string based
-      expect(mockFiscalYearRepo.createQueryBuilder).toHaveBeenCalledWith('fy');
-      expect(mockFyBuilder.where).toHaveBeenCalledWith('fy.userId = :userId', { userId });
-      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.startDate <= :date', {
-        date: '2026-07-02',
-      });
-      expect(mockFyBuilder.andWhere).toHaveBeenCalledWith('fy.endDate >= :date', {
-        date: '2026-07-02',
-      });
     });
 
     it('should calculate comparative mode balance sheet correctly', async () => {
@@ -514,17 +511,13 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       };
       mockJournalEntryRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      // Mock Fiscal Year query builder returning 2026 fiscal year
-      const mockFyBuilder = {
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({
-          id: 'fy-2026',
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-        }),
-      };
-      mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockFyBuilder);
+      mockPeriodRepo.findOne!.mockResolvedValue({
+        id: 'p-2026-06',
+        name: '2026-06',
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+        userId,
+      } as unknown as PeriodEntity);
 
       const result = (await balanceSheetUseCase.execute(userId, {
         mode: 'date',
@@ -567,14 +560,8 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       ];
       mockAccountRepo.find!.mockResolvedValue(mockAccounts);
 
-      // No period and no fiscal year found
+      // No period found
       mockPeriodRepo.findOne!.mockResolvedValue(null);
-      const mockFyBuilder = {
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(null),
-      };
-      mockFiscalYearRepo.createQueryBuilder.mockReturnValue(mockFyBuilder);
 
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
@@ -674,12 +661,10 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-06',
-        fiscalYearId: 'fy-2026',
-        fiscalYear: {
-          id: 'fy-2026',
-          startDate: '2026-01-01',
-          endDate: '2026-12-31',
-        },
+        userId,
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+        status: 'OPEN',
       } as unknown as PeriodEntity;
 
       const mockAccounts = [
@@ -764,8 +749,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         { id: 'acc-cash', name: 'Cash', type: 'ASSET', status: 'ACTIVE', userId } as AccountEntity,
@@ -821,8 +809,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         {
@@ -904,8 +895,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         {
@@ -984,8 +978,11 @@ describe('Fast Reports (Balance Sheet & Income Statement) Integration Tests', ()
       const mockPeriod = {
         id: periodId,
         name: '2026-03',
-        fiscalYearId: 'fy-uuid',
-      } as PeriodEntity;
+        userId,
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
+        status: 'OPEN',
+      } as unknown as PeriodEntity;
 
       const mockAccounts = [
         {

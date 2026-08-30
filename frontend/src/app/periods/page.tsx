@@ -1,83 +1,111 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../../services/api';
+import { PeriodResponse } from '@sistema-contable/shared';
 import {
   Plus,
   Calendar,
-  Lock,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  AlertTriangle,
   ChevronDown,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 
-type Period = {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: 'OPEN' | 'CLOSED' | 'PLANNING';
-};
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
 
-type FiscalYear = {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: 'OPEN' | 'CLOSED' | 'PLANNING';
-  periods?: Period[];
-};
+function formatPeriodLabel(periodName: string): string {
+  if (!periodName || !periodName.includes('-')) return periodName;
+  const [yearStr, monthStr] = periodName.split('-');
+  const monthIdx = parseInt(monthStr, 10) - 1;
+  if (monthIdx >= 0 && monthIdx < 12) {
+    return `${MONTH_NAMES[monthIdx]} ${yearStr}`;
+  }
+  return periodName;
+}
 
 export default function PeriodsPage() {
-  const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
-  const [periods, setPeriods] = useState<Period[]>([]);
+  const [periods, setPeriods] = useState<PeriodResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Modal State for New Fiscal Year
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newFyYear, setNewFyYear] = useState(new Date().getFullYear());
+  // Modal State for Ensure Period
+  const [showEnsureModal, setShowEnsureModal] = useState(false);
+  const currentMonthString = new Date().toISOString().substring(0, 7);
+  const [targetMonth, setTargetMonth] = useState(currentMonthString);
 
-  // Modal State for Closing Fiscal Year
-  const [closingFy, setClosingFy] = useState<FiscalYear | null>(null);
-
-  // Accordion State: only one fiscal year expanded at a time
-  const [expandedFyId, setExpandedFyId] = useState<string | null>(null);
+  // Accordion state: Set of expanded year strings
+  const [expandedYears, setExpandedYears] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData(true);
   }, []);
 
+  // Group periods by Year (e.g. "2026")
+  const periodsByYear = useMemo(() => {
+    const groups: Record<string, PeriodResponse[]> = {};
+    for (const p of periods) {
+      const year = p.startDate ? p.startDate.substring(0, 4) : p.name.substring(0, 4);
+      if (!groups[year]) {
+        groups[year] = [];
+      }
+      groups[year].push(p);
+    }
+    // Sort each group by startDate ascending
+    for (const year of Object.keys(groups)) {
+      groups[year].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    }
+    return groups;
+  }, [periods]);
+
+  const years = useMemo(() => {
+    return Object.keys(periodsByYear).sort((a, b) => b.localeCompare(a));
+  }, [periodsByYear]);
+
+  // Expand the latest year by default
   useEffect(() => {
-    if (fiscalYears.length > 0) {
-      setExpandedFyId((current) => {
-        if (current && fiscalYears.some((fy) => fy.id === current)) {
-          return current;
+    if (years.length > 0) {
+      setExpandedYears((prev) => {
+        if (Object.keys(prev).length === 0) {
+          const currentYear = new Date().getFullYear().toString();
+          const target = years.includes(currentYear) ? currentYear : years[0];
+          return { [target]: true };
         }
-        const openFy = fiscalYears.find((fy) => fy.status === 'OPEN');
-        return openFy ? openFy.id : fiscalYears[0].id;
+        return prev;
       });
     }
-  }, [fiscalYears]);
+  }, [years]);
 
-  const toggleExpandFy = (fyId: string) => {
-    setExpandedFyId((prev) => (prev === fyId ? null : fyId));
+  const toggleYear = (year: string) => {
+    setExpandedYears((prev) => ({
+      ...prev,
+      [year]: !prev[year],
+    }));
   };
 
   const loadData = async (isInitial = false) => {
     try {
       if (isInitial) setLoading(true);
       setError('');
-
-      const [fyData, periodData] = await Promise.all([api.fiscalYears.list(), api.periods.list()]);
-
-      setFiscalYears(fyData || []);
-      setPeriods(periodData || []);
+      const data = await api.periods.list();
+      setPeriods(data || []);
     } catch (err: any) {
       setError(err.message || 'Error al cargar la información de períodos.');
     } finally {
@@ -85,10 +113,10 @@ export default function PeriodsPage() {
     }
   };
 
-  const handleCreateFiscalYear = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFyYear) {
-      setError('El año del ejercicio fiscal es obligatorio.');
+  const handleEnsurePeriod = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!targetMonth) {
+      setError('Debe seleccionar un mes válido.');
       return;
     }
 
@@ -97,49 +125,17 @@ export default function PeriodsPage() {
       setError('');
       setSuccess('');
 
-      const startDateISO = newFyYear + '-01-01';
-      const endDateISO = newFyYear + '-12-31';
+      const res = await api.periods.ensure(targetMonth);
+      setSuccess(`Período ${formatPeriodLabel(res.name)} asegurado y disponible.`);
+      setShowEnsureModal(false);
 
-      await api.fiscalYears.create({
-        year: Number(newFyYear),
-        startDate: startDateISO,
-        endDate: endDateISO,
-      });
-
-      setSuccess(`Ejercicio fiscal ${newFyYear} creado con éxito.`);
-      setShowCreateModal(false);
-
-      // Reset form
-      setNewFyYear(new Date().getFullYear());
+      // Auto expand the year of the ensured period
+      const year = res.name.substring(0, 4);
+      setExpandedYears((prev) => ({ ...prev, [year]: true }));
 
       await loadData(false);
     } catch (err: any) {
-      setError(err.message || 'Error al crear el ejercicio fiscal.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCloseFiscalYearSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!closingFy) {
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      setError('');
-      setSuccess('');
-
-      await api.fiscalYears.close(closingFy.id);
-
-      setSuccess(
-        `El ejercicio fiscal "${closingFy.name}" ha sido cerrado con éxito. Se generó el asiento de cierre.`,
-      );
-      setClosingFy(null);
-      await loadData(false);
-    } catch (err: any) {
-      setError(err.message || 'Error al cerrar el ejercicio fiscal.');
+      setError(err.message || 'Error al asegurar el período contable.');
     } finally {
       setActionLoading(false);
     }
@@ -148,7 +144,7 @@ export default function PeriodsPage() {
   const handleReconstructBalances = async () => {
     if (
       !confirm(
-        '¿Está seguro de reconstruir los saldos acumulados de todas las cuentas? Esto podría tardar unos segundos.',
+        '¿Está seguro de reconstruir los saldos acumulados de todas las cuentas? Esto recalculará la continuidad histórica período por período.',
       )
     ) {
       return;
@@ -159,7 +155,7 @@ export default function PeriodsPage() {
       setError('');
       setSuccess('');
       await api.reports.reconstructBalances();
-      setSuccess('Saldos contables reconstruidos con éxito.');
+      setSuccess('Saldos contables continuos reconstruidos con éxito.');
       await loadData(false);
     } catch (err: any) {
       setError(err.message || 'Error al reconstruir saldos.');
@@ -174,24 +170,23 @@ export default function PeriodsPage() {
   ) => {
     const newStatus = currentStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
 
-    // Optimistic UI update so switch toggles instantly and scroll position stays fixed
-    setPeriods((prevPeriods) =>
-      prevPeriods.map((p) => (p.id === periodId ? { ...p, status: newStatus } : p)),
+    // Optimistic UI update
+    setPeriods((prev) =>
+      prev.map((p) =>
+        p.id === periodId ? { ...p, status: newStatus as 'OPEN' | 'CLOSED' | 'PLANNING' } : p,
+      ),
     );
 
     try {
       setError('');
       setSuccess('');
-      await api.periods.update(periodId, { status: newStatus });
-      setSuccess(
-        `Período actualizado a ${newStatus === 'OPEN' ? 'Abierto' : 'Cerrado'} con éxito.`,
-      );
-      // Background refetch without unmounting DOM or triggering loading screens
+      await api.periods.update(periodId, { status: newStatus as 'OPEN' | 'CLOSED' });
+      setSuccess(`Período actualizado a ${newStatus === 'OPEN' ? 'Abierto' : 'Cerrado'}.`);
       await loadData(false);
     } catch (err: any) {
-      // Revert optimistic update on failure
-      setPeriods((prevPeriods) =>
-        prevPeriods.map((p) => (p.id === periodId ? { ...p, status: currentStatus } : p)),
+      // Revert optimistic update
+      setPeriods((prev) =>
+        prev.map((p) => (p.id === periodId ? { ...p, status: currentStatus } : p)),
       );
       setError(err.message || 'Error al actualizar el estado del período.');
     }
@@ -208,14 +203,14 @@ export default function PeriodsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Top Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
-            Períodos y Ejercicios Fiscales
+            Períodos Contables
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Gestione años fiscales, cierres mensuales y bloqueos de transacciones
+            Línea temporal continua de meses contables y control de bloqueos
           </p>
         </div>
 
@@ -224,18 +219,21 @@ export default function PeriodsPage() {
             onClick={handleReconstructBalances}
             disabled={actionLoading}
             className="flex items-center justify-center gap-1.5 py-2 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150 cursor-pointer"
-            title="Recalcula el histórico de saldos período por período"
+            title="Recalcula el histórico continuo de saldos mes a mes"
           >
-            <RefreshCw className={`w-4.5 h-4.5 ${actionLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
             <span>Reconstruir Saldos</span>
           </button>
 
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setTargetMonth(currentMonthString);
+              setShowEnsureModal(true);
+            }}
             className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Crear Ejercicio</span>
+            <span>Asegurar Período</span>
           </button>
         </div>
       </div>
@@ -254,45 +252,44 @@ export default function PeriodsPage() {
         </div>
       )}
 
-      {/* Main List of Fiscal Years */}
-      {fiscalYears.length === 0 ? (
+      {/* Main List of Periods Grouped by Year */}
+      {periods.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm text-center space-y-4 max-w-lg mx-auto">
           <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-500 mx-auto" />
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-              No hay ejercicios fiscales creados
+              No hay períodos contables inicializados
             </h3>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-              Debe registrar un ejercicio fiscal (por ejemplo, el año actual) para que los períodos
-              mensuales comiencen a registrar saldos acumulados.
+              El sistema genera períodos mensuales automáticamente al registrar transacciones o
+              presupuestos. También puede asegurar el período actual directamente.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => handleEnsurePeriod()}
+            disabled={actionLoading}
             className="w-full max-w-xs py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
           >
-            Crear Primer Ejercicio Fiscal
+            Asegurar Período Actual ({formatPeriodLabel(currentMonthString)})
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
-          {fiscalYears.map((fy) => {
-            const filteredPeriodsForFy = periods
-              .filter((p: any) => p.fiscalYearId === fy.id)
-              .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-
-            const isExpanded = expandedFyId === fy.id;
+        <div className="space-y-4">
+          {years.map((year) => {
+            const yearPeriods = periodsByYear[year] || [];
+            const isExpanded = !!expandedYears[year];
+            const openCount = yearPeriods.filter((p) => p.status === 'OPEN').length;
 
             return (
               <div
-                key={fy.id}
+                key={year}
                 className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden"
               >
-                {/* Fiscal Year Collapsible Header */}
+                {/* Year Header */}
                 <div
-                  onClick={() => toggleExpandFy(fy.id)}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/70 transition duration-150 cursor-pointer select-none"
+                  onClick={() => toggleYear(year)}
+                  className="p-4 sm:p-5 flex justify-between items-center bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/70 transition duration-150 cursor-pointer select-none"
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-slate-400 dark:text-slate-500 shrink-0">
@@ -303,142 +300,92 @@ export default function PeriodsPage() {
                       )}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="flex items-center gap-2.5">
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base">
-                          {fy.name}
+                          Año {year}
                         </h3>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            fy.status === 'OPEN'
-                              ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/40'
-                              : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40'
-                          }`}
-                        >
-                          {fy.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 tabular-nums">
+                          {yearPeriods.length} {yearPeriods.length === 1 ? 'mes' : 'meses'}
                         </span>
                         <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">
-                          ({filteredPeriodsForFy.length} meses)
+                          ({openCount} abiertos)
                         </span>
                       </div>
-                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">
-                        Rango:{' '}
-                        {new Date(fy.startDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })} al{' '}
-                        {new Date(fy.endDate).toLocaleDateString('es-ES', { timeZone: 'UTC' })}
-                      </p>
                     </div>
-                  </div>
-
-                  <div
-                    className="flex items-center gap-3 self-end sm:self-auto"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {fy.status === 'OPEN' && (
-                      <button
-                        onClick={() => setClosingFy(fy)}
-                        disabled={actionLoading}
-                        className="flex items-center gap-1.5 py-1.5 px-3 text-xs font-bold rounded-xl transition duration-150 bg-red-600 hover:bg-red-700 text-white cursor-pointer disabled:opacity-50 shadow-sm"
-                        title="Cerrar definitivamente el ejercicio y generar asiento de cierre"
-                      >
-                        <Lock className="w-3.5 h-3.5" />
-                        <span>Cerrar Ejercicio</span>
-                      </button>
-                    )}
                   </div>
                 </div>
 
-                {/* Collapsible Monthly Periods List (Vertical Rows) */}
+                {/* Monthly Periods List */}
                 {isExpanded && (
-                  <div className="border-t border-slate-100 dark:border-slate-700/80">
-                    {filteredPeriodsForFy.length === 0 ? (
-                      <p className="p-5 text-xs text-slate-400 italic">
-                        No se encontraron meses en este ejercicio.
-                      </p>
-                    ) : (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                        {filteredPeriodsForFy.map((period) => (
+                  <div className="border-t border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
+                    {yearPeriods.map((period) => (
+                      <div
+                        key={period.id}
+                        className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3.5">
                           <div
-                            key={period.id}
-                            className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors"
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                              period.status === 'OPEN'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400'
+                                : 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400'
+                            }`}
                           >
-                            <div className="flex items-center gap-3.5">
-                              <div
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-extrabold text-xs text-slate-800 dark:text-slate-200">
+                                {formatPeriodLabel(period.name)}
+                              </p>
+                              <span className="text-xs text-slate-400 dark:text-slate-500 font-mono tabular-nums">
+                                ({period.name})
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                                   period.status === 'OPEN'
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400'
-                                    : period.status === 'PLANNING'
-                                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
-                                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400'
+                                    ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/40'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                                 }`}
                               >
-                                <Calendar className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-extrabold text-xs text-slate-800 dark:text-slate-200">
-                                    {period.name}
-                                  </p>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                      period.status === 'OPEN'
-                                        ? 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/40'
-                                        : period.status === 'PLANNING'
-                                          ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                                    }`}
-                                  >
-                                    {period.status === 'OPEN'
-                                      ? 'Abierto'
-                                      : period.status === 'PLANNING'
-                                        ? 'Planificación'
-                                        : 'Cerrado'}
-                                  </span>
-                                </div>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
-                                  {new Date(period.startDate).toLocaleDateString('es-ES', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    timeZone: 'UTC',
-                                  })}{' '}
-                                  al{' '}
-                                  {new Date(period.endDate).toLocaleDateString('es-ES', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    timeZone: 'UTC',
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Switch on far right */}
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 hidden sm:inline">
                                 {period.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
                               </span>
-                              <button
-                                onClick={() => handleTogglePeriod(period.id, period.status)}
-                                disabled={actionLoading}
-                                title={
-                                  period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'
-                                }
-                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  period.status === 'OPEN'
-                                    ? 'bg-indigo-600 dark:bg-indigo-500'
-                                    : 'bg-slate-200 dark:bg-slate-700'
-                                }`}
-                              >
-                                <span
-                                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                    period.status === 'OPEN' ? 'translate-x-4' : 'translate-x-0'
-                                  }`}
-                                />
-                              </button>
                             </div>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium tabular-nums">
+                              {period.startDate} al {period.endDate}
+                            </p>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Toggle switch */}
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 hidden sm:inline">
+                            {period.status === 'OPEN' ? 'Abierto' : 'Cerrado'}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleTogglePeriod(
+                                period.id,
+                                period.status as 'OPEN' | 'CLOSED' | 'PLANNING',
+                              )
+                            }
+                            disabled={actionLoading}
+                            title={period.status === 'OPEN' ? 'Cerrar período' : 'Abrir período'}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                              period.status === 'OPEN'
+                                ? 'bg-indigo-600 dark:bg-indigo-500'
+                                : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                period.status === 'OPEN' ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -447,52 +394,50 @@ export default function PeriodsPage() {
         </div>
       )}
 
-      {/* CREATE FISCAL YEAR MODAL */}
-      {showCreateModal && (
+      {/* ENSURE PERIOD MODAL */}
+      {showEnsureModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base mb-2">
-              Crear Nuevo Ejercicio Fiscal
-            </h3>
-            <p className="text-3xs text-slate-400 dark:text-slate-500 mb-4">
-              Se creará el año fiscal seleccionado junto con sus 12 períodos mensuales para
-              registrar balances contables.
+            <div className="flex items-center gap-2.5 mb-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base">
+                Asegurar Período Contable
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-4 leading-relaxed">
+              Seleccione el mes a aprovisionar. Si existen meses intermedios faltantes, el sistema
+              los creará automáticamente preservando la continuidad de saldos contables y
+              presupuestos.
             </p>
 
-            <form onSubmit={handleCreateFiscalYear} className="space-y-4">
+            <form onSubmit={handleEnsurePeriod} className="space-y-4">
               <div>
-                <label className="block text-3xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                  Año del Ejercicio
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Mes Objetivo (AAAA-MM)
                 </label>
-                <select
-                  value={newFyYear}
-                  onChange={(e) => setNewFyYear(Number(e.target.value))}
+                <input
+                  type="month"
+                  value={targetMonth}
+                  onChange={(e) => setTargetMonth(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  {Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(
-                    (y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ),
-                  )}
-                </select>
+                  required
+                />
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150"
+                  onClick={() => setShowEnsureModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={actionLoading}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50"
+                  disabled={actionLoading || !targetMonth}
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50 cursor-pointer"
                 >
-                  {actionLoading ? 'Creando...' : 'Crear Ejercicio'}
+                  {actionLoading ? 'Asegurando...' : 'Asegurar Período'}
                 </button>
               </div>
             </form>
@@ -500,68 +445,17 @@ export default function PeriodsPage() {
         </div>
       )}
 
-      {/* CLOSE FISCAL YEAR MODAL */}
-      {closingFy && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base mb-2">
-              Cierre de Ejercicio: {closingFy.name}
-            </h3>
-
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300 rounded-2xl flex items-start gap-2.5 mb-4 text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-              <p className="text-[10px] leading-normal font-semibold">
-                Este proceso es <strong>definitivo</strong> e irreversible. Se generará un asiento
-                de cierre que reseteará a cero las cuentas temporales de Ingresos y Gastos, y
-                registrará la utilidad o pérdida del ejercicio en la cuenta de Resultados
-                Acumulados.
-              </p>
-            </div>
-
-            <form onSubmit={handleCloseFiscalYearSubmit} className="space-y-4">
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                <span className="block text-4xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                  Cuenta Destino de Cierre
-                </span>
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                  <span>Automático: Cuenta del Sistema (Resultados Acumulados)</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClosingFy(null);
-                  }}
-                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition duration-150"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition duration-150 disabled:opacity-50"
-                >
-                  {actionLoading ? 'Cerrando...' : 'Confirmar Cierre'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {/* Loading Overlay */}
       {actionLoading && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 flex flex-col items-center max-w-xs shadow-xl border border-slate-100 dark:border-slate-700 text-center space-y-4">
             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <div>
               <p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
-                Actualizando saldos históricos...
+                Procesando períodos contables...
               </p>
-              <p className="text-4xs text-slate-400 dark:text-slate-500 mt-1 font-semibold">
-                Por favor espere mientras se recalcula la contabilidad.
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-semibold">
+                Por favor espere un momento.
               </p>
             </div>
           </div>

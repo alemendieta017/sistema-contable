@@ -8,7 +8,7 @@
 
 **Input**: User description: "Rediseño del Módulo de Cuentas de Dinero y Optimización de Flujo de Caja"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Default Money Accounts Initialization (Priority: P1)
 
@@ -35,7 +35,7 @@ As an accountant or business owner creating or editing an account, I want a expl
 
 **Acceptance Scenarios**:
 
-1. **Given** the account creation modal, **When** selecting the Asset account type, **Then** a clear toggle option *"¿Es cuenta de dinero / efectivo?"* is visible.
+1. **Given** the account creation modal, **When** selecting the Asset account type, **Then** a clear toggle option _"¿Es cuenta de dinero / efectivo?"_ is visible.
 2. **Given** an account name containing liquidity keywords (e.g., "Efectivo", "Caja", "Banco", "MP"), **When** typing the account name while Asset type is selected, **Then** the money account toggle is automatically enabled by default.
 3. **Given** an account saved with the money account toggle enabled, **When** viewing the account in the ledger grid, **Then** a distinct visual badge (e.g., "Caja/Banco") is displayed instead of an editable checkbox.
 
@@ -77,7 +77,7 @@ As a financial officer reviewing company liquidity, I want the Cash Flow report 
 - How does the system handle an account with zero balance and zero entries? The money account toggle remains fully editable until the first transaction is posted.
 - What happens if no money accounts exist in the system? The Cash Flow report displays zero opening/closing cash balance and informs the user to configure at least one money account.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -96,7 +96,7 @@ As a financial officer reviewing company liquidity, I want the Cash Flow report 
 - **Account Period Balance**: Aggregated accounting entity tracking accumulated debits, credits, opening balance, and closing balance for a specific account within a designated financial period.
 - **Cash Flow Report**: Financial statement presenting net cash movements and itemized non-liquid cash inflow/outflow activities for a given date range.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

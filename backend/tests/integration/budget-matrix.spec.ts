@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetBudgetMatrixUseCase } from '../../src/application/budgets/get-budget-matrix.use-case';
 import { UpdateBudgetMatrixUseCase } from '../../src/application/budgets/update-budget-matrix.use-case';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
@@ -25,29 +24,24 @@ describe('Budget Matrix Integration Tests', () => {
     }),
   };
 
-  const sampleFiscalYear = {
-    id: 'fy-2026',
-    name: '2026',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    status: 'OPEN',
-    periods: [
-      {
-        id: 'p-1',
-        name: '2026-01',
-        status: 'CLOSED',
-        startDate: '2026-01-01',
-        endDate: '2026-01-31',
-      },
-      {
-        id: 'p-2',
-        name: '2026-02',
-        status: 'OPEN',
-        startDate: '2026-02-01',
-        endDate: '2026-02-28',
-      },
-    ],
-  };
+  const samplePeriods = [
+    {
+      id: 'p-1',
+      name: '2026-01',
+      status: 'CLOSED',
+      startDate: '2026-01-01',
+      endDate: '2026-01-31',
+      userId: 'user-1',
+    },
+    {
+      id: 'p-2',
+      name: '2026-02',
+      status: 'OPEN',
+      startDate: '2026-02-01',
+      endDate: '2026-02-28',
+      userId: 'user-1',
+    },
+  ];
 
   const sampleAccounts = [
     {
@@ -91,9 +85,6 @@ describe('Budget Matrix Integration Tests', () => {
   beforeEach(async () => {
     mockEntityManager = {
       findOne: jest.fn().mockImplementation((cls, options) => {
-        if (cls === FiscalYearEntity || cls?.name === 'FiscalYearEntity') {
-          return sampleFiscalYear;
-        }
         if (cls === BudgetEntity || cls?.name === 'BudgetEntity') {
           const periodId = options?.where?.periodId;
           if (periodId === 'p-2') {
@@ -118,7 +109,12 @@ describe('Budget Matrix Integration Tests', () => {
         }
         return null;
       }),
-      find: jest.fn(),
+      find: jest.fn().mockImplementation((cls) => {
+        if (cls === PeriodEntity || cls?.name === 'PeriodEntity') {
+          return Promise.resolve(samplePeriods);
+        }
+        return Promise.resolve([]);
+      }),
       save: jest
         .fn()
         .mockImplementation((cls, entity) =>
@@ -186,7 +182,6 @@ describe('Budget Matrix Integration Tests', () => {
         GetBudgetMatrixUseCase,
         UpdateBudgetMatrixUseCase,
         DeleteBudgetMatrixRowUseCase,
-        { provide: getRepositoryToken(FiscalYearEntity), useValue: {} },
         { provide: getRepositoryToken(PeriodEntity), useValue: {} },
         { provide: getRepositoryToken(AccountEntity), useValue: {} },
         { provide: getRepositoryToken(BudgetEntity), useValue: {} },
@@ -201,8 +196,8 @@ describe('Budget Matrix Integration Tests', () => {
   });
 
   describe('GetBudgetMatrixUseCase', () => {
-    it('should throw NotFoundException if fiscal year does not exist', async () => {
-      mockEntityManager.findOne.mockResolvedValueOnce(null);
+    it('should throw NotFoundException if no periods exist', async () => {
+      mockEntityManager.find.mockResolvedValueOnce([]);
       await expect(getMatrixUseCase.execute('user-1', 'invalid-fy')).rejects.toThrow(
         NotFoundException,
       );

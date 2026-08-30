@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Sistema Contable E2E Workflow', () => {
-  test('should allow a new user to register, log in, manage accounts and post transactions', async ({ page }) => {
+  test('should allow a new user to register, log in, manage accounts and post transactions', async ({
+    page,
+  }) => {
     // 1. Visit homepage
     await page.goto('/');
     await expect(page.locator('h1')).toContainText('Sistema Contable');
@@ -24,7 +26,7 @@ test.describe('Sistema Contable E2E Workflow', () => {
     // Fill details
     await page.fill('input[type="number"]', '50000');
     await page.fill('input[placeholder="Detalle..."]', 'Supermercado Mensual');
-    
+
     // Save transaction
     const saveBtn = page.locator('button', { hasText: 'Guardar Registro' });
     await expect(saveBtn).toBeVisible();

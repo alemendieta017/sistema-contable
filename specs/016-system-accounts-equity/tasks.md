@@ -100,7 +100,7 @@
 
 ## Phase 6: User Story 4 - Operability Restrictions on System Accounts in Journal Entries (Priority: P1)
 
-**Goal**: Restrict manual posting to `NET_INCOME` (*Resultado del Ejercicio*) in both backend validation and frontend UI selectors, while ensuring `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable.
+**Goal**: Restrict manual posting to `NET_INCOME` (_Resultado del Ejercicio_) in both backend validation and frontend UI selectors, while ensuring `RETAINED_EARNINGS` (_Resultados Acumulados / Utilidades Retenidas_) remains operable.
 
 **Independent Test**: Try selecting or posting a manual journal entry to `NET_INCOME` (fails in UI & API), then post to `RETAINED_EARNINGS` (succeeds).
 
@@ -112,7 +112,6 @@
 
 - [x] T019 [US4] Add domain/use-case validation in `CreateJournalEntryUseCase` to reject manual journal entries that reference accounts with `systemRole = 'NET_INCOME'` in `backend/src/application/entries/`
 - [x] T020 [P] [US4] Update frontend journal entry account selection dropdowns to filter out accounts with `systemRole = 'NET_INCOME'`, while keeping `RETAINED_EARNINGS` visible and operable in `frontend/src/`
-
 
 ---
 
@@ -128,4 +127,3 @@
 ## Phase 8: Convergence
 
 - [x] T017 Remove account selector dropdown from close fiscal year modal in `frontend/src/app/periods/page.tsx` for 100% automatic system account assignment (`RETAINED_EARNINGS`) per US3/AC1
-

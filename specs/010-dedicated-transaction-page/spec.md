@@ -17,10 +17,7 @@
 - **Q3**: Are there restrictions on editing or deleting transactions from past periods? → **A**: Option A - Unrestricted. Users can edit or delete any transaction in the ledger at any time since there is no closed period/fiscal year feature.
 - **Q4**: Should changing the date and time of an existing transaction be allowed when editing? → **A**: Option A - Fully Editable Date/Time. Users can modify the transaction date/time to any value.
 
-
-
-
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Dedicated Desktop Transaction Screen (Priority: P1)
 
@@ -31,6 +28,7 @@ As a desktop user or professional accountant, I want to record journal entries o
 **Independent Test**: Navigate to `/transactions/new` (or click "Nueva Transacción" on the Sidebar or page header). Verify that a dedicated full-page editor loads, utilizing the wide grid grid spacing.
 
 **Acceptance Scenarios**:
+
 1. **Given** I click the "Nueva Transacción" button on the sidebar, **When** the page loads, **Then** I am navigated to `/transactions/new` showing a spacious layout with transaction headers (Date, Description) and entry rows.
 2. **Given** the dedicated screen, **When** I fill out the transaction and click "Guardar Asiento", **Then** the transaction is persisted, a success indicator is shown, and I am redirected back to the `/transactions` view.
 3. **Given** I am editing on desktop, **When** I click "Cancelar", **Then** I am returned to the previous transactions list page.
@@ -46,6 +44,7 @@ As a mobile user, I want a fullscreen, distraction-free transaction loading expe
 **Independent Test**: Resize the browser to a mobile width (< 640px) or use a phone. Open `/transactions/new`. Verify that the layout takes 100% of the viewport height and the standard app layout navigation elements are hidden, presenting a dedicated mobile layout.
 
 **Acceptance Scenarios**:
+
 1. **Given** a mobile viewport, **When** I open the transaction page, **Then** the main sidebar and top headers are hidden, and a fullscreen sheet view appears with a mobile-optimized header (e.g. Back/Cancel icon and a visual Save trigger).
 2. **Given** the mobile view, **When** I tap to choose an account, **Then** a searchable selection drawer or dropdown overlay appears, optimized for touch inputs.
 3. **Given** a mobile view, **When** I scroll vertically, **Then** the bottom action bar (containing total Debe, total Haber, difference, and the Submit button) remains sticky at the bottom of the screen or behaves cleanly.
@@ -61,6 +60,7 @@ As a power user, I want autocomplete accounts, smart defaults (e.g. automatic op
 **Independent Test**: Focus on the input fields, press tab, add rows, observe the balancing values update instantly with smooth transitions, and verify visual markers.
 
 **Acceptance Scenarios**:
+
 1. **Given** a transaction with an active unbalanced difference (e.g., Debe = 1,000, Haber = 0), **When** I click "Agregar Apunte", **Then** the new line is added with "HABER" selected automatically, and the amount field is pre-filled with the difference of `1,000`.
 2. **Given** a new entry row is added or removed, **When** the list changes, **Then** the row animates in or out smoothly (e.g. slide-in/fade-in) instead of popping instantly.
 3. **Given** the transaction is perfectly balanced, **When** the status changes, **Then** the difference indicator turns green with a checkmark and the save button is animated to its active, enabled state.
@@ -76,6 +76,7 @@ As a user, I want to edit the details of an existing transaction using the dedic
 **Independent Test**: Click the "Edit" button on a transaction card/row on `/transactions`. Verify it navigates to the dedicated transaction page loaded with that transaction's date, description, and entries, allowing modifications.
 
 **Acceptance Scenarios**:
+
 1. **Given** an existing transaction, **When** I click its "Editar" button, **Then** I am redirected to `/transactions/edit/:id` (or `/transactions/new?edit=:id`) with all inputs populated with the current transaction data.
 2. **Given** a transaction loading for editing, **When** I modify fields and click "Guardar", **Then** the updates are saved via a `PUT` request and I am returned to the transactions list showing the modified values.
 
@@ -90,6 +91,7 @@ As a user, I want to copy an existing transaction as a template to create a new 
 **Independent Test**: Click "Copiar" on an existing transaction. Verify it navigates to `/transactions/new?cloneFrom=:id`, prefilling description and entry lines, while setting the date to the current date.
 
 **Acceptance Scenarios**:
+
 1. **Given** an existing transaction, **When** I click "Copiar", **Then** I navigate to `/transactions/new?cloneFrom=:id`, and all fields (description, accounts, entries) are pre-loaded, but saving it creates a brand new transaction.
 2. **Given** the copy page loads, **When** the form initializes, **Then** the transaction date defaults to the current date instead of the source transaction's date, allowing immediate saving.
 
@@ -104,6 +106,7 @@ As a user, I want to delete a transaction completely from the ledger if it was e
 **Independent Test**: Click the "Eliminar" button on a transaction, confirm the action, and verify the transaction disappears from list views and ledger totals.
 
 **Acceptance Scenarios**:
+
 1. **Given** a transaction list, **When** I click "Eliminar" on a transaction, **Then** a confirmation dialog is displayed.
 2. **Given** the confirmation dialog, **When** I confirm, **Then** the transaction is permanently deleted (via `DELETE /api/transactions/:id`) and list balances are updated.
 
@@ -116,7 +119,7 @@ As a user, I want to delete a transaction completely from the ledger if it was e
 - **Accidental Navigation**: If a user has entered data and tries to navigate away (by clicking Back or Cancel), the system should show a confirmation prompt to prevent loss of draft data.
 - **Modifying Reversals**: A reversed/reversal transaction should not be editable to maintain transaction integrity. The "Editar" button MUST be hidden or disabled for reversed transactions.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -138,7 +141,6 @@ As a user, I want to delete a transaction completely from the ledger if it was e
 - **FR-012**: Deletion of any transaction MUST require an explicit user confirmation dialog to avoid accidental data loss.
 - **FR-013**: The transaction entry page MUST allow setting both the date and time of the transaction (using a datetime-local input field or equivalent), and properly parse and persist the full timestamp.
 
-
 ### Key Entities
 
 - **JournalEntryTransaction**: The overall transaction payload:
@@ -151,7 +153,7 @@ As a user, I want to delete a transaction completely from the ledger if it was e
   - `entryType`: "DEBIT" or "CREDIT".
   - `amount`: Numeric value.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -166,5 +168,3 @@ As a user, I want to delete a transaction completely from the ledger if it was e
 - The default base currency (e.g. USD, PYG) is fetched and applied to formatting and placeholders on the dedicated page.
 - Standard TailwindCSS v4 classes are used for the UI layout and styling.
 - Editing and deleting transactions is unrestricted across all historical dates, since no period locking or closure rules are currently enforced in the database model.
-
-

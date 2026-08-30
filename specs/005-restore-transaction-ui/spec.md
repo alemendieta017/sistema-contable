@@ -8,7 +8,7 @@
 
 **Input**: User description: "tras el ultimo spec, la seccion de transacciones quedo bien feo. quiero que vuelva a tener los bordes y look and feel que tienen la otras pantallas"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Consistent Rounding and Card Styles (Priority: P1)
 
@@ -39,7 +39,7 @@ Aligns the borders, dividers, and background colors of transaction records (Dail
 
 ---
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -48,12 +48,12 @@ Aligns the borders, dividers, and background colors of transaction records (Dail
 - **FR-003**: The transaction filter card and layout container MUST use borders, padding, and rounding consistent with other page containers.
 - **FR-004**: The daily, monthly, and calendar transaction views MUST use table/list borders, dividing lines, and rounding consistent with the AccountsList component.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Transaction**: Represents an accounting transaction with Debit and Credit entries, which is displayed in the list and summary cards.
 - **Account**: Represents an account or category associated with transaction entries.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

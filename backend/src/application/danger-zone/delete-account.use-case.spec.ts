@@ -10,7 +10,6 @@ import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PasswordResetTokenEntity } from '../../infrastructure/database/entities/password-reset-token.entity';
 
 describe('DeleteUserAccountUseCase (US3)', () => {
@@ -114,9 +113,6 @@ describe('DeleteUserAccountUseCase (US3)', () => {
       }
       if (entityClass === TransactionEntity) {
         return Promise.resolve([{ id: 'tx-1' }]);
-      }
-      if (entityClass === FiscalYearEntity) {
-        return Promise.resolve([{ id: 'fy-1' }]);
       }
       return Promise.resolve([]);
     });

@@ -9,6 +9,7 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
 import { CreateTransactionDto } from './create-transaction.use-case';
 import { BalanceUpdateService } from '../periods/balance-update.service';
+import { EnsurePeriodService } from '../periods/ensure-period.service';
 
 @Injectable()
 export class UpdateTransactionUseCase {
@@ -21,6 +22,7 @@ export class UpdateTransactionUseCase {
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
     private readonly balanceUpdateService: BalanceUpdateService,
+    private readonly ensurePeriodService: EnsurePeriodService,
   ) {}
 
   async execute(userId: string, transactionId: string, dto: CreateTransactionDto) {
@@ -52,8 +54,7 @@ export class UpdateTransactionUseCase {
       const oldTxDate = originalTx.accountingDate;
       const oldPeriod = await entityManager
         .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
+        .where('period.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: oldTxDate })
         .andWhere('period.endDate >= :date', { date: oldTxDate })
         .getOne();
@@ -74,19 +75,14 @@ export class UpdateTransactionUseCase {
         );
       }
 
-      // 2. Check period lock on new transaction date
+      // 2. Auto-provision or obtain period for new transaction date
       const newTxDate = dto.accountingDate;
-      const newPeriod = await entityManager
-        .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
-        .andWhere('period.startDate <= :date', { date: newTxDate })
-        .andWhere('period.endDate >= :date', { date: newTxDate })
-        .getOne();
+      const newPeriod = await this.ensurePeriodService.ensurePeriod(
+        entityManager,
+        userId,
+        newTxDate.substring(0, 7),
+      );
 
-      if (!newPeriod) {
-        throw new BadRequestException('No accounting period found for the new transaction date');
-      }
       if (newPeriod.status === 'CLOSED') {
         throw new BadRequestException(
           'The accounting period for the new transaction date is closed',
@@ -142,7 +138,6 @@ export class UpdateTransactionUseCase {
             'System account NET_INCOME is non-operable for manual journal entries',
           );
         }
-
 
         const rateAtDate = Number(currency?.rateToBase ?? 1.0);
         const amountBase = Number((entry.amount * rateAtDate).toFixed(4));

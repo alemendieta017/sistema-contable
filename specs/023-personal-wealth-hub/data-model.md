@@ -250,3 +250,5 @@ The following legacy entities and files are scheduled for deletion:
 - `backend/src/application/periods/close-fiscal-year.use-case.ts`: **DELETED**
 - `backend/src/infrastructure/controllers/dto/create-fiscal-year.dto.ts`: **DELETED**
 - `shared/src`: Remove `CreateFiscalYearRequestSchema`, `CloseFiscalYearRequestSchema`, and all `fiscalYearId` fields from matrix DTOs.
+- `Legacy System Roles in accounts`: `NET_INCOME` and `RETAINED_EARNINGS` are removed from the database entity model. A single system account `Capital` (`type: 'EQUITY'`, `systemRole: 'CAPITAL'`) serves as the offsetting leg for starting balances and capital injections across time.
+- `Streamlined Balance Presentation`: The Balance General computes Net Worth directly as $\text{Total Assets} - \text{Total Liabilities}$ without synthetic corporate equity tree injections. Zero-balance equity accounts are automatically omitted from report presentation.

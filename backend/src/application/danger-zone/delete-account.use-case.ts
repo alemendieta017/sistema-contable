@@ -8,7 +8,6 @@ import { UserEntity } from '../../infrastructure/database/entities/user.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
@@ -91,18 +90,8 @@ export class DeleteUserAccountUseCase {
         await manager.delete(TransactionEntity, { userId });
       }
 
-      // 5. Delete user's periods and fiscal years
-      const userFiscalYears = await manager.find(FiscalYearEntity, { where: { userId } });
-      const fyIds = userFiscalYears.map((fy) => fy.id);
-      if (fyIds.length > 0) {
-        await manager
-          .createQueryBuilder()
-          .delete()
-          .from(PeriodEntity)
-          .where('fiscal_year_id IN (:...fyIds)', { fyIds })
-          .execute();
-        await manager.delete(FiscalYearEntity, { userId });
-      }
+      // 5. Delete user's periods
+      await manager.delete(PeriodEntity, { userId });
 
       // 6. Delete user's accounts (clear parent_id first to prevent FK cycles)
       if (accountIds.length > 0) {

@@ -8,7 +8,7 @@
 
 **Input**: User description: "la vista mensual debe mostrar la info en formato tabular, una bonita tabla clean UX/UI, no en cards"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Tabular Monthly Summary (Priority: P1)
 
@@ -45,7 +45,7 @@ As a user, I want the table to feel premium, featuring subtle hover highlights, 
 - **Year with no transactions at all**: The table should render all 12 months with 0 values and 0 transactions count, rather than showing a blank screen or error.
 - **Large currency numbers**: PYG values can be long (e.g., ₲150.000.000). The table columns must have adequate spacing and alignment (text-right for numbers) so values do not run into each other.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -66,7 +66,7 @@ As a user, I want the table to feel premium, featuring subtle hover highlights, 
   - `expense`: Sum of all expenses in that month in base currency.
   - `net`: Net balance (income - expense) in base currency.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -3,17 +3,22 @@
 ## 1. Modified Entities
 
 ### Account (`accounts` table)
+
 - Added attribute `isCashOrBank: boolean` (name in database: `is_cash_or_bank`), type `boolean`, default `false`.
 - Validation: Block updates to `isCashOrBank` if there are any `JournalEntry` rows pointing to the account.
 
 ### FiscalYear (`fiscal_years` table)
+
 - Updated status enum: `status` type `varchar(10)`, default `OPEN` (Values: `CLOSED`, `OPEN`, `PLANNING`).
 
 ### Period (`periods` table)
+
 - Updated status enum: `status` type `varchar(10)`, default `OPEN` (Values: `CLOSED`, `OPEN`, `PLANNING`).
 
 ### Budget (`budgets` table)
+
 Refactored schema:
+
 - `id`: UUID, Primary Key.
 - `userId`: UUID, Foreign Key to `users`.
 - `periodId`: UUID, Unique Foreign Key to `periods` (name in database: `period_id`).
@@ -22,6 +27,7 @@ Refactored schema:
 - `updatedAt`: Timestamp with time zone.
 
 Relationships:
+
 - 1-to-1 with `PeriodEntity`.
 - 1-to-Many with `BudgetItemEntity`.
 
@@ -30,12 +36,14 @@ Relationships:
 ## 2. New Entities
 
 ### BudgetItem (`budget_items` table)
+
 - `id`: UUID, Primary Key.
 - `budgetId`: UUID, Foreign Key to `budgets` (cascade delete on delete of budget).
 - `accountId`: UUID, Foreign Key to `accounts` (cascade delete on delete of account).
 - `amount`: Decimal (18, 4), representing the budgeted limit or expected amount. Can be positive or negative.
 
 Indexes/Constraints:
+
 - Unique Index on `[budgetId, accountId]` to guarantee that an account is only budgeted once per period.
 
 ---
@@ -85,7 +93,7 @@ classDiagram
     +string type
     +boolean isCashOrBank
   }
-  
+
   User "1" --> "*" FiscalYear
   FiscalYear "1" --> "*" Period
   Period "1" -- "1" Budget

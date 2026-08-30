@@ -76,7 +76,7 @@ export default function BudgetControlPage() {
           api.periods.list(),
           api.currencies.list(),
         ]);
-        const list = Array.isArray(periodList) ? periodList : periodList?.data || [];
+        const list: any[] = Array.isArray(periodList) ? periodList : [];
         setPeriods(list);
         setCurrencies(curList || []);
         if (list && list.length > 0) {

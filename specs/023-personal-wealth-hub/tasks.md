@@ -16,10 +16,10 @@
 
 **Purpose**: Centralize contracts, Zod schemas, TypeScript types, and enums in `@sistema-contable/shared` as single source of truth, removing all legacy `FiscalYear` schemas.
 
-- [ ] T001 Update shared package to remove `FiscalYear` schemas/types and add `EnsurePeriodRequestSchema` and `EnsurePeriodResponse` in `shared/src/index.ts`
-- [ ] T002 [P] Update shared package to add rolling budget matrix and cash flow schemas (`RollingBudgetMatrixResponse`, `RollingCashFlowSummary`, `BatchUpdateBudgetMatrixRequestSchema`, `ExtendBudgetMatrixRequestSchema`, `ExtendBudgetMatrixResponse`) in `shared/src/index.ts`
-- [ ] T003 [P] Update shared package to add recurring schedule and net worth schemas (`RecurringScheduleDto`, `CreateRecurringScheduleRequestSchema`, `UpdateRecurringScheduleRequestSchema`, `CalendarPreviewResponse`, `SettleRecurringScheduleRequestSchema`, `NetWorthEvolutionPoint`, `NetWorthEvolutionResponse`) in `shared/src/index.ts`
-- [ ] T004 Compile shared package and verify types with `npm run build --workspace=@sistema-contable/shared`
+- [x] T001 Update shared package to remove `FiscalYear` schemas/types and add `EnsurePeriodRequestSchema` and `EnsurePeriodResponse` in `shared/src/index.ts`
+- [x] T002 [P] Update shared package to add rolling budget matrix and cash flow schemas (`RollingBudgetMatrixResponse`, `RollingCashFlowSummary`, `BatchUpdateBudgetMatrixRequestSchema`, `ExtendBudgetMatrixRequestSchema`, `ExtendBudgetMatrixResponse`) in `shared/src/index.ts`
+- [x] T003 [P] Update shared package to add recurring schedule and net worth schemas (`RecurringScheduleDto`, `CreateRecurringScheduleRequestSchema`, `UpdateRecurringScheduleRequestSchema`, `CalendarPreviewResponse`, `SettleRecurringScheduleRequestSchema`, `NetWorthEvolutionPoint`, `NetWorthEvolutionResponse`) in `shared/src/index.ts`
+- [x] T004 Compile shared package and verify types with `npm run build --workspace=@sistema-contable/shared`
 
 ---
 
@@ -29,11 +29,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Delete legacy fiscal year backend files (`backend/src/infrastructure/database/entities/fiscal-year.entity.ts`, `backend/src/application/periods/create-fiscal-year.use-case.ts`, `backend/src/application/periods/close-fiscal-year.use-case.ts`, `backend/src/infrastructure/controllers/dto/create-fiscal-year.dto.ts`)
-- [ ] T006 Refactor `PeriodEntity` in `backend/src/infrastructure/database/entities/period.entity.ts` to remove `fiscalYearId` and relation, add direct `userId` ownership, and update compound index to `[userId, name]`
-- [ ] T007 Refactor `Period` domain model in `backend/src/domain/ledger/period.model.ts` to decouple from fiscal years and represent monthly calendar periods (`YYYY-MM`, start/end dates, user ownership)
-- [ ] T008 [P] Update TypeORM database configuration and module imports in `backend/src/infrastructure/database/database.module.ts` and `backend/src/app.module.ts` to remove `FiscalYearEntity`
-- [ ] T009 [P] Update frontend API service in `frontend/src/services/api.ts` to remove `fiscalYears` namespace and align period endpoints with user-scoped `/api/periods`
+- [x] T005 Delete legacy fiscal year backend files (`backend/src/infrastructure/database/entities/fiscal-year.entity.ts`, `backend/src/application/periods/create-fiscal-year.use-case.ts`, `backend/src/application/periods/close-fiscal-year.use-case.ts`, `backend/src/infrastructure/controllers/dto/create-fiscal-year.dto.ts`)
+- [x] T006 Refactor `PeriodEntity` in `backend/src/infrastructure/database/entities/period.entity.ts` to remove `fiscalYearId` and relation, add direct `userId` ownership, and update compound index to `[userId, name]`
+- [x] T007 Refactor `Period` domain model in `backend/src/domain/ledger/period.model.ts` to decouple from fiscal years and represent monthly calendar periods (`YYYY-MM`, start/end dates, user ownership)
+- [x] T008 [P] Update TypeORM database configuration and module imports in `backend/src/infrastructure/database/database.module.ts` and `backend/src/app.module.ts` to remove `FiscalYearEntity`
+- [x] T008b [US1] Create TypeORM migration `1785900000000-EliminateFiscalYearsAndScopePeriodsToUser.ts` in `backend/src/infrastructure/database/migrations/` to drop `fiscal_years` table, remove `fiscal_year_id` from `periods`, and add `user_id` foreign key and composite indexes
+- [x] T009 [P] Update frontend API service in `frontend/src/services/api.ts` to remove `fiscalYears` namespace and align period endpoints with user-scoped `/api/periods`
 
 **Checkpoint**: Foundation ready — monthly period schema and shared contracts established; user story implementation can now proceed.
 
@@ -47,17 +48,17 @@
 
 ### Tests for User Story 1 (Strict TDD - Write and ensure FAIL first) ⚠️
 
-- [ ] T010 [P] [US1] Unit and integration tests for `EnsurePeriodService` auto-provisioning and continuous gap filling in `backend/tests/integration/period-creation.spec.ts`
-- [ ] T011 [P] [US1] Integration tests for forward balance cascade across chronological `AccountPeriodBalanceEntity` snapshots in `backend/tests/integration/balance-propagation.spec.ts`
-- [ ] T012 [P] [US1] Integration tests for unconstrained transaction posting across past and future dates without boundary errors in `backend/tests/integration/ledger-validation.spec.ts`
+- [x] T010 [P] [US1] Unit and integration tests for `EnsurePeriodService` auto-provisioning and continuous gap filling in `backend/tests/integration/period-creation.spec.ts`
+- [x] T011 [P] [US1] Integration tests for forward balance cascade across chronological `AccountPeriodBalanceEntity` snapshots in `backend/tests/integration/balance-propagation.spec.ts`
+- [x] T012 [P] [US1] Integration tests for unconstrained transaction posting across past and future dates without boundary errors in `backend/tests/integration/ledger-validation.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `EnsurePeriodService` in `backend/src/application/periods/ensure-period.service.ts` with atomic get-or-create, month normalization, gap filling, and initial snapshot generation
-- [ ] T014 [US1] Refactor `BalanceUpdateService` in `backend/src/application/periods/balance-update.service.ts` to eliminate fiscal year joins and implement continuous forward balance cascade across subsequent `AccountPeriodBalanceEntity` snapshots
-- [ ] T015 [US1] Update `CreateTransactionUseCase` in `backend/src/application/ledger/create-transaction.use-case.ts` to invoke `EnsurePeriodService` and auto-provision periods upon transaction posting
-- [ ] T016 [US1] Refactor `PeriodController` in `backend/src/infrastructure/controllers/period.controller.ts` to expose `POST /api/periods/ensure`, `GET /api/periods`, and eliminate fiscal year routes
-- [ ] T017 [US1] Refactor periods management view in `frontend/src/app/periods/page.tsx` to remove annual fiscal year closing wizards and provide continuous monthly status overview
+- [x] T013 [US1] Implement `EnsurePeriodService` in `backend/src/application/periods/ensure-period.service.ts` with atomic get-or-create, month normalization, gap filling, and initial snapshot generation
+- [x] T014 [US1] Refactor `BalanceUpdateService` in `backend/src/application/periods/balance-update.service.ts` to eliminate fiscal year joins and implement continuous forward balance cascade across subsequent `AccountPeriodBalanceEntity` snapshots
+- [x] T015 [US1] Update `CreateTransactionUseCase` in `backend/src/application/ledger/create-transaction.use-case.ts` to invoke `EnsurePeriodService` and auto-provision periods upon transaction posting
+- [x] T016 [US1] Refactor `PeriodController` in `backend/src/infrastructure/controllers/period.controller.ts` to expose `POST /api/periods/ensure`, `GET /api/periods`, and eliminate fiscal year routes
+- [x] T017 [US1] Refactor periods management view in `frontend/src/app/periods/page.tsx` to remove annual fiscal year closing wizards and provide continuous monthly status overview
 
 **Checkpoint**: At this point, User Story 1 is fully functional and testable independently (MVP deliverable).
 
@@ -103,11 +104,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Refactor `BalanceSheetUseCase` in `backend/src/application/periods/balance-sheet.use-case.ts` to query `AccountPeriodBalanceEntity` directly by user and monthly period without fiscal year dependency
+- [ ] T031 [US3] Refactor `BalanceSheetUseCase` in `backend/src/application/periods/balance-sheet.use-case.ts` to query `AccountPeriodBalanceEntity` directly by user and monthly period/date range, computing Net Worth directly as Total Assets - Total Liabilities without synthetic corporate equity tree injections
 - [ ] T032 [US3] Implement `CashFlowStatementUseCase` in `backend/src/application/reports/cash-flow-statement.use-case.ts` for actual historical cash movements across operational, investing, and financing categories
 - [ ] T033 [US3] Refactor Income Statement use case in `backend/src/application/periods/income-statement.use-case.ts` to support Real and Projected modes by period
 - [ ] T034 [US3] Update `ReportsController` in `backend/src/infrastructure/controllers/reports.controller.ts` for balance sheet, cash flow, and income statement endpoints
-- [ ] T035 [P] [US3] Refactor Balance Sheet and Cash Flow pages in `frontend/src/app/reports/balance-sheet/page.tsx` and `frontend/src/app/reports/cash-flow/page.tsx` for monthly period selectors without fiscal year constraints
+- [ ] T035 [P] [US3] Refactor Balance Sheet and Cash Flow pages in `frontend/src/app/reports/balance-sheet/page.tsx` and `frontend/src/app/reports/cash-flow/page.tsx` for streamlined executive presentation (Total Assets, Total Liabilities, Net Worth) and monthly period selectors without fiscal year constraints
 - [ ] T036 [P] [US3] Refactor Forecast and Budget Control pages in `frontend/src/app/reports/forecast/page.tsx` and `frontend/src/app/budgets/control/page.tsx` to consume rolling matrix and budget execution data
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 are all independently testable and operational.
@@ -151,6 +152,7 @@
 ### Implementation for User Story 5
 
 - [ ] T046 [P] [US5] Create `RecurringScheduleEntity` in `backend/src/infrastructure/database/entities/recurring-schedule.entity.ts` with check constraints on `dueDay` and `estimatedAmount`
+- [ ] T046b [US5] Create TypeORM migration for `recurring_schedules` table with foreign keys, check constraints, and composite indexes in `backend/src/infrastructure/database/migrations/`
 - [ ] T047 [P] [US5] Create `RecurringSchedule` domain model in `backend/src/domain/commitments/recurring-schedule.model.ts`
 - [ ] T048 [US5] Implement `CreateRecurringScheduleUseCase` and CRUD in `backend/src/application/commitments/create-recurring-schedule.use-case.ts`
 - [ ] T049 [US5] Implement `GetCalendarPreviewUseCase` in `backend/src/application/commitments/get-calendar-preview.use-case.ts` (virtual projection engine with zero ledger pollution)

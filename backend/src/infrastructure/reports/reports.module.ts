@@ -4,7 +4,6 @@ import { JournalEntryEntity } from '../database/entities/journal-entry.entity';
 import { TransactionEntity } from '../database/entities/transaction.entity';
 import { AccountEntity } from '../database/entities/account.entity';
 import { PeriodEntity } from '../database/entities/period.entity';
-import { FiscalYearEntity } from '../database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../database/entities/budget.entity';
 import { GetCategoryStatisticsUseCase } from '../../application/reports/get-category-statistics.use-case';
@@ -24,7 +23,6 @@ import { AuthModule } from '../auth/auth.module';
       TransactionEntity,
       AccountEntity,
       PeriodEntity,
-      FiscalYearEntity,
       AccountPeriodBalanceEntity,
       BudgetEntity,
     ]),

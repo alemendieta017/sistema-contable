@@ -8,7 +8,7 @@
 
 **Input**: User description: "mejorar el formulario de entrada de asientos contables, debe verse cool, genial, los rubros deben ser entradas por líneas, no por cards. Diseño clean. Las palabras debe haber estan muy grandes desproporcional al resto. la pantalla de cargar nuevo asiento contable debe respetar la moneda por defecto, y en este caso, tambien los decimales y el simbolo. no se esta actualmente respetando la cantidad de decimales en los placeholders de los formularios ni tampoco los simbolos de la moneda por defecto"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Clean Line-Based Entry Creation (Priority: P1)
 
@@ -19,6 +19,7 @@ As an accountant or user, I want to record journal entries using a compact, line
 **Independent Test**: Navigate to the "Asiento Libre" page or open the "Registrar Asiento Contable" modal, verify that entries are presented as table-like rows instead of cards.
 
 **Acceptance Scenarios**:
+
 1. **Given** the Asiento Libre page, **When** I add multiple entry lines, **Then** they appear in a clean table/grid line-by-line layout.
 2. **Given** the entries list, **When** I view the "Debe" and "Haber" text/labels/buttons, **Then** their size and formatting are balanced and proportionate with the rest of the text inputs.
 
@@ -33,6 +34,7 @@ As a user, I want the entry form and its validation to respect my system's defau
 **Independent Test**: If base currency is PYG (decimalPlaces: 0, symbol: ₲), verify that the amount input placeholder is `0` and currency symbol prefix/suffix displays `₲`. If base currency is USD, verify placeholder is `0.00` and symbol is `$`.
 
 **Acceptance Scenarios**:
+
 1. **Given** default currency is configured, **When** the entry form loads, **Then** all input placeholders for amounts use the correct decimal places format (e.g., `0.00` or `0`).
 2. **Given** the balance summary cards or footers, **When** total Debe, total Haber, and Difference are shown, **Then** they display the default currency symbol and decimals.
 
@@ -47,6 +49,7 @@ As a power user, I want to easily add and remove entry lines in the row-based la
 **Independent Test**: Add 3 lines, delete the second line, and verify that the layout adapts instantly and correctly calculates total Debe, total Haber, and Difference.
 
 **Acceptance Scenarios**:
+
 1. **Given** 3 entry rows, **When** I click the delete icon on the second row, **Then** that row is removed and the remaining rows shift up smoothly.
 2. **Given** a new entry row is added, **When** I select a account and enter amounts, **Then** totals and status indicators are updated in real-time.
 
@@ -57,7 +60,7 @@ As a power user, I want to easily add and remove entry lines in the row-based la
 - **Very narrow screens (mobile)**: On mobile viewports, the multi-column row could overflow. The layout must adjust gracefully using responsive wrappers or compact flex behaviors to prevent text truncation or broken alignments.
 - **Long account names**: If an account has a long hierarchical name (e.g. "Activo › Corriente › Caja y Bancos › Caja Chica"), the selector must handle the text smoothly without expanding the row height disproportionally.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -75,7 +78,7 @@ As a power user, I want to easily add and remove entry lines in the row-based la
   - `entryType`: "DEBIT" (Debe) or "CREDIT" (Haber).
   - `amount`: Numeric value of the entry.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -30,6 +30,5 @@
 
 ### 6. System Account Operability Restrictions in Journal Entries
 
-- **Decision**: Mark `NET_INCOME` (*Resultado del Ejercicio*) as non-operable (`allowManualEntry = false`), filtering it out from UI entry selectors and rejecting manual debit/credit postings in `CreateJournalEntryUseCase`. Ensure `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable (`allowManualEntry = true`).
+- **Decision**: Mark `NET_INCOME` (_Resultado del Ejercicio_) as non-operable (`allowManualEntry = false`), filtering it out from UI entry selectors and rejecting manual debit/credit postings in `CreateJournalEntryUseCase`. Ensure `RETAINED_EARNINGS` (_Resultados Acumulados / Utilidades Retenidas_) remains operable (`allowManualEntry = true`).
 - **Rationale**: Fulfills FR-008 and FR-009. Prevents manual journal entries from corrupting the real-time net income calculation ($\text{Ingresos} - \text{Egresos} = \text{Resultado del Ejercicio}$) and breaking double-entry synchronization between the Income Statement and Balance Sheet. Retained earnings must remain operable for valid equity operations such as dividend distributions, legal reserve allocations, and prior-period adjustments.
-

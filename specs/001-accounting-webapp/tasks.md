@@ -53,11 +53,14 @@
 **Independent Test**: Register an expense of $50,000 to Cash and confirm that cash balance decreases and expense category increases, with a balanced ledger write.
 
 ### Tests for User Story 1
+
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+
 - [x] T011 [P] [US1] Write integration tests for double-entry balance check (FR-002) in backend/tests/integration/ledger-validation.spec.ts
 - [x] T012 [P] [US1] Write contract tests for transaction and account creation endpoints in backend/tests/contract/ledger.spec.ts
 
 ### Implementation for User Story 1
+
 - [x] T013 [P] [US1] Create Account, Transaction, and JournalEntry database entities in backend/src/infrastructure/database/entities/
 - [x] T014 [P] [US1] Implement Ledger domain model and repository interfaces in backend/src/domain/ledger/
 - [x] T015 [US1] Implement CreateTransaction use case enforcing double-entry validation (FR-001, FR-002) and serializable locks in backend/src/application/ledger/create-transaction.use-case.ts
@@ -77,9 +80,11 @@
 **Independent Test**: Register a split entry debiting "Comida" ($70k) and "Ropa" ($30k), crediting "Tarjeta" ($100k) and verify it balances.
 
 ### Tests for User Story 2
+
 - [x] T020 [P] [US2] Write integration tests verifying multi-item transaction posting and rejection of unbalanced split entries in backend/tests/integration/multi-item-validation.spec.ts
 
 ### Implementation for User Story 2
+
 - [x] T021 [US2] Extend CreateTransaction use case and REST endpoints to accept arbitrary journal entry lists in backend/src/application/ledger/create-transaction.use-case.ts
 - [x] T022 [P] [US2] Build advanced seat editor dynamic form (Asiento Libre) showing live balancing summary on screen in frontend/src/app/transactions/asiento-libre/page.tsx
 
@@ -94,9 +99,11 @@
 **Independent Test**: Verify that accounts page displays asset groups, liability groups, and net worth = assets - liabilities.
 
 ### Tests for User Story 3
+
 - [x] T023 [P] [US3] Write integration tests for account balance aggregation and net worth summaries in backend/tests/integration/balance-calculation.spec.ts
 
 ### Implementation for User Story 3
+
 - [x] T024 [US3] Implement GetAccountsSummary usecase returning balances grouped by accounts (Activos/Pasivos) in backend/src/application/accounts/get-accounts-summary.use-case.ts
 - [x] T025 [US3] Implement GET /api/accounts/summary endpoint in backend/src/infrastructure/controllers/account.controller.ts
 - [x] T026 [P] [US3] Build accounts dashboard listing assets, credit card cycles, and net worth gauges in frontend/src/app/accounts/page.tsx
@@ -112,9 +119,11 @@
 **Independent Test**: Configure a budget of $500,000 for comida, post a transaction of $200,000, and verify budget reflects 40% consumption.
 
 ### Tests for User Story 4
+
 - [x] T027 [P] [US4] Write integration tests for budget spent-amount calculation and default recurrence checks in backend/tests/integration/budget-tracking.spec.ts
 
 ### Implementation for User Story 4
+
 - [x] T028 [P] [US4] Create Budget and BudgetAmount database entities in backend/src/infrastructure/database/entities/
 - [x] T029 [P] [US4] Implement Budget domain model and use cases in backend/src/domain/budgets/
 - [x] T030 [US4] Implement GetBudgetsSummary use case aggregating expenses against budget thresholds in backend/src/application/budgets/get-budgets-summary.use-case.ts
@@ -131,6 +140,7 @@
 **Independent Test**: Verify statistic view represents proportional category amounts matching actual transactions.
 
 ### Implementation for User Story 5
+
 - [x] T032 [US5] Implement category percentage statistics API endpoint in backend/src/infrastructure/controllers/reports.controller.ts
 - [x] T033 [P] [US5] Build statistics dashboard incorporating charts for category allocations in frontend/src/app/stats/page.tsx
 
@@ -145,6 +155,7 @@
 **Independent Test**: Trigger Excel export and verify download file headers match `Fecha`, `Cuenta`, `Categoría`, `Subcategorías`, `Nota`, `PYG`, `Ingreso/Gasto`, `Descripción`, `Importe`, `Moneda`.
 
 ### Implementation for User Story 6
+
 - [x] T034 [US6] Implement Excel generation stream service using Excel libraries in backend/src/application/reports/export-excel.service.ts
 - [x] T035 [US6] Implement JSON database dump and import services in backend/src/application/backup/backup.service.ts
 - [x] T036 [P] [US6] Build settings page with database backup upload and Excel download links in frontend/src/app/settings/page.tsx

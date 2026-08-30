@@ -7,6 +7,7 @@
 **Status**: Draft
 
 **Input**: User description: "Mejoras pantalla transacciones:
+
 - Retirar counters redundantes en vista de meses mensual
 - Retirar filtros de fecha en calendario y mensual, ya que debe ceñirse al contexto del filtro de mes o año
 - Hacer que los counters de la vista de transacciones en mobile sea de una sola linea
@@ -20,7 +21,7 @@
 - Q: ¿Cómo deben comportarse los counters en mobile y las fechas de los segmented controls al cambiar de vista?
   → A: Los counters en mobile deben presentarse en una sola línea pero sin scroll lateral ni sobresalir de la pantalla (ajustándose al ancho disponible). Las fechas de cada pestaña de segmented controls deben ser independientes, manteniendo su propio contexto sin resetearse ni afectarse mutuamente al cambiar de vista (por ejemplo, al volver de mensual a diario).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Streamlined Monthly and Calendar Views (Priority: P1)
 
@@ -84,7 +85,7 @@ As a user switching between Light and Dark themes, I want all elements (day bord
 - **Mobile Overflow**: On mobile viewports, the counters must fit in a single row without horizontal overflow, wrapping, or lateral scrolling.
 - **View Switching**: The date state/context for each view switcher tab/tab-view (Diario, Calendario, Mensual) must be independent. Toggling between them must not overwrite or reset the active date/month/year of other views (e.g., if the user is in June 2026 in the daily view, goes to monthly view which shows the year 2026, and returns to daily view, the daily view must still show June 2026 and not reset to January 2026).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -98,11 +99,11 @@ As a user switching between Light and Dark themes, I want all elements (day bord
   - The "Add Account" button must be visible with correct contrast in light mode.
   - Hover states on the segmented controls must be visible and aesthetically pleasing in both modes.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Transaction View State**: Represents the currently selected view layout (Diario, Calendario, Mensual) and active filters (Month, Year).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -38,7 +38,7 @@ Implement a mobile-first double-entry accounting web application inspired by Rea
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 1. **Double-Entry Bookkeeping & Ledger Integrity**: **PASS**
    - Transactions are modeled with a header and a detail list of debits/credits (`journal_entries`).
@@ -117,4 +117,4 @@ package.json              # Monorepo workspaces definition
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-*No violations detected. The architecture aligns with clean architecture and double-entry principles.*
+_No violations detected. The architecture aligns with clean architecture and double-entry principles._

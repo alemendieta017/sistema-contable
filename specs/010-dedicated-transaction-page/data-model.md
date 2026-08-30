@@ -45,32 +45,34 @@ classDiagram
 ---
 
 ### 1. TransactionEntity (Header)
+
 Represents the journal entry header.
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | UUID (PK) | Unique identifier for the transaction. |
-| `userId` | UUID (FK) | References the `UserEntity` who recorded this entry. |
-| `date` | Timestamp | Date and time when the transaction occurred. |
-| `description` | String | Explanatory note or concept (Glosa). |
-| `status` | String | Either `"POSTED"` or `"REVERSED"`. |
+| Field          | Type                | Description                                          |
+| -------------- | ------------------- | ---------------------------------------------------- |
+| `id`           | UUID (PK)           | Unique identifier for the transaction.               |
+| `userId`       | UUID (FK)           | References the `UserEntity` who recorded this entry. |
+| `date`         | Timestamp           | Date and time when the transaction occurred.         |
+| `description`  | String              | Explanatory note or concept (Glosa).                 |
+| `status`       | String              | Either `"POSTED"` or `"REVERSED"`.                   |
 | `reversalOfId` | UUID (FK, Nullable) | References the transaction that this entry reverses. |
-| `createdAt` | Timestamp | System timestamp when the record was created. |
+| `createdAt`    | Timestamp           | System timestamp when the record was created.        |
 
 ---
 
 ### 2. JournalEntryEntity (Lines)
+
 Represents individual credit and debit lines.
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | UUID (PK) | Unique identifier for the journal entry line. |
-| `transactionId` | UUID (FK) | References the parent `TransactionEntity`. CASCADE DELETE enabled. |
-| `accountId` | UUID (FK) | References the `AccountEntity` affected. |
-| `entryType` | String | Either `"DEBIT"` or `"CREDIT"`. |
-| `amount` | Decimal | Amount in the account's local currency. |
-| `amountBase` | Decimal | Amount converted to the system's base currency using `rateAtDate`. |
-| `rateAtDate` | Decimal | Exchange rate from the account currency to base currency at the transaction date. |
+| Field           | Type      | Description                                                                       |
+| --------------- | --------- | --------------------------------------------------------------------------------- |
+| `id`            | UUID (PK) | Unique identifier for the journal entry line.                                     |
+| `transactionId` | UUID (FK) | References the parent `TransactionEntity`. CASCADE DELETE enabled.                |
+| `accountId`     | UUID (FK) | References the `AccountEntity` affected.                                          |
+| `entryType`     | String    | Either `"DEBIT"` or `"CREDIT"`.                                                   |
+| `amount`        | Decimal   | Amount in the account's local currency.                                           |
+| `amountBase`    | Decimal   | Amount converted to the system's base currency using `rateAtDate`.                |
+| `rateAtDate`    | Decimal   | Exchange rate from the account currency to base currency at the transaction date. |
 
 ---
 
@@ -85,6 +87,7 @@ stateDiagram-v2
 ```
 
 ### State Behavior
+
 - **POSTED**: Active transaction. It can be modified (`PUT /api/transactions/:id`), reversed, or permanently deleted.
 - **REVERSED**: The transaction has been offset by a reversal transaction. It cannot be modified (`PUT /api/transactions/:id`). However, it can be permanently deleted.
 - **REVERSAL TRANSACTION** (a transaction with a non-null `reversalOfId`): Implies it was generated automatically to offset an error. It cannot be edited.

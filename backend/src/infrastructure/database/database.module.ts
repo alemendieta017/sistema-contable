@@ -3,7 +3,6 @@ import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { CurrencyEntity } from './entities/currency.entity';
-import { FiscalYearEntity } from './entities/fiscal-year.entity';
 import { PeriodEntity } from './entities/period.entity';
 import { AccountPeriodBalanceEntity } from './entities/account-period-balance.entity';
 
@@ -55,7 +54,6 @@ import { BudgetItemEntity } from './entities/budget-item.entity';
     TypeOrmModule.forFeature([
       UserEntity,
       PasswordResetTokenEntity,
-      FiscalYearEntity,
       PeriodEntity,
       AccountPeriodBalanceEntity,
       BudgetEntity,

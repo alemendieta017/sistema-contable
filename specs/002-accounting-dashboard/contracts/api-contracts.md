@@ -7,7 +7,9 @@ All API endpoints are prefixed with `/api`. Requests must include an `Authorizat
 ## 1. Authentication
 
 ### POST `/auth/register`
+
 Creates a new user.
+
 - **Request Body**:
   ```json
   {
@@ -25,7 +27,9 @@ Creates a new user.
   ```
 
 ### POST `/auth/login`
+
 Authenticates a user.
+
 - **Request Body**:
   ```json
   {
@@ -49,7 +53,9 @@ Authenticates a user.
 ## 2. Accounts Module
 
 ### GET `/accounts`
+
 Lists all accounts for the current user.
+
 - **Response (200 OK)**:
   ```json
   [
@@ -66,7 +72,9 @@ Lists all accounts for the current user.
   ```
 
 ### GET `/accounts/summary`
+
 Returns summarized balances (Assets, Liabilities, Net Balance) along with current balances for each account.
+
 - **Response (200 OK)**:
   ```json
   {
@@ -89,7 +97,9 @@ Returns summarized balances (Assets, Liabilities, Net Balance) along with curren
   ```
 
 ### POST `/accounts`
+
 Creates a new account.
+
 - **Request Body**:
   ```json
   {
@@ -118,7 +128,9 @@ Creates a new account.
   ```
 
 ### DELETE `/accounts/:id`
+
 Deletes or deactivates an account.
+
 - **Response (200 OK or 204 No Content)**
 
 ---
@@ -126,7 +138,9 @@ Deletes or deactivates an account.
 ## 3. Transactions Module
 
 ### GET `/transactions`
+
 Lists transactions within an optional date range.
+
 - **Query Parameters**:
   - `startDate`: ISO Date String (e.g. `2026-06-01`)
   - `endDate`: ISO Date String (e.g. `2026-06-30`)
@@ -168,7 +182,9 @@ Lists transactions within an optional date range.
   ```
 
 ### POST `/transactions`
+
 Creates a double-entry transaction.
+
 - **Request Body**:
   ```json
   {
@@ -207,7 +223,9 @@ Creates a double-entry transaction.
 ## 4. Reports & Currencies
 
 ### GET `/reports/statistics`
+
 Returns category aggregates for a specific period and transaction type.
+
 - **Query Parameters**:
   - `period`: string (`YYYY-MM`)
   - `type`: string (`INCOME` or `EXPENSE`)
@@ -230,7 +248,9 @@ Returns category aggregates for a specific period and transaction type.
   ```
 
 ### GET `/currencies`
+
 Lists all available currencies.
+
 - **Response (200 OK)**:
   ```json
   [

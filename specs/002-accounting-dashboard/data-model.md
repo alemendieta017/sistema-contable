@@ -67,6 +67,7 @@ classDiagram
 ## Entity Details
 
 ### 1. Account (Cuenta / Rubro)
+
 - **Database Table**: `accounts`
 - **Fields**:
   - `id`: UUID (Primary Key)
@@ -83,6 +84,7 @@ classDiagram
   - Circular parent-child hierarchies are forbidden.
 
 ### 2. Transaction (Transacción / Asiento)
+
 - **Database Table**: `transactions`
 - **Fields**:
   - `id`: UUID (Primary Key)
@@ -94,6 +96,7 @@ classDiagram
   - Must have at least 2 entries (Double-entry rules).
 
 ### 3. JournalEntry (Apunte / Línea de Asiento)
+
 - **Database Table**: `journal_entries`
 - **Fields**:
   - `id`: UUID (Primary Key)
@@ -107,6 +110,7 @@ classDiagram
   - The sum of all `amountBase` values for DEBIT entries in a transaction must equal the sum of all `amountBase` values for CREDIT entries in that transaction.
 
 ### 4. Currency (Moneda)
+
 - **Database Table**: `currencies`
 - **Fields**:
   - `id`: UUID (Primary Key)

@@ -15,7 +15,7 @@
 - **Scope expansion**: The refactor also applies to the transactions screen, transaction counters, existing migrations, seed scripts, and any date filters/reads/writes across the application.
 - **English Naming & Schema Mapping**: The new date field must be named `accountingDate` (mapped to database column `accounting_date` of type `DATE`). The existing `date` column (`TIMESTAMPTZ`) will be renamed/merged into `createdAt` (`created_at`, type `TIMESTAMPTZ`) representing the audit creation time. All database columns and application entities must be in English.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Accurate Monthly Reports Across Timezones (Priority: P1)
 
@@ -66,7 +66,7 @@ As a business administrator, when I initialize a new Fiscal Year, the system sho
 - **Timezone boundary shifts**: If a transaction is created exactly at midnight (00:00:00 local time), it must not drift to the previous day when stored in the database. Storing the date as a pure YYYY-MM-DD string/DATE type prevents this.
 - **Period Reopening**: If a period is reopened, historical balances must recalculate correctly from transaction `accountingDate` dates rather than transaction creation timestamps.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -82,13 +82,13 @@ As a business administrator, when I initialize a new Fiscal Year, the system sho
 - **FR-009**: All seed scripts MUST be updated to generate transaction, period, and fiscal year dates in pure `YYYY-MM-DD` string format.
 - **FR-010**: All application queries, filters, and list views that filter by date (including dashboard charts and ledger views) MUST use pure date comparisons on `accountingDate` (DATE).
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Transaction**: Represents a financial transaction. Attributes: `id`, `accountingDate` (pure DATE, column `accounting_date`), `createdAt` (TIMESTAMPTZ, column `created_at`), `description`, etc.
 - **FiscalYear**: Represents an accounting fiscal year. Attributes: `id`, `year` (int), `startDate` (pure DATE, column `start_date`), `endDate` (pure DATE, column `end_date`), `status` (OPEN/CLOSED).
 - **Period**: Represents a monthly accounting period. Attributes: `id`, `fiscalYearId`, `startDate` (pure DATE, column `start_date`), `endDate` (pure DATE, column `end_date`), `status` (OPEN/CLOSED).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

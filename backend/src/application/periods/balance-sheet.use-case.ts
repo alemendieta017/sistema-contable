@@ -5,7 +5,6 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 
 @Injectable()
 export class BalanceSheetUseCase {
@@ -43,11 +42,8 @@ export class BalanceSheetUseCase {
       const period = await this.periodRepository.findOne({
         where: {
           id: periodId,
-          fiscalYear: {
-            userId,
-          },
+          userId,
         },
-        relations: ['fiscalYear'],
       });
 
       if (!period) {
@@ -72,11 +68,10 @@ export class BalanceSheetUseCase {
       // 2. Check if a PeriodEntity exists for 'date' to use pre-calculated opening balances
       const currentPeriod = await this.periodRepository.findOne({
         where: {
-          fiscalYear: { userId },
+          userId,
           startDate: LessThanOrEqual(date),
           endDate: MoreThanOrEqual(date),
         },
-        relations: ['fiscalYear'],
       });
 
       const balanceMap = new Map<string, number>();
@@ -122,10 +117,9 @@ export class BalanceSheetUseCase {
         // Check if there is a latest prior period ending before date
         const latestPriorPeriod = await this.periodRepository.findOne({
           where: {
-            fiscalYear: { userId },
+            userId,
             endDate: LessThan(date),
           },
-          relations: ['fiscalYear'],
           order: { endDate: 'DESC' },
         });
 
@@ -203,18 +197,8 @@ export class BalanceSheetUseCase {
       }
 
       // 3. Calculate virtual Net Income for the current fiscal year up to date
-      const fiscalYear = currentPeriod
-        ? currentPeriod.fiscalYear
-        : await this.dataSource
-            .getRepository(FiscalYearEntity)
-            .createQueryBuilder('fy')
-            .where('fy.userId = :userId', { userId })
-            .andWhere('fy.startDate <= :date', { date })
-            .andWhere('fy.endDate >= :date', { date })
-            .getOne();
-
       let cumulativeNetIncome = 0;
-      if (fiscalYear) {
+      if (currentPeriod) {
         const tempEntrySums = await this.dataSource
           .getRepository(JournalEntryEntity)
           .createQueryBuilder('entry')
@@ -224,7 +208,9 @@ export class BalanceSheetUseCase {
           .innerJoin('entry.account', 'account')
           .where('transaction.userId = :userId', { userId })
           .andWhere('transaction.status = :status', { status: 'POSTED' })
-          .andWhere('transaction.accountingDate >= :startDate', { startDate: fiscalYear.startDate })
+          .andWhere('transaction.accountingDate >= :startDate', {
+            startDate: currentPeriod.startDate,
+          })
           .andWhere('transaction.accountingDate <= :endDate', { endDate: date })
           .andWhere('account.type IN (:...types)', { types: ['INCOME', 'EXPENSE'] })
           .groupBy('entry.entryType')
@@ -244,7 +230,7 @@ export class BalanceSheetUseCase {
       }
 
       // Calculate priorNetIncome (Resultados Acumulados)
-      const priorBoundaryDate = fiscalYear ? fiscalYear.startDate : null;
+      const priorBoundaryDate = currentPeriod ? currentPeriod.startDate : null;
 
       const priorQuery = this.dataSource
         .getRepository(JournalEntryEntity)
@@ -347,11 +333,8 @@ export class BalanceSheetUseCase {
       const periods = await this.periodRepository.find({
         where: {
           id: In(periodIds),
-          fiscalYear: {
-            userId,
-          },
+          userId,
         },
-        relations: ['fiscalYear'],
       });
 
       if (periods.length !== periodIds.length) {
@@ -458,7 +441,7 @@ export class BalanceSheetUseCase {
     const netIncome = Number((totalIncome - totalExpense).toFixed(4));
 
     // Calculate priorNetIncome (Resultados Acumulados)
-    const priorBoundaryDate = period.fiscalYear?.startDate;
+    const priorBoundaryDate = period.startDate;
     let priorNetIncome = 0;
 
     if (priorBoundaryDate) {

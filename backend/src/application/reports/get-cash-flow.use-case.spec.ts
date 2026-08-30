@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CashFlowStatementForecastUseCase } from './cash-flow-statement.use-case';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
@@ -17,7 +17,7 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
       getRepository: jest.fn(),
     };
 
-    const fiscalYearRepoMock = {
+    const periodRepoMock = {
       manager: {
         transaction: jest.fn((cb) => cb(entityManagerMock)),
       },
@@ -27,8 +27,8 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
       providers: [
         CashFlowStatementForecastUseCase,
         {
-          provide: getRepositoryToken(FiscalYearEntity),
-          useValue: fiscalYearRepoMock,
+          provide: getRepositoryToken(PeriodEntity),
+          useValue: periodRepoMock,
         },
         {
           provide: getRepositoryToken(AccountPeriodBalanceEntity),
@@ -49,10 +49,12 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
   });
 
   it('should calculate initialCash, netFlow, and finalCash from AccountPeriodBalanceEntity for liquid accounts', async () => {
-    const mockFy = {
-      id: 'fy-2026',
-      name: 'Ejercicio 2026',
-      periods: [{ id: 'p-1', name: '2026-01', startDate: '2026-01-01', status: 'CLOSED' }],
+    const mockPeriod = {
+      id: 'p-1',
+      name: '2026-01',
+      startDate: '2026-01-01',
+      endDate: '2026-01-31',
+      status: 'CLOSED',
     };
 
     const mockAccounts: Partial<AccountEntity>[] = [
@@ -90,11 +92,12 @@ describe('CashFlowStatementForecastUseCase (US4)', () => {
     ];
 
     entityManagerMock.findOne.mockImplementation((entity: any, _opts: any) => {
-      if (entity === FiscalYearEntity) return Promise.resolve(mockFy);
+      if (entity === PeriodEntity) return Promise.resolve(mockPeriod);
       return Promise.resolve(null);
     });
 
     entityManagerMock.find.mockImplementation((entity: any, opts: any) => {
+      if (entity === PeriodEntity) return Promise.resolve([mockPeriod]);
       if (entity === AccountEntity) return Promise.resolve(mockAccounts);
       if (entity === AccountPeriodBalanceEntity) {
         if (opts?.where?.account?.isCashOrBank) {

@@ -5,7 +5,9 @@
 **Input**: Feature specification from `/specs/008-fix-timezone-handling/spec.md`
 
 ## Summary
-Implement a systematic and robust timezone and date handling strategy across the system. 
+
+Implement a systematic and robust timezone and date handling strategy across the system.
+
 - **On Write (Write Flow)**: The Next.js frontend will capture the browser's local date selection (e.g. `2026-06-01` in UTC-4) and format it as an ISO-8601 string preserving the client's timezone offset (`2026-06-01T00:00:00.000-04:00`). The NestJS backend parses this string using native JS Date conversion, resolving the correct instant, which TypeORM automatically persists as UTC-0 in the PostgreSQL database.
 - **On Read (Read Flow)**: The Next.js frontend receives UTC-0 timestamps and uses native Date local representation methods (e.g., `getFullYear()`, `getMonth()`, `getDate()`) to render the transactions in the correct calendar slots.
 - **On Reporting & Filters**: The Next.js frontend sends date range limits (`startDate` and `endDate`) containing local timezone offsets as ISO-8601 strings (e.g. `2026-06-01T00:00:00.000-04:00` for start and `2026-06-30T23:59:59.999-04:00` for end). The backend natively parses these strings using native JS Date conversion to resolve correct UTC boundaries for listing transactions. The backend reports statistics endpoint will accept a `timezoneOffset` parameter to compute accurate monthly report boundaries matching the user's local timezone.
@@ -32,7 +34,7 @@ Implement a systematic and robust timezone and date handling strategy across the
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Ledger Integrity**: Pass. The ledger is append-only. Flipped entries are preserved.
 - **SOLID / Clean Architecture**: Pass. The changes will be isolated within the respective UI components and application use cases/controllers, respecting layer boundaries.
@@ -79,4 +81,4 @@ All edits will be made in the existing `backend` and `frontend` folders.
 
 ## Complexity Tracking
 
-*No violations identified.*
+_No violations identified._

@@ -9,6 +9,7 @@
 ## Summary
 
 The objective is to implement a comprehensive budgeting system that tracks not only income and expenses, but also savings/investments (asset movements) and financing (liability movements). These inputs are used to generate two key monthly real vs. projected reports:
+
 1. **Income Statement (Real vs. Projected)** (accrual basis).
 2. **Cash Flow Statement (Real vs. Projected)** (cash basis).
 
@@ -40,7 +41,7 @@ The technical approach introduces a dynamic "add-on-demand" tabular entry UI, su
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Principle I: Double-Entry Bookkeeping & Ledger Integrity**: Pass. Budget entities do not modify ledger entries; they are read-only comparisons. Blocking modifications to `isCashOrBank` for accounts with transactions ensures ledger integrity.
 - **Principle II: Clean Architecture & SOLID Principles**: Pass. All budget operations (reconciliation, saving, reporting) will be encapsulated in separate Use Case classes inside the application layer.
@@ -107,4 +108,4 @@ backend/
 
 ## Complexity Tracking
 
-*No violations detected.*
+_No violations detected._

@@ -24,11 +24,10 @@ export class ReplicateBudgetItemUseCase {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period and check if user owns it
       const period = await entityManager.findOne(PeriodEntity, {
-        where: { id: dto.periodId },
-        relations: ['fiscalYear'],
+        where: { id: dto.periodId, userId },
       });
 
-      if (!period || period.fiscalYear.userId !== userId) {
+      if (!period) {
         throw new NotFoundException('Period not found');
       }
 
@@ -50,11 +49,13 @@ export class ReplicateBudgetItemUseCase {
         throw new BadRequestException(`Cannot budget for Cash/Bank account ${account.name}`);
       }
 
-      // 3. Find all 12 periods of that fiscal year
-      const allPeriods = await entityManager.find(PeriodEntity, {
-        where: { fiscalYearId: period.fiscalYearId },
+      // 3. Find all periods of that calendar year
+      const yearStr = period.name.substring(0, 4);
+      const userPeriods = await entityManager.find(PeriodEntity, {
+        where: { userId },
         order: { name: 'ASC' },
       });
+      const allPeriods = userPeriods.filter((p) => p.name.startsWith(`${yearStr}-`));
 
       const periodIds = allPeriods.map((p) => p.id);
 

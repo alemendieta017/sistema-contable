@@ -5,6 +5,7 @@ This document details the research, technical decisions, and layout approach for
 ## Analysis of Current Layout
 
 The current `MonthlyView` component (`frontend/src/components/MonthlyView.tsx`) renders the 12 months as a responsive grid of card components. Each card displays:
+
 - Month Name
 - Transaction Count
 - Income
@@ -16,9 +17,11 @@ While visually distinct, this grid of cards is hard to compare vertically and do
 ## Selected Layout Approach
 
 ### Decision
+
 Implement a single, comprehensive HTML table component (`<table>`) style layout using Tailwind CSS classes for table layout structure, row border lines, right-aligned numbers, and consistent columns.
 
 ### Rationale
+
 - **Financial Standard**: Tabular formatting is the industry standard for bookkeeping and accounting software (e.g., balance sheets, income statements).
 - **Scanability**: Vertical alignment of currency values allows immediate column comparison of income/expenses/net balances across months.
 - **Clean UX/UI**: Reduces layout noise, padding overhead, and card boxes, resulting in a cleaner, professional dashboard look.
@@ -26,11 +29,13 @@ Implement a single, comprehensive HTML table component (`<table>`) style layout 
 ### Alternatives Considered
 
 #### Option A: CSS Grid-based Pseudo-Table
+
 - **Pros**: Easy to make fully responsive.
 - **Cons**: Can be less semantic than an HTML table if not formatted carefully with ARIA labels.
 - **Decision**: HTML `<table>` with semantic elements (`thead`, `tbody`, `tr`, `th`, `td`) styled with Tailwind is preferred for cleaner markup and accessibility.
 
 #### Option B: Keep Cards but Minimize Padding
+
 - **Pros**: Low code impact.
 - **Cons**: Fails the primary user requirement of showing info in "formato tabular, una bonita tabla clean UX/UI, no en cards".
 - **Decision**: Rejected.

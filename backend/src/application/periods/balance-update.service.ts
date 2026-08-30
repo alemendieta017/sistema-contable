@@ -24,8 +24,7 @@ export class BalanceUpdateService {
     // 1. Fetch all periods for this user to avoid N+1 queries during propagation
     const allUserPeriods = await entityManager
       .createQueryBuilder(PeriodEntity, 'period')
-      .innerJoinAndSelect('period.fiscalYear', 'fiscalYear')
-      .where('fiscalYear.userId = :userId', { userId })
+      .where('period.userId = :userId', { userId })
       .orderBy('period.startDate', 'ASC')
       .getMany();
 
@@ -49,23 +48,7 @@ export class BalanceUpdateService {
       );
     }
 
-    // 3. Precompute first periods of all fiscal years for the user
-    const firstPeriodOfFiscalYear = new Map<string, string>(); // fiscalYearId -> periodId
-    const periodsByFy = new Map<string, PeriodEntity[]>();
-    for (const p of allUserPeriods) {
-      if (!periodsByFy.has(p.fiscalYearId)) {
-        periodsByFy.set(p.fiscalYearId, []);
-      }
-      periodsByFy.get(p.fiscalYearId)!.push(p);
-    }
-    for (const [fyId, pList] of periodsByFy.entries()) {
-      pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
-      if (pList.length > 0) {
-        firstPeriodOfFiscalYear.set(fyId, pList[0].id);
-      }
-    }
-
-    // 4. Fetch all accounts affected by the changes
+    // 3. Fetch all accounts affected by the changes
     const accountIds = changes.map((c) => c.accountId);
     const accounts = await entityManager.find(AccountEntity, {
       where: { id: In(accountIds), userId },
@@ -132,10 +115,7 @@ export class BalanceUpdateService {
             where: { accountId, periodId: previousPeriod.id },
           });
           if (prevBalance) {
-            // Check if targetPeriod is first period of its fiscal year
-            const isFirstPeriod =
-              firstPeriodOfFiscalYear.get(targetPeriod.fiscalYearId) === targetPeriod.id;
-            if (isFirstPeriod && (account.type === 'INCOME' || account.type === 'EXPENSE')) {
+            if (account.type === 'INCOME' || account.type === 'EXPENSE') {
               inheritedOpening = 0;
             } else {
               inheritedOpening = Number(prevBalance.closingBalance);
@@ -174,12 +154,8 @@ export class BalanceUpdateService {
         const key = `${accountId}:${futurePeriod.id}`;
         let futureBalance = futureBalanceMap.get(key);
 
-        const isFirstPeriodOfFy =
-          firstPeriodOfFiscalYear.get(futurePeriod.fiscalYearId) === futurePeriod.id;
         const expectedOpening =
-          isFirstPeriodOfFy && (account.type === 'INCOME' || account.type === 'EXPENSE')
-            ? 0
-            : Number(previousClosing);
+          account.type === 'INCOME' || account.type === 'EXPENSE' ? 0 : Number(previousClosing);
 
         if (!futureBalance) {
           futureBalance = entityManager.create(AccountPeriodBalanceEntity, {
@@ -222,8 +198,7 @@ export class BalanceUpdateService {
     // 1. Fetch all periods for this user to avoid N+1 queries during propagation
     const allUserPeriods = await entityManager
       .createQueryBuilder(PeriodEntity, 'period')
-      .innerJoinAndSelect('period.fiscalYear', 'fiscalYear')
-      .where('fiscalYear.userId = :userId', { userId })
+      .where('period.userId = :userId', { userId })
       .orderBy('period.startDate', 'ASC')
       .getMany();
 
@@ -243,23 +218,7 @@ export class BalanceUpdateService {
       return;
     }
 
-    // 3. Precompute first periods of all fiscal years for the user
-    const firstPeriodOfFiscalYear = new Map<string, string>(); // fiscalYearId -> periodId
-    const periodsByFy = new Map<string, PeriodEntity[]>();
-    for (const p of allUserPeriods) {
-      if (!periodsByFy.has(p.fiscalYearId)) {
-        periodsByFy.set(p.fiscalYearId, []);
-      }
-      periodsByFy.get(p.fiscalYearId)!.push(p);
-    }
-    for (const [fyId, pList] of periodsByFy.entries()) {
-      pList.sort((a, b) => a.startDate.localeCompare(b.startDate));
-      if (pList.length > 0) {
-        firstPeriodOfFiscalYear.set(fyId, pList[0].id);
-      }
-    }
-
-    // 4. Get the current period's closing balance for all accounts that have balance records in that period
+    // 3. Get the current period's closing balance for all accounts that have balance records in that period
     const currentPeriodBalances = await entityManager.find(AccountPeriodBalanceEntity, {
       where: { periodId: targetPeriod.id },
     });
@@ -306,12 +265,8 @@ export class BalanceUpdateService {
         const key = `${accountId}:${futurePeriod.id}`;
         let futureBalance = balanceMap.get(key);
 
-        const isFirstPeriodOfFy =
-          firstPeriodOfFiscalYear.get(futurePeriod.fiscalYearId) === futurePeriod.id;
         const expectedOpening =
-          isFirstPeriodOfFy && (account.type === 'INCOME' || account.type === 'EXPENSE')
-            ? 0
-            : previousClosing;
+          account.type === 'INCOME' || account.type === 'EXPENSE' ? 0 : previousClosing;
 
         if (!futureBalance) {
           futureBalance = entityManager.create(AccountPeriodBalanceEntity, {

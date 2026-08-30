@@ -68,6 +68,5 @@ export const CloseFiscalYearRequestSchema = z.object({
 3. **Zero Balance Omission Rule**:
    - In Balance Sheet generation, accounts with `systemRole != null` AND `Math.abs(balance) < 0.0001` are omitted from the reported `equity` node list.
 4. **Operability & Manual Entry Validation Rules**:
-   - Accounts with `systemRole = 'NET_INCOME'` (*Resultado del Ejercicio*) MUST NOT permit manual journal entries (`allowManualEntry = false`). In `CreateJournalEntryUseCase`, any transaction line item targeting a `NET_INCOME` account ID throws a `DomainException` ("System account NET_INCOME is non-operable for manual journal entries").
-   - Accounts with `systemRole = 'RETAINED_EARNINGS'` (*Resultados Acumulados / Utilidades Retenidas*) MUST permit manual journal entries (`allowManualEntry = true`), enabling users to record transactions for dividend distribution, legal reserves, or prior-period adjustments.
-
+   - Accounts with `systemRole = 'NET_INCOME'` (_Resultado del Ejercicio_) MUST NOT permit manual journal entries (`allowManualEntry = false`). In `CreateJournalEntryUseCase`, any transaction line item targeting a `NET_INCOME` account ID throws a `DomainException` ("System account NET_INCOME is non-operable for manual journal entries").
+   - Accounts with `systemRole = 'RETAINED_EARNINGS'` (_Resultados Acumulados / Utilidades Retenidas_) MUST permit manual journal entries (`allowManualEntry = true`), enabling users to record transactions for dividend distribution, legal reserves, or prior-period adjustments.

@@ -1,18 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { AccountPeriodBalanceEntity } from '../../infrastructure/database/entities/account-period-balance.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
-import { getFriendlyPeriodName } from '../../domain/common/date.utils';
 
 @Injectable()
 export class CashFlowStatementForecastUseCase {
   constructor(
-    @InjectRepository(FiscalYearEntity)
-    private readonly fiscalYearRepository: Repository<FiscalYearEntity>,
+    @InjectRepository(PeriodEntity)
+    private readonly periodRepository: Repository<PeriodEntity>,
     @InjectRepository(AccountPeriodBalanceEntity)
     private readonly balanceRepository: Repository<AccountPeriodBalanceEntity>,
     @InjectRepository(BudgetEntity)
@@ -24,57 +22,30 @@ export class CashFlowStatementForecastUseCase {
     userId: string,
     year: number,
   ): Promise<PeriodEntity[]> {
-    const name = `Ejercicio ${year}`;
-    const startDate = `${year}-01-01`;
-    const endDate = `${year}-12-31`;
-
-    let fyEntity = await entityManager.findOne(FiscalYearEntity, {
-      where: { userId, name },
-      relations: ['periods'],
-    });
-
-    if (fyEntity) {
-      return fyEntity.periods;
-    }
-
-    fyEntity = entityManager.create(FiscalYearEntity, {
-      userId,
-      name,
-      startDate,
-      endDate,
-      status: 'PLANNING',
-    });
-    const savedFy = await entityManager.save(FiscalYearEntity, fyEntity);
-
-    const periods = [];
+    const periods: PeriodEntity[] = [];
     for (let m = 0; m < 12; m++) {
       const pStart = `${year}-${String(m + 1).padStart(2, '0')}-01`;
       const pEnd = new Date(Date.UTC(year, m + 1, 0)).toISOString().split('T')[0];
       const periodName = `${year}-${String(m + 1).padStart(2, '0')}`;
 
-      const periodEntity = entityManager.create(PeriodEntity, {
-        fiscalYearId: savedFy.id,
-        name: periodName,
-        startDate: pStart,
-        endDate: pEnd,
-        status: 'PLANNING',
-      });
-      const savedPeriod = await entityManager.save(PeriodEntity, periodEntity);
-      periods.push(savedPeriod);
-
-      const budgetEntity = entityManager.create(BudgetEntity, {
-        userId,
-        periodId: savedPeriod.id,
-        name: getFriendlyPeriodName(periodName),
-      });
-      await entityManager.save(BudgetEntity, budgetEntity);
+      let p = await entityManager.findOne(PeriodEntity, { where: { userId, name: periodName } });
+      if (!p) {
+        p = entityManager.create(PeriodEntity, {
+          userId,
+          name: periodName,
+          startDate: pStart,
+          endDate: pEnd,
+          status: 'PLANNING',
+        });
+        p = await entityManager.save(PeriodEntity, p);
+      }
+      periods.push(p);
     }
-
     return periods;
   }
 
-  async execute(userId: string, fiscalYearId: string, rolling?: boolean, currentDate?: Date) {
-    return this.fiscalYearRepository.manager.transaction(async (entityManager) => {
+  async execute(userId: string, fiscalYearId?: string, rolling?: boolean, currentDate?: Date) {
+    return this.periodRepository.manager.transaction(async (entityManager) => {
       let periods: PeriodEntity[] = [];
       let fiscalYearName = '';
 
@@ -83,8 +54,7 @@ export class CashFlowStatementForecastUseCase {
         const lastClosedPeriod = await entityManager
           .getRepository(PeriodEntity)
           .createQueryBuilder('period')
-          .innerJoin('period.fiscalYear', 'fiscalYear')
-          .where('fiscalYear.userId = :userId', { userId })
+          .where('period.userId = :userId', { userId })
           .andWhere('period.status = :status', { status: 'CLOSED' })
           .orderBy('period.endDate', 'DESC')
           .getOne();
@@ -93,15 +63,28 @@ export class CashFlowStatementForecastUseCase {
         if (lastClosedPeriod) {
           startPeriod = lastClosedPeriod;
         } else {
-          // If no closed periods, start from the first period of the current fiscal year
-          const fy = await entityManager.findOne(FiscalYearEntity, {
-            where: { id: fiscalYearId, userId },
-            relations: ['periods'],
-          });
-          if (!fy) throw new NotFoundException('Fiscal year not found');
-          const fyPeriods = [...fy.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
-          startPeriod = fyPeriods[0] || null;
-          fiscalYearName = fy.name;
+          const pOrFy: any = fiscalYearId
+            ? await entityManager.findOne(PeriodEntity, {
+                where: [{ id: fiscalYearId }, { userId }],
+              })
+            : null;
+          if (fiscalYearId && !pOrFy) {
+            throw new NotFoundException('Fiscal year not found');
+          }
+          if (pOrFy?.periods?.length) {
+            const fyPeriods = [...pOrFy.periods].sort((a, b) =>
+              a.startDate.localeCompare(b.startDate),
+            );
+            startPeriod = fyPeriods[0] || null;
+            fiscalYearName = pOrFy.name;
+          } else {
+            const userPeriods = await entityManager.find(PeriodEntity, {
+              where: { userId },
+              order: { startDate: 'ASC' },
+            });
+            startPeriod = userPeriods[0] || null;
+            fiscalYearName = startPeriod?.name || '';
+          }
         }
 
         if (!startPeriod) {
@@ -121,8 +104,7 @@ export class CashFlowStatementForecastUseCase {
           let period = await entityManager
             .getRepository(PeriodEntity)
             .createQueryBuilder('period')
-            .innerJoin('period.fiscalYear', 'fiscalYear')
-            .where('fiscalYear.userId = :userId', { userId })
+            .where('period.userId = :userId', { userId })
             .andWhere('(period.startDate = :pStart OR period.name = :pName)', { pStart, pName })
             .getOne();
 
@@ -141,13 +123,30 @@ export class CashFlowStatementForecastUseCase {
           fiscalYearName = `Rolling 12M (${startPeriod.name})`;
         }
       } else {
-        const fy = await entityManager.findOne(FiscalYearEntity, {
-          where: { id: fiscalYearId, userId },
-          relations: ['periods'],
-        });
-        if (!fy) throw new NotFoundException('Fiscal year not found');
-        periods = [...fy.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
-        fiscalYearName = fy.name;
+        if (fiscalYearId) {
+          const pOrFy: any = await entityManager.findOne(PeriodEntity, {
+            where: [{ id: fiscalYearId }, { userId }],
+          });
+          if (!pOrFy) {
+            throw new NotFoundException('Fiscal year not found');
+          }
+          if (pOrFy.periods) {
+            periods = [...pOrFy.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
+            fiscalYearName = pOrFy.name || `Ejercicio ${fiscalYearId}`;
+          } else {
+            periods = await entityManager.find(PeriodEntity, {
+              where: { userId },
+              order: { startDate: 'ASC' },
+            });
+            fiscalYearName = pOrFy.name || 'Períodos';
+          }
+        } else {
+          periods = await entityManager.find(PeriodEntity, {
+            where: { userId },
+            order: { startDate: 'ASC' },
+          });
+          fiscalYearName = 'Períodos';
+        }
       }
 
       const now = currentDate || new Date();

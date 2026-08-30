@@ -1,19 +1,7 @@
-export class FiscalYear {
-  constructor(
-    public readonly id: string | undefined,
-    public readonly userId: string,
-    public readonly name: string,
-    public readonly startDate: string,
-    public readonly endDate: string,
-    public readonly status: 'OPEN' | 'CLOSED' | 'PLANNING' = 'OPEN',
-    public readonly periods?: Period[],
-  ) {}
-}
-
 export class Period {
   constructor(
     public readonly id: string | undefined,
-    public readonly fiscalYearId: string,
+    public readonly userId: string,
     public readonly name: string,
     public readonly startDate: string,
     public readonly endDate: string,

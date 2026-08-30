@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import {
   BudgetMatrixResponse,
   BudgetMatrixPeriod,
@@ -45,23 +45,18 @@ export class GetBudgetMatrixUseCase {
 
   async execute(
     userId: string,
-    fiscalYearId: string,
+    fiscalYearId?: string,
     categoryId?: string,
   ): Promise<BudgetMatrixResponse> {
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periodsList = await manager.find(PeriodEntity, {
+        where: { userId },
+        order: { startDate: 'ASC' },
       });
 
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
+      if (periodsList.length === 0) {
+        throw new NotFoundException('No accounting periods found');
       }
-
-      // Sort periods chronologically
-      const periodsList = (fiscalYear.periods || []).sort((a, b) =>
-        a.startDate.localeCompare(b.startDate),
-      );
 
       const periodIds = periodsList.map((p) => p.id);
 
@@ -487,8 +482,8 @@ export class GetBudgetMatrixUseCase {
       };
 
       return {
-        fiscalYearId: fiscalYear.id,
-        fiscalYearName: fiscalYear.name,
+        fiscalYearId: fiscalYearId || 'current',
+        fiscalYearName: `Presupuesto ${fiscalYearId || 'Continuo'}`,
         periods: formattedPeriods,
         sections,
         summary,

@@ -5,9 +5,9 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../infrastructure/database/entities/currency.entity';
-import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
 import { BalanceUpdateService } from '../periods/balance-update.service';
+import { EnsurePeriodService } from '../periods/ensure-period.service';
 
 export interface CreateTransactionDto {
   accountingDate: string;
@@ -30,6 +30,7 @@ export class CreateTransactionUseCase {
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
     private readonly balanceUpdateService: BalanceUpdateService,
+    private readonly ensurePeriodService: EnsurePeriodService,
   ) {}
 
   async execute(userId: string, dto: CreateTransactionDto) {
@@ -39,24 +40,21 @@ export class CreateTransactionUseCase {
 
     // Run within a database transaction with SERIALIZABLE isolation to ensure ledger consistency
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
-      // 1. Check period lock on transaction date
+      // 1. Auto-provision or obtain period for transaction date
       const txDate = dto.accountingDate;
-      const period = await entityManager
-        .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
-        .andWhere('period.startDate <= :date', { date: txDate })
-        .andWhere('period.endDate >= :date', { date: txDate })
-        .getOne();
+      const period = await this.ensurePeriodService.ensurePeriod(
+        entityManager,
+        userId,
+        txDate.substring(0, 7),
+      );
 
-      if (!period) {
-        throw new BadRequestException('No accounting period found for the transaction date');
-      }
       if (period.status === 'CLOSED') {
         throw new BadRequestException('The accounting period for the transaction date is closed');
       }
       if (period.status === 'PLANNING') {
-        throw new BadRequestException('The accounting period for the transaction date is in planning status');
+        throw new BadRequestException(
+          'The accounting period for the transaction date is in planning status',
+        );
       }
 
       const journalEntries: JournalEntry[] = [];
@@ -86,7 +84,6 @@ export class CreateTransactionUseCase {
             'System account NET_INCOME is non-operable for manual journal entries',
           );
         }
-
 
         const rateAtDate = Number(currency?.rateToBase ?? 1.0);
         const amountBase = Number((entry.amount * rateAtDate).toFixed(4));

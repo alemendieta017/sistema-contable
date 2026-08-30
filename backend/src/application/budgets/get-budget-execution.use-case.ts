@@ -21,15 +21,10 @@ export class GetBudgetExecutionUseCase {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period details
       const period = await entityManager.findOne(PeriodEntity, {
-        where: { id: periodId },
-        relations: ['fiscalYear'],
+        where: { id: periodId, userId },
       });
 
       if (!period) {
-        throw new NotFoundException(`Period with ID ${periodId} not found`);
-      }
-
-      if (period.fiscalYear.userId !== userId) {
         throw new NotFoundException(`Period with ID ${periodId} not found`);
       }
 

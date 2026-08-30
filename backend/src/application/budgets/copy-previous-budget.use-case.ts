@@ -23,11 +23,10 @@ export class CopyPreviousBudgetUseCase {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch current period and verify ownership
       const currentPeriod = await entityManager.findOne(PeriodEntity, {
-        where: { id: periodId },
-        relations: ['fiscalYear'],
+        where: { id: periodId, userId },
       });
 
-      if (!currentPeriod || currentPeriod.fiscalYear.userId !== userId) {
+      if (!currentPeriod) {
         throw new NotFoundException('Period not found');
       }
 
@@ -40,8 +39,7 @@ export class CopyPreviousBudgetUseCase {
       const previousPeriod = await entityManager
         .getRepository(PeriodEntity)
         .createQueryBuilder('period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
+        .where('period.userId = :userId', { userId })
         .andWhere('period.endDate < :currentStartDate', {
           currentStartDate: currentPeriod.startDate,
         })

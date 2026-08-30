@@ -82,8 +82,11 @@ export enum AccountStatus {
 }
 export const AccountStatusSchema = z.nativeEnum(AccountStatus);
 
-export const SystemRoleSchema = z.enum(['NET_INCOME', 'RETAINED_EARNINGS']).nullable().optional();
-export type SystemRole = 'NET_INCOME' | 'RETAINED_EARNINGS';
+export const SystemRoleSchema = z
+  .enum(['CAPITAL', 'NET_INCOME', 'RETAINED_EARNINGS'])
+  .nullable()
+  .optional();
+export type SystemRole = 'CAPITAL' | 'NET_INCOME' | 'RETAINED_EARNINGS';
 
 export const AccountTypeSchema = z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']);
 export type AccountType = z.infer<typeof AccountTypeSchema>;
@@ -146,21 +149,31 @@ export type CreateTransactionRequest = z.infer<typeof CreateTransactionRequestSc
 export const UpdateTransactionRequestSchema = CreateTransactionRequestSchema;
 export type UpdateTransactionRequest = CreateTransactionRequest;
 
-// Create Fiscal Year Schema
-export const CreateFiscalYearRequestSchema = z.object({
-  year: z.number().int().min(1900).max(2100),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
+// Ensure Period Schema
+export const EnsurePeriodRequestSchema = z.object({
+  period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Period must be in YYYY-MM format'),
 });
 
-export type CreateFiscalYearRequest = z.infer<typeof CreateFiscalYearRequestSchema>;
+export type EnsurePeriodRequest = z.infer<typeof EnsurePeriodRequestSchema>;
 
-// Close Fiscal Year Schema
-export const CloseFiscalYearRequestSchema = z.object({
-  retainedEarningsAccountId: z.string().uuid().optional(),
-});
+export interface EnsurePeriodResponse {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  userId: string;
+  created: boolean;
+}
 
-export type CloseFiscalYearRequest = z.infer<typeof CloseFiscalYearRequestSchema>;
+export interface PeriodResponse {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  userId: string;
+}
 
 // Update Period Schema
 export const UpdatePeriodRequestSchema = z.object({
@@ -263,11 +276,43 @@ export const MatrixCellUpdateSchema = z.object({
 export type MatrixCellUpdate = z.infer<typeof MatrixCellUpdateSchema>;
 
 export const UpdateBudgetMatrixRequestSchema = z.object({
-  fiscalYearId: z.string().uuid(),
+  fiscalYearId: z.string().uuid().optional(),
   updates: z.array(MatrixCellUpdateSchema),
 });
 
 export type UpdateBudgetMatrixRequest = z.infer<typeof UpdateBudgetMatrixRequestSchema>;
+
+export const BatchUpdateBudgetMatrixRequestSchema = z.object({
+  updates: z.array(MatrixCellUpdateSchema),
+});
+
+export type BatchUpdateBudgetMatrixRequest = z.infer<typeof BatchUpdateBudgetMatrixRequestSchema>;
+
+export interface BatchUpdateBudgetMatrixResponse {
+  success: boolean;
+  updatedCount: number;
+}
+
+export const ExtendBudgetMatrixRequestSchema = z.object({
+  targetPeriod: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Target period must be in YYYY-MM format'),
+  copyFromPrevious: z.boolean().optional().default(true),
+});
+
+export type ExtendBudgetMatrixRequest = z.infer<typeof ExtendBudgetMatrixRequestSchema>;
+
+export interface ExtendBudgetMatrixResponse {
+  success: boolean;
+  provisionedPeriod: {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+  };
+  itemsCopied: number;
+}
 
 export interface UpdateBudgetMatrixResponse {
   success: boolean;
@@ -275,7 +320,7 @@ export interface UpdateBudgetMatrixResponse {
 }
 
 export const ApplyBudgetDriverRequestSchema = z.object({
-  fiscalYearId: z.string().uuid(),
+  fiscalYearId: z.string().uuid().optional(),
   accountId: z.string().uuid(),
   subRowId: z.string().nullable().optional(),
   driverType: BudgetDriverTypeSchema,
@@ -293,7 +338,7 @@ export interface ApplyBudgetDriverResponse {
 }
 
 export const BaselineActualsRequestSchema = z.object({
-  fiscalYearId: z.string().uuid(),
+  fiscalYearId: z.string().uuid().optional(),
   adjustmentPercentage: z.number().default(0),
   accountIds: z.array(z.string().uuid()).optional(),
 });
@@ -368,14 +413,37 @@ export interface BudgetMatrixSummary {
   cumulativeNetFlow: Record<string, number> & { total: number };
 }
 
+export interface RollingCashFlowSummary {
+  totalInflows: Record<string, number> & { total: number };
+  operatingExpenses: Record<string, number> & { total: number };
+  operatingSurplus: Record<string, number> & { total: number };
+  investmentsAndSavings: Record<string, number> & { total: number };
+  debtFinancing: Record<string, number> & { total: number };
+  netCashFlow: Record<string, number> & { total: number };
+  openingCash: Record<string, number>;
+  closingCash: Record<string, number>;
+  shortfallAlerts: Record<string, { isNegative: boolean; shortfall: number }>;
+}
+
+export interface RollingBudgetMatrixResponse {
+  startPeriod: string;
+  monthsCount: number;
+  periods: BudgetMatrixPeriod[];
+  sections: BudgetMatrixSection[];
+  cashFlowForecast: RollingCashFlowSummary;
+}
+
 export interface BudgetMatrixResponse {
-  fiscalYearId: string;
-  fiscalYearName: string;
+  fiscalYearId?: string;
+  fiscalYearName?: string;
+  startPeriod?: string;
+  monthsCount?: number;
   periods: BudgetMatrixPeriod[];
   sections?: BudgetMatrixSection[];
   summary?: BudgetMatrixSummary;
   rows?: BudgetMatrixRow[];
   categoryTotals?: Record<string, Record<string, number> & { total: number }>;
+  cashFlowForecast?: RollingCashFlowSummary;
 }
 
 export interface BudgetControlItem {
@@ -492,11 +560,124 @@ export interface StarterAccountDefinition {
   name: string;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
   isCashOrBank?: boolean;
-  systemRole?: 'NET_INCOME' | 'RETAINED_EARNINGS';
+  systemRole?: SystemRole;
 }
 
 export const DEFAULT_STARTER_ACCOUNTS: StarterAccountDefinition[] = [
-  // Cuentas de Sistema obligatorias (Patrimonio Neto) requeridas por el motor contable
-  { name: 'Resultado del Ejercicio', type: 'EQUITY', systemRole: 'NET_INCOME' },
-  { name: 'Resultados Acumulados', type: 'EQUITY', systemRole: 'RETAINED_EARNINGS' },
+  // Cuenta de Sistema obligatoria para patrimonio y saldos iniciales
+  { name: 'Capital', type: 'EQUITY', systemRole: 'CAPITAL' },
 ];
+
+// Tactical Commitments & Recurring Schedules
+export enum RecurringFrequency {
+  MONTHLY = 'MONTHLY',
+  BIWEEKLY = 'BIWEEKLY',
+  ANNUALLY = 'ANNUALLY',
+}
+export const RecurringFrequencySchema = z.nativeEnum(RecurringFrequency);
+
+export enum FlowType {
+  INFLOW = 'INFLOW',
+  OUTFLOW = 'OUTFLOW',
+}
+export const FlowTypeSchema = z.nativeEnum(FlowType);
+
+export const CreateRecurringScheduleRequestSchema = z.object({
+  name: z.string().min(1).max(100),
+  flowType: FlowTypeSchema,
+  estimatedAmount: z.number().positive(),
+  frequency: RecurringFrequencySchema.default(RecurringFrequency.MONTHLY),
+  dueDay: z.number().int().min(1).max(31),
+  accountId: z.string().uuid(),
+  categoryId: z.string().uuid(),
+  metadata: z.record(z.any()).optional().nullable(),
+});
+
+export type CreateRecurringScheduleRequest = z.infer<typeof CreateRecurringScheduleRequestSchema>;
+
+export const UpdateRecurringScheduleRequestSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  flowType: FlowTypeSchema.optional(),
+  estimatedAmount: z.number().positive().optional(),
+  frequency: RecurringFrequencySchema.optional(),
+  dueDay: z.number().int().min(1).max(31).optional(),
+  accountId: z.string().uuid().optional(),
+  categoryId: z.string().uuid().optional(),
+  isActive: z.boolean().optional(),
+  metadata: z.record(z.any()).optional().nullable(),
+});
+
+export type UpdateRecurringScheduleRequest = z.infer<typeof UpdateRecurringScheduleRequestSchema>;
+
+export interface RecurringScheduleDto {
+  id: string;
+  name: string;
+  flowType: FlowType | 'INFLOW' | 'OUTFLOW';
+  estimatedAmount: number;
+  frequency: RecurringFrequency | 'MONTHLY' | 'BIWEEKLY' | 'ANNUALLY';
+  dueDay: number;
+  accountId: string;
+  categoryId: string;
+  accountName?: string;
+  categoryName?: string;
+  isActive: boolean;
+  metadata?: Record<string, any> | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VirtualCalendarEvent {
+  scheduleId: string;
+  name: string;
+  flowType: FlowType | 'INFLOW' | 'OUTFLOW';
+  date: string;
+  estimatedAmount: number;
+  accountId: string;
+  accountName?: string;
+  categoryId: string;
+  categoryName?: string;
+  isSettled: boolean;
+}
+
+export interface CalendarPreviewResponse {
+  startDate: string;
+  endDate: string;
+  virtualEvents: VirtualCalendarEvent[];
+  projectedNetCommitments: number;
+}
+
+export const SettleRecurringScheduleRequestSchema = z.object({
+  occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
+  actualAmount: z.number().positive(),
+  description: z.string().min(1),
+});
+
+export type SettleRecurringScheduleRequest = z.infer<typeof SettleRecurringScheduleRequestSchema>;
+
+export interface SettleRecurringScheduleResponse {
+  success: boolean;
+  transactionId: string;
+  settledDate: string;
+  amount: number;
+  balanceCascadeUpdated: boolean;
+}
+
+// Net Worth Evolution Time-Series
+export interface NetWorthEvolutionPoint {
+  period: string;
+  date: string;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
+}
+
+export interface NetWorthEvolutionResponse {
+  history: NetWorthEvolutionPoint[];
+  latest: {
+    assets: number;
+    liabilities: number;
+    netWorth: number;
+  };
+  change12Months: number;
+  changePercentage: number;
+}

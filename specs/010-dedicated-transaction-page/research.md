@@ -15,11 +15,13 @@ This avoids duplicate UI pages for creating, editing, and cloning.
 We will introduce three new API endpoints to handle single transaction retrieval, updates, and deletion.
 
 ### Endpoints
+
 - `GET /api/transactions/:id`: Retrieve details of a specific transaction including its journal entries.
 - `PUT /api/transactions/:id`: Update a transaction's details and journal entries.
 - `DELETE /api/transactions/:id`: Permanently delete a transaction.
 
 ### Domain Rules & Restrictions
+
 - **Immutability of Reversals**: A reversed transaction (`status === 'REVERSED'`) or a transaction that is a reversal itself (`reversalOfId !== null`) must NOT be editable. Attempting to call `PUT` on these will return `400 Bad Request`.
 - **Cascade Deletion**: TypeORM relational mapping defines `onDelete: 'CASCADE'` for `journal_entries` pointing to `transactions`. Thus, deleting a transaction entity automatically deletes its associated journal entries at the database level.
 - **Double-Entry Constraint**: Updates must satisfy the double-entry balancing rule (`sum(debits) === sum(credits)`) across base currency rates, validated inside a `SERIALIZABLE` database transaction.
@@ -61,10 +63,12 @@ This ensures the backend parses and stores the exact datetime provided.
 Using Next.js App Router, we will update `frontend/src/components/MainLayout.tsx` to detect if the user is on the dedicated entry route:
 
 ```typescript
-const isTransactionEntryPage = pathname === "/transactions/new" || pathname?.startsWith("/transactions/new/");
+const isTransactionEntryPage =
+  pathname === '/transactions/new' || pathname?.startsWith('/transactions/new/');
 ```
 
 If active, we will apply classes to hide layout bars on mobile viewports (< 640px):
+
 - Header: hidden on mobile, visible on desktop (`hidden sm:block`)
 - Sidebar: hidden on mobile, visible on desktop (already `hidden lg:flex` by default)
 - BottomNav: completely hidden (`{!isTransactionEntryPage && <BottomNav />}`)

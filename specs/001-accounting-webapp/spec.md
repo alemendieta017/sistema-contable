@@ -14,7 +14,7 @@
 
 - Q: ¿Cómo se define y gestiona el plan de cuentas (sistema de cuentas) para el usuario? → A: El sistema de cuentas debe ser maleable; el usuario define libremente las cuentas que desee bajo los tipos base (Activos, Pasivos, Ingresos, Gastos, Patrimonio Neto, etc.).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Registro de Transacciones Básicas (Ingreso, Gasto, Transferencia) (Priority: P1)
 
@@ -109,7 +109,7 @@ Como usuario precavido, quiero exportar mis transacciones a formato Excel y gene
 - **Cierre de Ciclos de Tarjetas de Crédito**: Manejar la generación automática de la transacción de pago de tarjeta de crédito al llegar la fecha de vencimiento si está configurado como pago automático, o alertar al usuario si es manual.
 - **Categorías Eliminadas**: Si se elimina una categoría que tiene transacciones históricas o presupuestos asignados, el sistema no debe eliminar las transacciones. Debe impedir la eliminación física de categorías con transacciones asociadas y en su lugar realizar un borrado lógico (marcar como inactiva/eliminada) para preservar la integridad histórica del libro contable.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -124,7 +124,7 @@ Como usuario precavido, quiero exportar mis transacciones a formato Excel y gene
 - **FR-009**: Las categorías de gastos y de ingresos deben soportar un nivel de anidamiento de subcategorías (máximo 2 niveles de jerarquía).
 - **FR-010**: El sistema debe permitir la exportación de transacciones filtradas por periodo a un formato compatible con hojas de cálculo (Excel), respetando la estructura de campos analizada en la ingeniería inversa.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Account (Cuenta)**: Representa una entidad financiera del usuario (ej. efectivo, cuenta bancaria, tarjeta de crédito). Atributos: ID, nombre, código/grupo, tipo (Activo, Pasivo, etc.), moneda, saldo actual, fecha de cierre (tarjetas), cuenta de pago asociada.
 - **Category (Categoría/Cuenta de Resultado)**: Representa una clasificación de ingresos o gastos (ej. comida, transporte, salario). Atributos: ID, nombre, tipo (Ingreso, Gasto), categoría padre (PID), orden.
@@ -133,7 +133,7 @@ Como usuario precavido, quiero exportar mis transacciones a formato Excel y gene
 - **Budget (Presupuesto)**: Estructura de control para limitar el gasto. Atributos: ID, ID de categoría, tipo de periodo (ej. mensual), estado (activo/eliminado).
 - **BudgetAmount (Importe de Presupuesto)**: El límite financiero asignado a un presupuesto para un periodo específico. Atributos: ID, ID de presupuesto, importe, periodo (ej. `YYYYMM` o `0` para el valor por defecto).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

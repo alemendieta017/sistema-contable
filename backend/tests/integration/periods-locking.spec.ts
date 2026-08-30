@@ -10,8 +10,8 @@ import { JournalEntryEntity } from '../../src/infrastructure/database/entities/j
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../src/infrastructure/database/entities/currency.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { DataSource } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 
@@ -53,6 +53,21 @@ describe('Periods Locking Integration Tests', () => {
         UpdateTransactionUseCase,
         ReverseTransactionUseCase,
         {
+          provide: EnsurePeriodService,
+          useValue: {
+            ensurePeriod: jest.fn().mockImplementation(async (em, userId, periodName) => {
+              if (em.createQueryBuilder) {
+                const qb = em.createQueryBuilder();
+                if (qb && typeof qb.getOne === 'function') {
+                  const res = await qb.getOne();
+                  if (res) return res;
+                }
+              }
+              return em.findOne(PeriodEntity, { where: { userId, name: periodName } });
+            }),
+          },
+        },
+        {
           provide: BalanceUpdateService,
           useValue: {
             updateBalances: jest.fn().mockResolvedValue(undefined),
@@ -76,10 +91,6 @@ describe('Periods Locking Integration Tests', () => {
         },
         {
           provide: getRepositoryToken(PeriodEntity),
-          useValue: {},
-        },
-        {
-          provide: getRepositoryToken(FiscalYearEntity),
           useValue: {},
         },
         {

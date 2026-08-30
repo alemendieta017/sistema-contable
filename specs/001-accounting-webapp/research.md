@@ -7,12 +7,12 @@ This document outlines the architectural research, decisions, and patterns selec
 ## 1. Monorepo Organization & Workspace Management
 
 - **Decision**: Use npm workspaces for monorepo management with a shared package containing TypeScript models, validation schemas (Zod), and API contracts.
-- **Rationale**: 
+- **Rationale**:
   - Standard npm workspaces do not require installing additional tools (like pnpm or Yarn), reducing environment setup complexity for developers.
   - Centralizes type safety: both frontend and backend depend on the same TypeScript definitions, ensuring that any API or entity contract modification updates compile-time validation on both ends.
-- **Alternatives Considered**: 
-  - *pnpm workspaces*: Highly efficient for disk space, but introduces a dependency on pnpm. Standard npm is preferred for developer universality.
-  - *Separate repositories*: Rejected because it leads to type duplication, contract desynchronization, and complex deployment coordination, violating Principle III (Monorepo Organization) of the Constitution.
+- **Alternatives Considered**:
+  - _pnpm workspaces_: Highly efficient for disk space, but introduces a dependency on pnpm. Standard npm is preferred for developer universality.
+  - _Separate repositories_: Rejected because it leads to type duplication, contract desynchronization, and complex deployment coordination, violating Principle III (Monorepo Organization) of the Constitution.
 
 ---
 
@@ -26,8 +26,8 @@ This document outlines the architectural research, decisions, and patterns selec
   - Bind mounts reflect code edits inside the container instantly.
   - Node modules are cached in named volumes so host-guest OS differences (especially Windows-WSL boundaries) do not cause dependency clashes or slow build performance.
 - **Alternatives Considered**:
-  - *Local process execution (no Docker)*: Rejected because the user explicitly requested a unified docker-compose to spin up the entire system easily.
-  - *Docker polling vs filesystem events*: Windows host with WSL workspaces sometimes fails to propagate `inotify` events. We configure NestJS and Next.js with environment variables or watch settings to fall back to polling if file changes are missed.
+  - _Local process execution (no Docker)_: Rejected because the user explicitly requested a unified docker-compose to spin up the entire system easily.
+  - _Docker polling vs filesystem events_: Windows host with WSL workspaces sometimes fails to propagate `inotify` events. We configure NestJS and Next.js with environment variables or watch settings to fall back to polling if file changes are missed.
 
 ---
 
@@ -36,7 +36,7 @@ This document outlines the architectural research, decisions, and patterns selec
 - **Decision**: Model the ledger using two primary tables with relational transaction integrity, implementing the persistence layer using TypeORM in NestJS:
   - `transactions` (Asiento Header): Stores ID, timestamp, description, status (Vigente, Anulado), and metadata.
   - `journal_entries` (Apuntes/Líneas): Stores ID, transaction ID, account ID, movement type (DEBIT or CREDIT), and amount.
-  - **Integrity Enforcement**: 
+  - **Integrity Enforcement**:
     - Database transactions run under **Repeatable Read** or **Serializable** isolation levels to prevent race conditions during concurrent balance updates.
     - Application layer use cases check that $\sum \text{Debits} = \sum \text{Credits}$ before committing.
     - A database-level check or trigger verifies that the sum of entries for a given transaction ID balances out to zero (treating Debits as positive and Credits as negative numbers).
@@ -44,7 +44,7 @@ This document outlines the architectural research, decisions, and patterns selec
   - Strict compliance with Principle I (Double-Entry Bookkeeping & Ledger Integrity).
   - Splitting header and details allows multi-item entries (split transactions) cleanly, satisfying the key functional requirement requested by the user.
 - **Alternatives Considered**:
-  - *Single transaction line with opposite accounts (like the original mobile app)*: Rejected because it cannot support multi-item entries (e.g. split transactions), which is the primary feature addition requested.
+  - _Single transaction line with opposite accounts (like the original mobile app)_: Rejected because it cannot support multi-item entries (e.g. split transactions), which is the primary feature addition requested.
 
 ---
 
@@ -56,4 +56,4 @@ This document outlines the architectural research, decisions, and patterns selec
   - Next.js App Router (SSR) ensures fast initial load times, which is critical for mobile web applications.
   - shadcn/ui provides clean, accessible components that integrate naturally with Tailwind CSS, allowing us to build the premium, responsive dashboard screens required to match the RealByte mobile layout.
 - **Alternatives Considered**:
-  - *Tailwind v3*: Deemed legacy; the constitution explicitly mandates Tailwind v4.3.
+  - _Tailwind v3_: Deemed legacy; the constitution explicitly mandates Tailwind v4.3.

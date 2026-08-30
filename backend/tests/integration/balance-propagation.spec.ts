@@ -11,8 +11,8 @@ import { JournalEntryEntity } from '../../src/infrastructure/database/entities/j
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../src/infrastructure/database/entities/currency.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { DataSource } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 
@@ -25,8 +25,22 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
 
   let mockEntityManager: any;
   let mockDataSource: any;
+  let mockEnsurePeriodService: any;
 
   beforeEach(async () => {
+    mockEnsurePeriodService = {
+      ensurePeriod: jest.fn().mockImplementation((em, userId, periodStr) => {
+        return Promise.resolve({
+          id: `period-${periodStr}`,
+          name: periodStr,
+          startDate: `${periodStr}-01`,
+          endDate: `${periodStr}-28`,
+          status: 'OPEN',
+          userId,
+        });
+      }),
+    };
+
     mockEntityManager = {
       findOne: jest.fn(),
       find: jest.fn(),
@@ -57,6 +71,10 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         ReconstructBalancesUseCase,
         BalanceUpdateService,
         {
+          provide: EnsurePeriodService,
+          useValue: mockEnsurePeriodService,
+        },
+        {
           provide: getRepositoryToken(TransactionEntity),
           useValue: {},
         },
@@ -74,10 +92,6 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         },
         {
           provide: getRepositoryToken(PeriodEntity),
-          useValue: {},
-        },
-        {
-          provide: getRepositoryToken(FiscalYearEntity),
           useValue: {},
         },
         {
@@ -111,13 +125,10 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       };
 
       // Mock Period lookup to return a CLOSED period
-      const mockQueryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-      };
-      mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockEnsurePeriodService.ensurePeriod.mockResolvedValueOnce({
+        id: 'period-1',
+        status: 'CLOSED',
+      });
 
       await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
         new BadRequestException('The accounting period for the transaction date is closed'),
@@ -160,13 +171,10 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
         entries: [],
       });
 
-      const mockQueryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-      };
-      mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockEnsurePeriodService.ensurePeriod.mockResolvedValueOnce({
+        id: 'period-1',
+        status: 'CLOSED',
+      });
 
       await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
         new BadRequestException('The accounting period for the reversal date is closed'),

@@ -25,17 +25,12 @@ export class UpdatePeriodUseCase {
     const status = dto.status;
 
     return this.dataSource.transaction(async (entityManager) => {
-      // 1. Fetch period and its fiscal year to verify ownership
+      // 1. Fetch period to verify ownership
       const period = await entityManager.findOne(PeriodEntity, {
-        where: { id: periodId },
-        relations: ['fiscalYear'],
+        where: { id: periodId, userId },
       });
 
       if (!period) {
-        throw new NotFoundException(`Period with ID ${periodId} not found`);
-      }
-
-      if (period.fiscalYear.userId !== userId) {
         throw new NotFoundException(`Period with ID ${periodId} not found`);
       }
 
@@ -44,7 +39,7 @@ export class UpdatePeriodUseCase {
       if (oldStatus === status) {
         return {
           id: period.id,
-          fiscalYearId: period.fiscalYearId,
+          userId: period.userId,
           name: period.name,
           startDate: period.startDate,
           endDate: period.endDate,
@@ -66,7 +61,7 @@ export class UpdatePeriodUseCase {
 
       return {
         id: updatedPeriod.id,
-        fiscalYearId: updatedPeriod.fiscalYearId,
+        userId: updatedPeriod.userId,
         name: updatedPeriod.name,
         startDate: updatedPeriod.startDate,
         endDate: updatedPeriod.endDate,

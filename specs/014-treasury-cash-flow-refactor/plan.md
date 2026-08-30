@@ -22,7 +22,7 @@ Refactor money account configuration UX and default initialization to eliminate 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - [x] **I. Double-Entry Bookkeeping & Ledger Integrity**: Compliant. Cash balance movements update period balances without altering ledger entries or violating double-entry balance.
 - [x] **II. Clean Architecture & SOLID Principles**: Compliant. Domain entities and use cases handle validation rules (`UpdateAccountUseCase`) decoupled from infrastructure/UI.
@@ -90,5 +90,5 @@ frontend/
 > **No constitution violations or unjustified complexities.**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| *None* | N/A | N/A |
+| --------- | ---------- | ------------------------------------ |
+| _None_    | N/A        | N/A                                  |

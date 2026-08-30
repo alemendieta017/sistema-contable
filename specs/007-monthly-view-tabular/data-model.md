@@ -8,12 +8,12 @@ However, the client-side component aggregates transaction entries into the follo
 
 ```typescript
 interface MonthlySummaryRow {
-  monthIndex: number;      // 0 to 11 (representando de Enero a Diciembre)
-  monthName: string;       // Nombre legible en español (e.g. "Enero")
-  income: number;          // Suma de montos base de tipo CREDIT para cuentas INCOME
-  expense: number;         // Suma de montos base de tipo DEBIT para cuentas EXPENSE
-  net: number;             // Balance Neto (income - expense)
-  txCount: number;         // Cantidad total de transacciones registradas en el mes
+  monthIndex: number; // 0 to 11 (representando de Enero a Diciembre)
+  monthName: string; // Nombre legible en español (e.g. "Enero")
+  income: number; // Suma de montos base de tipo CREDIT para cuentas INCOME
+  expense: number; // Suma de montos base de tipo DEBIT para cuentas EXPENSE
+  net: number; // Balance Neto (income - expense)
+  txCount: number; // Cantidad total de transacciones registradas en el mes
 }
 ```
 

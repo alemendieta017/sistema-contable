@@ -29,8 +29,7 @@ export class DeleteTransactionUseCase {
       const txDate = transaction.accountingDate;
       const period = await entityManager
         .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
+        .where('period.userId = :userId', { userId })
         .andWhere('period.startDate <= :date', { date: txDate })
         .andWhere('period.endDate >= :date', { date: txDate })
         .getOne();
@@ -42,7 +41,9 @@ export class DeleteTransactionUseCase {
         throw new BadRequestException('The accounting period for the transaction date is closed');
       }
       if (period.status === 'PLANNING') {
-        throw new BadRequestException('The accounting period for the transaction date is in planning status');
+        throw new BadRequestException(
+          'The accounting period for the transaction date is in planning status',
+        );
       }
 
       // 2. Call balance-update.service to subtract debits/credits

@@ -17,6 +17,8 @@ import {
   FactoryResetRequest,
   DeleteAccountRequest,
   DangerZoneResponse,
+  EnsurePeriodResponse,
+  PeriodResponse,
 } from '@sistema-contable/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -515,62 +517,51 @@ export const api = {
     },
   },
 
-  fiscalYears: {
-    async list() {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'GET',
-        headers: getHeaders(),
-      });
-      return handleResponse(res);
-    },
-
-    async create(data: { year: number; startDate: string; endDate: string }) {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return handleResponse(res);
-    },
-
-    async close(id: string, data?: { retainedEarningsAccountId?: string }) {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years/${id}/close`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(data || {}),
-      });
-      return handleResponse(res);
-    },
-  },
-
   periods: {
-    async list(fiscalYearId?: string) {
-      const url = new URL(`${API_BASE_URL}/periods`);
-      if (fiscalYearId) {
-        url.searchParams.append('fiscalYearId', fiscalYearId);
-      }
-      const res = await fetch(url.toString(), {
+    async list(): Promise<PeriodResponse[]> {
+      const res = await fetch(`${API_BASE_URL}/periods`, {
         method: 'GET',
         headers: getHeaders(),
       });
       return handleResponse(res);
     },
 
-    async listFiscalYears() {
-      const res = await fetch(`${API_BASE_URL}/fiscal-years`, {
-        method: 'GET',
+    async ensure(period: string): Promise<EnsurePeriodResponse> {
+      const res = await fetch(`${API_BASE_URL}/periods/ensure`, {
+        method: 'POST',
         headers: getHeaders(),
+        body: JSON.stringify({ period }),
       });
       return handleResponse(res);
     },
 
-    async update(id: string, data: { status: 'OPEN' | 'CLOSED' | 'PLANNING' }) {
+    async update(
+      id: string,
+      data: { status: 'OPEN' | 'CLOSED' | 'PLANNING' },
+    ): Promise<PeriodResponse> {
       const res = await fetch(`${API_BASE_URL}/periods/${id}`, {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify(data),
       });
       return handleResponse(res);
+    },
+  },
+
+  fiscalYears: {
+    async list(): Promise<any[]> {
+      const periods = await api.periods.list();
+      const yearsSet = new Set(periods.map((p) => (p.name ? p.name.substring(0, 4) : '2026')));
+      if (yearsSet.size === 0) {
+        const currentYear = new Date().getFullYear().toString();
+        yearsSet.add(currentYear);
+      }
+      return Array.from(yearsSet).map((y) => ({
+        id: y,
+        name: y,
+        year: Number(y),
+        status: 'OPEN',
+      }));
     },
   },
 

@@ -28,11 +28,10 @@ export class UpdateBudgetItemsUseCase {
     return this.dataSource.transaction(async (entityManager) => {
       // 1. Fetch period and check if user owns it
       const period = await entityManager.findOne(PeriodEntity, {
-        where: { id: periodId },
-        relations: ['fiscalYear'],
+        where: { id: periodId, userId },
       });
 
-      if (!period || period.fiscalYear.userId !== userId) {
+      if (!period) {
         throw new NotFoundException('Period not found');
       }
 

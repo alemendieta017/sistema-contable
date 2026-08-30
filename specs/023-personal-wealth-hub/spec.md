@@ -181,8 +181,8 @@ As a user managing day-to-day cash flow, I want to track recurring scheduled com
 - **FR-011**: System MUST render the Budget Matrix and Cash Flow Forecast in a Rolling 12-Month view by default, spanning from the current month to $M+11$.
 - **FR-012**: System MUST support forward and backward navigation across the rolling timeline and allow dynamic addition of future months without artificial annual cutoffs.
 - **FR-013**: System MUST display historical actuals for past months, hybrid actual-to-date vs budget for the active month, and pure budgeted figures for future months.
-- **FR-014**: System MUST provide an instant Balance General (Statement of Financial Position) querying `AccountPeriodBalanceEntity` closing balances for any specified period, date, or comparative range.
-- **FR-015**: System MUST compute Net Worth as $\sum \text{Assets} - \sum \text{Liabilities}$ without requiring annual closing journal entries or static retained-earnings refunding.
+- **FR-014**: System MUST provide a streamlined executive Balance General (Statement of Financial Position) displaying Total Assets, Total Liabilities, and Net Worth directly ($\text{Net Worth} = \sum \text{Assets} - \sum \text{Liabilities}$) for any specified monthly period, date, or comparative date range, eliminating synthetic corporate equity account injections from the UI.
+- **FR-015**: System MUST designate exactly one single system account `Capital` (`type: 'EQUITY'`, `systemRole: 'CAPITAL'`) per user as the offsetting leg for starting account balances and external capital injections, omitting zero-balance equity rows from financial statements.
 - **FR-016**: System MUST provide a Net Worth Evolution report returning the historical time series of net worth per monthly period.
 - **FR-017**: System MUST provide a Real Cash Flow statement detailing actual historical cash movements across operational, investing, and financing categories.
 - **FR-018**: System MUST provide both a Real Estado de Resultados (actual income minus actual egresos) and a Projected Estado de Resultados (budgeted income minus budgeted egresos).

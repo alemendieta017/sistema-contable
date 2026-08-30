@@ -57,11 +57,12 @@ As an accountant, I want to close a fiscal year without having to manually selec
 
 ### User Story 4 - Operability Restrictions on System Accounts in Journal Entries (Priority: P1)
 
-As an accountant, I want system-calculated accounts like `NET_INCOME` (*Resultado del Ejercicio*) to be non-operable and hidden from manual journal entry account selectors, while `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable, so that manual entries cannot distort current fiscal period net income calculations while still permitting dividend distributions and prior-period adjustments.
+As an accountant, I want system-calculated accounts like `NET_INCOME` (_Resultado del Ejercicio_) to be non-operable and hidden from manual journal entry account selectors, while `RETAINED_EARNINGS` (_Resultados Acumulados / Utilidades Retenidas_) remains operable, so that manual entries cannot distort current fiscal period net income calculations while still permitting dividend distributions and prior-period adjustments.
 
 **Why this priority**: Prevents financial statement corruption and guarantees double-entry integrity between the Balance Sheet and Income Statement.
 
 **Independent Test**:
+
 1. Verify that when searching or browsing accounts in the manual journal entry UI form, `NET_INCOME` is excluded/hidden, whereas `RETAINED_EARNINGS` is visible and selectable.
 2. Verify that sending an HTTP POST request to create a manual journal entry referencing the `NET_INCOME` account ID results in a 400 Bad Request domain validation failure.
 
@@ -91,8 +92,8 @@ As an accountant, I want system-calculated accounts like `NET_INCOME` (*Resultad
 - **FR-005**: System MUST hide any system account (including `NET_INCOME` and `RETAINED_EARNINGS`) from the Equity section of the Balance Sheet if its balance evaluates to zero ($0.00).
 - **FR-006**: System MUST update `CloseFiscalYearUseCase` to automatically retrieve and utilize the company's designated account with `systemRole = 'RETAINED_EARNINGS'` without requiring a target account ID parameter in the HTTP DTO.
 - **FR-007**: System MUST preserve hierarchical tree structure, account code, and grouping when rendering system accounts in the Balance Sheet across all depth levels.
-- **FR-008**: System MUST enforce that `NET_INCOME` (*Resultado del Ejercicio*) is non-operable (`allowManualEntry = false`), filtering it out from UI manual journal entry selectors and rejecting manual posting attempts in backend entry validation.
-- **FR-009**: System MUST ensure that `RETAINED_EARNINGS` (*Resultados Acumulados / Utilidades Retenidas*) remains operable (`allowManualEntry = true`), allowing users to select it in manual journal entries for dividend distribution, reserves, or prior-period adjustments.
+- **FR-008**: System MUST enforce that `NET_INCOME` (_Resultado del Ejercicio_) is non-operable (`allowManualEntry = false`), filtering it out from UI manual journal entry selectors and rejecting manual posting attempts in backend entry validation.
+- **FR-009**: System MUST ensure that `RETAINED_EARNINGS` (_Resultados Acumulados / Utilidades Retenidas_) remains operable (`allowManualEntry = true`), allowing users to select it in manual journal entries for dividend distribution, reserves, or prior-period adjustments.
 
 ### Key Entities
 

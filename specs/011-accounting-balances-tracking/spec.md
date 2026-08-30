@@ -7,8 +7,9 @@
 **Status**: Draft
 
 **Input**: User description:
+
 > Mira, se viene un cambio grande al core de la aplicación y como quiero orientar su funcionamiento similar a un ERP profesional. Surge la necesidad de que se genere un tracking de los saldos de las cuentas, para mejorar reportes de saldo actual de cuentas, libro mayor, asientos de cierre, periodos, etc. Te voy a adjuntar una especificación de hacia donde apuntamos, quizás los nombres de las tablas sean algo diferentes pero quiero que captures la esencia del requerimiento para adaptarlo al actual funcionamiento de la aplicación.
-> 
+>
 > (The user attached a comprehensive specification covering core principles, database schema for accounts, fiscal years, periods, journal entries/lines, performance aggregates (account_period_balances), monthly/annual closing procedures, and reporting logic.)
 
 ## Clarifications
@@ -26,7 +27,7 @@
 - Q: Flujo de recálculo en cascada y estado de la UI → A: Ejecución automática al guardar asientos modificados en períodos reabiertos, bloqueando la UI con una pantalla de carga de "Actualizando saldos históricos..." (Opción A).
 - Q: Jerarquía de cuentas y filtro de profundidad en Balance General → A: Eliminar el filtro de profundidad del Balance General para simplificar la interfaz, dado que no hay jerarquías para cuentas de Activo, Pasivo o Patrimonio (Opción C).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Real-time Period Balance Aggregation (Priority: P1)
 
@@ -94,7 +95,7 @@ As an accountant, I want to query a Balance Sheet with flexible date/period filt
 - **OutOfOrder transaction dates**: When a transaction is posted with a past date (e.g. posting on `2026-04-10` but dated `2026-03-15`), the system must update the `account_period_balances` for `2026-03` and roll forward the balances to `2026-04` if the target period is open.
 - **Reversal of a transaction from a closed period**: If a transaction from `2026-03` needs to be reversed, but `2026-03` is closed, the reversal transaction must be posted in the currently open period (e.g. `2026-04`), referencing the original transaction ID.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -102,7 +103,6 @@ As an accountant, I want to query a Balance Sheet with flexible date/period filt
 
 - **FR-002**: System MUST support the definition of `Periods` nested within a Fiscal Year (typically 12 monthly periods per year) with properties: start date, end date, status (Open, Closed). The start and end dates of each period must respect the user's local timezone offset (e.g., if the user's local timezone is UTC-4, period `2026-01` must start at Jan 1st 04:00:00 UTC and end at Feb 1st 03:59:59.999 UTC).
 - **FR-003**: System MUST validate that every transaction has a date matching an active, open Period.
-
 
 - **FR-004**: System MUST reject any creation, modification, or deletion of ledger entries inside a closed Period.
 - **FR-005**: System MUST maintain a derived performance table/collection `Account Period Balances` tracking:
@@ -132,7 +132,7 @@ As an accountant, I want to query a Balance Sheet with flexible date/period filt
 - **FR-015**: [DELETED - Depth filter on Balance Sheet is no longer required since accounts of Assets, Liabilities, and Equity do not support hierarchy creation in the UI.]
 - **FR-016**: System MUST automatically trigger a forward cascade recalculation when a past period is modified. During this process, the backend will process the recalculation, and the frontend MUST display a blocking loading overlay stating "Actualizando saldos históricos..." to prevent concurrent modifications.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **FiscalYear**: Represents an accounting year (e.g. 2026).
   - Attributes: Name/Code (unique), Start Date, End Date, Status (OPEN, CLOSED).
@@ -141,7 +141,7 @@ As an accountant, I want to query a Balance Sheet with flexible date/period filt
 - **AccountPeriodBalance**: Aggregated snapshot for quick reporting.
   - Attributes: Account reference, Period reference, Opening Balance (base currency), Total Debits (base currency), Total Credits (base currency), Closing Balance (base currency), Last Updated Timestamp.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

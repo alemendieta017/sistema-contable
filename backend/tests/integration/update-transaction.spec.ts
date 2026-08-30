@@ -8,6 +8,7 @@ import { CurrencyEntity } from '../../src/infrastructure/database/entities/curre
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 
 describe('Update Transaction Integration Tests', () => {
   let useCase: UpdateTransactionUseCase;
@@ -61,6 +62,18 @@ describe('Update Transaction Integration Tests', () => {
           provide: BalanceUpdateService,
           useValue: {
             updateBalances: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: EnsurePeriodService,
+          useValue: {
+            ensurePeriod: jest.fn().mockResolvedValue({
+              id: 'period-1',
+              name: '2026-06',
+              startDate: '2026-06-01',
+              endDate: '2026-06-30',
+              status: 'OPEN',
+            }),
           },
         },
       ],
@@ -329,5 +342,91 @@ describe('Update Transaction Integration Tests', () => {
     });
 
     await expect(useCase.execute(userId, transactionId, dto)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should auto-provision new period when updating transaction date to a future month', async () => {
+    const userId = 'user-123';
+    const transactionId = 'tx-123';
+
+    const originalTx = {
+      id: transactionId,
+      userId,
+      accountingDate: '2026-06-01',
+      description: 'Old Description',
+      status: 'POSTED',
+      reversalOfId: null,
+      entries: [
+        { id: 'e-1', accountId: 'acc-cash', entryType: 'CREDIT', amount: 100, amountBase: 100 },
+        { id: 'e-2', accountId: 'acc-food', entryType: 'DEBIT', amount: 100, amountBase: 100 },
+      ],
+    };
+
+    const dto = {
+      accountingDate: '2027-04-15',
+      description: 'Future Expense',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 150 },
+        { accountId: 'acc-food', entryType: 'DEBIT' as const, amount: 150 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockImplementation(async (cls, options) => {
+      if (cls === TransactionEntity) return originalTx;
+      if (cls === AccountEntity) {
+        return {
+          id: options.where.id,
+          userId,
+          name: 'Account',
+          status: 'ACTIVE',
+          currencyId: 'USD',
+        };
+      }
+      if (cls === CurrencyEntity) return { id: 'USD', rateToBase: 1.0 };
+      return null;
+    });
+
+    const result = await useCase.execute(userId, transactionId, dto);
+    expect(result.accountingDate).toBe('2027-04-15');
+    expect(result.description).toBe('Future Expense');
+  });
+
+  it('should throw BadRequestException if new transaction date is in a closed period', async () => {
+    const userId = 'user-123';
+    const transactionId = 'tx-123';
+
+    const originalTx = {
+      id: transactionId,
+      userId,
+      accountingDate: '2026-06-01',
+      description: 'Old Description',
+      status: 'POSTED',
+      reversalOfId: null,
+      entries: [],
+    };
+
+    const dto = {
+      accountingDate: '2025-12-15',
+      description: 'Closed Month Move',
+      entries: [
+        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 100 },
+        { accountId: 'acc-food', entryType: 'DEBIT' as const, amount: 100 },
+      ],
+    };
+
+    mockEntityManager.findOne.mockImplementation(async (cls) => {
+      if (cls === TransactionEntity) return originalTx;
+      return null;
+    });
+
+    // Provide a closed period for ensurePeriod
+    const ensurePeriodService = (useCase as any).ensurePeriodService;
+    jest.spyOn(ensurePeriodService, 'ensurePeriod').mockResolvedValueOnce({
+      id: 'p-closed',
+      status: 'CLOSED',
+    });
+
+    await expect(useCase.execute(userId, transactionId, dto)).rejects.toThrow(
+      new BadRequestException('The accounting period for the new transaction date is closed'),
+    );
   });
 });

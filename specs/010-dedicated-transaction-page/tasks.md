@@ -34,6 +34,7 @@
 **Independent Test**: Navigate to `/transactions/new` on desktop, fill out a balanced transaction (Glosa, Date, 2 items), and click Save to successfully persist and return to lists.
 
 ### Implementation for User Story 1
+
 - [x] T006 [P] [US1] Create full-page container structure and desktop sidebar layout in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 - [x] T007 [P] [US1] Create form header, concept inputs, and datetime local selection in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 - [x] T008 [US1] Implement wide table row loop supporting Debits, Credits, and basic account selection dropdowns in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
@@ -48,6 +49,7 @@
 **Independent Test**: Resize the browser to mobile viewport (< 640px) or navigate to `/transactions/new` on mobile. Verify standard sidebars/footers are hidden, and entry rows render in stacked layout.
 
 ### Implementation for User Story 2
+
 - [x] T010 [P] [US2] Design touch-friendly stacked design or high-density vertical layout for entry rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 - [x] T011 [US2] Implement a sticky footer summary panel containing totals (Debe / Haber) and submit triggers in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 
@@ -60,6 +62,7 @@
 **Independent Test**: Create an unbalanced line (e.g. DEBIT 100), click "Agregar Apunte", and verify a CREDIT row is created with amount `100` auto-populated. Try to navigate back and confirm that the browser prompts for unsaved changes confirmation.
 
 ### Implementation for User Story 3
+
 - [x] T012 [US3] Add balance-detection triggers to auto-calculate difference and pre-fill opposite entry types when adding rows in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 - [x] T013 [P] [US3] Refactor entry rows account selector to use searchable combobox layout with grouping in [frontend/src/components/JournalEntryRow.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/components/JournalEntryRow.tsx)
 - [x] T014 [P] [US3] Implement browser `beforeunload` event handler and state triggers to prevent accidental navigation data loss in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
@@ -73,9 +76,11 @@
 **Independent Test**: Click edit on an existing transaction card, verify it loads at `/transactions/new?edit=<id>`. Save edits and verify changes reflect on database. Ensure reversed transactions disable/hide editing.
 
 ### Tests for User Story 4
+
 - [x] T015 [P] [US4] Write integration test cases for `UpdateTransactionUseCase` in [backend/tests/integration/update-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/update-transaction.spec.ts)
 
 ### Implementation for User Story 4
+
 - [x] T016 [US4] Implement transactional logic in `UpdateTransactionUseCase` inside [backend/src/application/ledger/update-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/update-transaction.use-case.ts)
 - [x] T017 [US4] Bind new update providers and export dependencies in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
 - [x] T018 [US4] Connect `GET :id` and `PUT :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
@@ -91,6 +96,7 @@
 **Independent Test**: Click duplicate/copy on a transaction, verify it opens `/transactions/new?cloneFrom=<id>` with date initialized to today. Save it and verify a new transaction is created without changing the source.
 
 ### Implementation for User Story 5
+
 - [x] T021 [US5] Implement clone state detection, transaction fetching, and reset of date inputs in [frontend/src/app/transactions/new/page.tsx](file:///Users/ale/dev/sistema-contable/frontend/src/app/transactions/new/page.tsx)
 
 ---
@@ -102,9 +108,11 @@
 **Independent Test**: Click delete on a transaction card, verify validation confirmation overlay, and verify it is removed from lists.
 
 ### Tests for User Story 6
+
 - [x] T022 [P] [US6] Write integration test cases for `DeleteTransactionUseCase` in [backend/tests/integration/delete-transaction.spec.ts](file:///Users/ale/dev/sistema-contable/backend/tests/integration/delete-transaction.spec.ts)
 
 ### Implementation for User Story 6
+
 - [x] T023 [US6] Implement deletion logic in `DeleteTransactionUseCase` inside [backend/src/application/ledger/delete-transaction.use-case.ts](file:///Users/ale/dev/sistema-contable/backend/src/application/ledger/delete-transaction.use-case.ts)
 - [x] T024 [US6] Bind deletion provider and export configurations in [backend/src/infrastructure/ledger/ledger.module.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/ledger/ledger.module.ts)
 - [x] T025 [US6] Connect `DELETE :id` use cases inside controller handlers in [backend/src/infrastructure/controllers/ledger.controller.ts](file:///Users/ale/dev/sistema-contable/backend/src/infrastructure/controllers/ledger.controller.ts)
@@ -141,6 +149,7 @@ graph TD
 ```
 
 ### Parallel Opportunities
+
 - **Phase 1 (Setup)**: Tasks T001, T002, T003 can be run in parallel.
 - **Phase 6 (Edit Mode)**: Test task T015 can be written in parallel with T020.
 - **Phase 8 (Delete)**: Test task T022 can be written in parallel with T026.
@@ -151,11 +160,13 @@ graph TD
 ## Implementation Strategy
 
 ### MVP Scope (User Story 1 Only)
+
 1. Complete Setup (Phase 1) and Foundational Layout rules (Phase 2).
 2. Create dedicated desktop entry page `/transactions/new` (T006-T009).
 3. Validate manually that user can save a balanced transaction and see it in the list.
 
 ### Incremental Delivery
+
 1. Add mobile view rules and stack styles (US2).
 2. Implement smart autofill and combobox account autocomplete (US3).
 3. Implement backend update logic + edit page forms (US4).

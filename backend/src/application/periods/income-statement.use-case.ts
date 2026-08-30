@@ -21,11 +21,8 @@ export class IncomeStatementUseCase {
     const period = await this.periodRepository.findOne({
       where: {
         id: periodId,
-        fiscalYear: {
-          userId,
-        },
+        userId,
       },
-      relations: ['fiscalYear'],
     });
 
     if (!period) {

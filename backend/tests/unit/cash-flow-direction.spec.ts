@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CashFlowStatementForecastUseCase } from '../../src/application/reports/cash-flow-statement.use-case';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
@@ -18,7 +18,7 @@ describe('CashFlowDirection Net Calculations (US4)', () => {
   beforeEach(async () => {
     mockEntityManager = {
       findOne: jest.fn().mockImplementation((cls, options) => {
-        if (cls === FiscalYearEntity) {
+        if (cls === PeriodEntity) {
           return mockFiscalYearRepo.findOne(options);
         }
         if (cls === BudgetEntity) {
@@ -103,7 +103,7 @@ describe('CashFlowDirection Net Calculations (US4)', () => {
       providers: [
         CashFlowStatementForecastUseCase,
         {
-          provide: getRepositoryToken(FiscalYearEntity),
+          provide: getRepositoryToken(PeriodEntity),
           useValue: mockFiscalYearRepo,
         },
         {

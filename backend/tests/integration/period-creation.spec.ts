@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateFiscalYearUseCase } from '../../src/application/periods/create-fiscal-year.use-case';
-import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FiscalYearEntity } from '../../src/infrastructure/database/entities/fiscal-year.entity';
 import { PeriodEntity } from '../../src/infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.entity';
 import { AccountEntity } from '../../src/infrastructure/database/entities/account.entity';
@@ -10,198 +8,262 @@ import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/en
 import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-describe('Fiscal Year and Period Creation Integration Tests', () => {
-  let useCase: CreateFiscalYearUseCase;
+describe('EnsurePeriodService Auto-Provisioning & Continuous Gap Filling Tests (US1)', () => {
+  let ensurePeriodService: EnsurePeriodService;
   let mockEntityManager: any;
-  let mockFiscalYearRepo: any;
-  let mockPeriodRepo: any;
-  let mockBalanceUpdateService: any;
+  let storedPeriods: PeriodEntity[] = [];
+  let storedBudgets: BudgetEntity[] = [];
+  let storedBalances: AccountPeriodBalanceEntity[] = [];
 
-  const createMockQueryBuilder = (getOneValue: any = null) => ({
-    innerJoin: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    getOne: jest.fn().mockResolvedValue(getOneValue),
-  });
-
-  const mockDataSource = {
-    transaction: jest.fn().mockImplementation(async (cb) => {
-      return cb(mockEntityManager);
-    }),
-  };
+  const mockAccounts: Partial<AccountEntity>[] = [
+    {
+      id: 'acc-asset',
+      userId: 'user-1',
+      name: 'Banco',
+      type: 'ASSET',
+      isCashOrBank: true,
+      status: 'ACTIVE',
+      currencyId: 'curr-1',
+      systemRole: null,
+      parentId: null,
+    },
+    {
+      id: 'acc-income',
+      userId: 'user-1',
+      name: 'Salario',
+      type: 'INCOME',
+      isCashOrBank: false,
+      status: 'ACTIVE',
+      currencyId: 'curr-1',
+      systemRole: null,
+      parentId: null,
+    },
+  ];
 
   beforeEach(async () => {
+    storedPeriods = [];
+    storedBudgets = [];
+    storedBalances = [];
+
     mockEntityManager = {
-      create: jest.fn().mockImplementation((entityClass, plainObject) => {
-        return {
-          id: `mock-${entityClass.name ? entityClass.name.toLowerCase() : 'entity'}-uuid`,
-          ...plainObject,
-        };
+      findOne: jest.fn().mockImplementation((entityClass, options) => {
+        if (entityClass === PeriodEntity) {
+          if (options?.where?.name) {
+            return Promise.resolve(
+              storedPeriods.find(
+                (p) => p.name === options.where.name && p.userId === options.where.userId,
+              ) || null,
+            );
+          }
+          if (options?.where?.endDate) {
+            const threshold =
+              options.where.endDate?._value || options.where.endDate?.value || '9999-12-31';
+            const matching = storedPeriods.filter(
+              (p) => p.userId === options.where.userId && p.endDate < threshold,
+            );
+            matching.sort((a, b) => b.endDate.localeCompare(a.endDate));
+            return Promise.resolve(matching[0] || null);
+          }
+        }
+        if (entityClass === BudgetEntity) {
+          return Promise.resolve(
+            storedBudgets.find((b) => b.periodId === options?.where?.periodId) || null,
+          );
+        }
+        if (entityClass === AccountPeriodBalanceEntity) {
+          return Promise.resolve(
+            storedBalances.find(
+              (b) =>
+                b.accountId === options?.where?.accountId &&
+                b.periodId === options?.where?.periodId,
+            ) || null,
+          );
+        }
+        return Promise.resolve(null);
       }),
-      save: jest.fn().mockImplementation(async (entityClass, entity) => {
-        return {
-          id:
-            entity.id ||
-            `mock-${entityClass.name ? entityClass.name.toLowerCase() : 'entity'}-uuid`,
+      find: jest.fn().mockImplementation((entityClass, options) => {
+        if (entityClass === AccountEntity) {
+          return Promise.resolve(mockAccounts);
+        }
+        if (entityClass === PeriodEntity) {
+          return Promise.resolve(storedPeriods);
+        }
+        if (entityClass === AccountPeriodBalanceEntity) {
+          if (options?.where?.periodId) {
+            return Promise.resolve(
+              storedBalances.filter((b) => b.periodId === options.where.periodId),
+            );
+          }
+          return Promise.resolve(storedBalances);
+        }
+        return Promise.resolve([]);
+      }),
+      create: jest.fn().mockImplementation((entityClass, plain) => {
+        return { id: `id-${Math.random().toString(36).substr(2, 9)}`, ...plain };
+      }),
+      save: jest.fn().mockImplementation((entityClass, entity) => {
+        if (Array.isArray(entity)) {
+          const savedList = entity.map((e) => ({
+            ...e,
+            id: e.id || `id-${Math.random().toString(36).substr(2, 9)}`,
+          }));
+          if (entityClass === PeriodEntity) {
+            storedPeriods.push(...savedList);
+          } else if (entityClass === BudgetEntity) {
+            storedBudgets.push(...savedList);
+          } else if (entityClass === AccountPeriodBalanceEntity) {
+            storedBalances.push(...savedList);
+          }
+          return Promise.resolve(savedList);
+        }
+        const saved = {
           ...entity,
+          id: entity.id || `id-${Math.random().toString(36).substr(2, 9)}`,
         };
+        if (entityClass === PeriodEntity) {
+          storedPeriods.push(saved);
+        } else if (entityClass === BudgetEntity) {
+          storedBudgets.push(saved);
+        } else if (entityClass === AccountPeriodBalanceEntity) {
+          storedBalances.push(saved);
+        }
+        return Promise.resolve(saved);
       }),
-      getRepository: jest.fn().mockReturnValue({
-        createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
-      }),
+      createQueryBuilder: jest.fn().mockImplementation((entityClass) => ({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockImplementation(async () => {
+          if (entityClass === PeriodEntity) {
+            if (storedPeriods.length === 0) return null;
+            const sorted = [...storedPeriods].sort((a, b) => b.name.localeCompare(a.name));
+            return sorted[0];
+          }
+          return null;
+        }),
+      })),
     };
 
-    mockFiscalYearRepo = {
-      findOne: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
-    };
-
-    mockPeriodRepo = {};
-
-    mockBalanceUpdateService = {
-      propagateBalancesFromPeriod: jest.fn().mockResolvedValue(undefined),
+    const mockDataSource = {
+      manager: mockEntityManager,
+      transaction: jest.fn().mockImplementation(async (cb) => cb(mockEntityManager)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CreateFiscalYearUseCase,
-        {
-          provide: BalanceUpdateService,
-          useValue: mockBalanceUpdateService,
-        },
-        {
-          provide: getRepositoryToken(FiscalYearEntity),
-          useValue: mockFiscalYearRepo,
-        },
-        {
-          provide: getRepositoryToken(PeriodEntity),
-          useValue: mockPeriodRepo,
-        },
-        {
-          provide: getRepositoryToken(BudgetEntity),
-          useValue: {},
-        },
-        {
-          provide: getRepositoryToken(AccountEntity),
-          useValue: {},
-        },
-        {
-          provide: getRepositoryToken(AccountPeriodBalanceEntity),
-          useValue: {},
-        },
-        {
-          provide: DataSource,
-          useValue: mockDataSource,
-        },
+        EnsurePeriodService,
+        { provide: getRepositoryToken(PeriodEntity), useValue: {} },
+        { provide: getRepositoryToken(AccountEntity), useValue: {} },
+        { provide: getRepositoryToken(BudgetEntity), useValue: {} },
+        { provide: getRepositoryToken(AccountPeriodBalanceEntity), useValue: {} },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
-    useCase = module.get<CreateFiscalYearUseCase>(CreateFiscalYearUseCase);
+    ensurePeriodService = module.get<EnsurePeriodService>(EnsurePeriodService);
   });
 
-  it('should successfully create a fiscal year, 12 monthly periods, and 12 empty budgets', async () => {
-    const userId = 'user-123';
-    const dto = {
-      year: 2026,
-      startDate: '2026-01-01',
-      endDate: '2026-12-31',
-    };
+  it('should auto-provision a single monthly period when no prior periods exist', async () => {
+    const userId = 'user-1';
+    const period = await ensurePeriodService.ensurePeriod(userId, '2026-01');
 
-    mockFiscalYearRepo.findOne.mockResolvedValue(null);
+    expect(period.name).toBe('2026-01');
+    expect(period.startDate).toBe('2026-01-01');
+    expect(period.endDate).toBe('2026-01-31');
+    expect(period.status).toBe('OPEN');
+    expect(period.userId).toBe(userId);
 
-    const result = await useCase.execute(userId, dto);
+    // Should create a budget envelope
+    expect(storedBudgets).toHaveLength(1);
+    expect(storedBudgets[0].periodId).toBe(period.id);
+    expect(storedBudgets[0].name).toBe('Enero 2026');
 
-    expect(result.name).toBe('Ejercicio 2026');
-    expect(result.status).toBe('OPEN');
-    expect(result.periods).toHaveLength(12);
-    expect(result.periods[0].name).toBe('2026-01');
-    expect(result.periods[11].name).toBe('2026-12');
+    // Should create initial balances for user accounts
+    expect(storedBalances).toHaveLength(2);
+    const assetBalance = storedBalances.find((b) => b.accountId === 'acc-asset');
+    expect(assetBalance?.openingBalance).toBe(0);
+    expect(assetBalance?.closingBalance).toBe(0);
+  });
 
-    // 1 fiscal year + 12 periods + 12 budgets = 25 saves
-    expect(mockEntityManager.save).toHaveBeenCalledTimes(25);
-
-    // Verify budget creation calls
-    const budgetCreateCalls = mockEntityManager.create.mock.calls.filter(
-      (args: any[]) => args[0] === BudgetEntity,
+  it('should throw BadRequestException if period format is invalid', async () => {
+    await expect(ensurePeriodService.ensurePeriod('user-1', 'invalid-date')).rejects.toThrow(
+      BadRequestException,
     );
-    expect(budgetCreateCalls).toHaveLength(12);
-  });
-
-  it('should trigger balance propagation when creating a subsequent fiscal year if a previous period exists', async () => {
-    const userId = 'user-123';
-    const dto = {
-      year: 2027,
-      startDate: '2027-01-01',
-      endDate: '2027-12-31',
-    };
-
-    mockFiscalYearRepo.findOne.mockResolvedValue(null);
-
-    const previousPeriod = {
-      id: 'prev-period-2026-12',
-      name: '2026-12',
-      startDate: '2026-12-01',
-      endDate: '2026-12-31',
-    };
-
-    mockEntityManager.getRepository.mockReturnValue({
-      createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder(previousPeriod)),
-    });
-
-    await useCase.execute(userId, dto);
-
-    expect(mockBalanceUpdateService.propagateBalancesFromPeriod).toHaveBeenCalledWith(
-      mockEntityManager,
-      userId,
-      'prev-period-2026-12',
+    await expect(ensurePeriodService.ensurePeriod('user-1', '2026-13')).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(ensurePeriodService.ensurePeriod('user-1', '')).rejects.toThrow(
+      BadRequestException,
     );
   });
 
-  it('should throw BadRequestException if startDate is after or equal to endDate', async () => {
-    const userId = 'user-123';
-    const dto = {
-      year: 2026,
-      startDate: '2026-12-31',
-      endDate: '2026-01-01',
-    };
+  it('should automatically fill gaps when ensuring a future period', async () => {
+    const userId = 'user-1';
+    // First, establish period 2025-10
+    await ensurePeriodService.ensurePeriod(userId, '2025-10');
+    expect(storedPeriods).toHaveLength(1);
 
-    await expect(useCase.execute(userId, dto)).rejects.toThrow(BadRequestException);
+    // Now request 2026-02 (gap: 2025-11, 2025-12, 2026-01, 2026-02)
+    const targetPeriod = await ensurePeriodService.ensurePeriod(userId, '2026-02');
+
+    expect(targetPeriod.name).toBe('2026-02');
+    expect(storedPeriods).toHaveLength(5);
+    const periodNames = storedPeriods.map((p) => p.name).sort();
+    expect(periodNames).toEqual(['2025-10', '2025-11', '2025-12', '2026-01', '2026-02']);
+
+    // Check that each gap period got a budget envelope
+    expect(storedBudgets).toHaveLength(5);
   });
 
-  it('should throw BadRequestException if fiscal year name already exists', async () => {
-    const userId = 'user-123';
-    const dto = {
-      year: 2026,
-      startDate: '2026-01-01',
-      endDate: '2026-12-31',
-    };
+  it('should reuse existing period without creating duplicates', async () => {
+    const userId = 'user-1';
+    const firstCall = await ensurePeriodService.ensurePeriod(userId, '2026-05');
+    const secondCall = await ensurePeriodService.ensurePeriod(userId, '2026-05');
 
-    mockFiscalYearRepo.findOne.mockResolvedValue({ id: 'existing-fy-id', name: 'Ejercicio 2026' });
-
-    await expect(useCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException('Fiscal year with name "Ejercicio 2026" already exists'),
-    );
+    expect(firstCall.id).toBe(secondCall.id);
+    expect(storedPeriods).toHaveLength(1);
   });
 
-  it('should throw BadRequestException if dates overlap with an existing fiscal year', async () => {
-    const userId = 'user-123';
-    const dto = {
-      year: 2026,
-      startDate: '2026-06-01',
-      endDate: '2027-05-31',
-    };
+  it('should carry forward closing balances from immediately preceding period for real accounts and 0 for P&L', async () => {
+    const userId = 'user-1';
+    // Create initial period 2026-01
+    const p1 = await ensurePeriodService.ensurePeriod(userId, '2026-01');
 
-    mockFiscalYearRepo.findOne.mockResolvedValue(null);
+    // Simulate journal activity closing balance in 2026-01
+    const balAsset = storedBalances.find(
+      (b) => b.accountId === 'acc-asset' && b.periodId === p1.id,
+    )!;
+    balAsset.closingBalance = 5000;
+    const balIncome = storedBalances.find(
+      (b) => b.accountId === 'acc-income' && b.periodId === p1.id,
+    )!;
+    balIncome.closingBalance = 3000;
 
-    mockFiscalYearRepo.createQueryBuilder.mockReturnValue(
-      createMockQueryBuilder({ id: 'existing-fy-id', name: 'Ejercicio 2026' }),
-    );
+    // Now ensure next month 2026-02
+    const p2 = await ensurePeriodService.ensurePeriod(userId, '2026-02');
 
-    await expect(useCase.execute(userId, dto)).rejects.toThrow(
-      new BadRequestException(
-        'Fiscal year dates overlap with existing fiscal year "Ejercicio 2026"',
-      ),
-    );
+    const p2AssetBal = storedBalances.find(
+      (b) => b.accountId === 'acc-asset' && b.periodId === p2.id,
+    )!;
+    const p2IncomeBal = storedBalances.find(
+      (b) => b.accountId === 'acc-income' && b.periodId === p2.id,
+    )!;
+
+    // Real account carries forward closing balance (5000)
+    expect(p2AssetBal.openingBalance).toBe(5000);
+    expect(p2AssetBal.closingBalance).toBe(5000);
+
+    // Temporary/P&L account resets opening balance to 0
+    expect(p2IncomeBal.openingBalance).toBe(0);
+    expect(p2IncomeBal.closingBalance).toBe(0);
+  });
+
+  it('should support execute() returning EnsurePeriodResponse for API controller', async () => {
+    const response = await ensurePeriodService.execute('user-1', { period: '2026-08' });
+    expect(response.created).toBe(true);
+    expect(response.name).toBe('2026-08');
+    expect(response.startDate).toBe('2026-08-01');
+    expect(response.endDate).toBe('2026-08-31');
+    expect(response.status).toBe('OPEN');
   });
 });

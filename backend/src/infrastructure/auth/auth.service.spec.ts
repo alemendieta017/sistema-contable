@@ -102,15 +102,9 @@ describe('AuthService', () => {
         expect.arrayContaining([
           expect.objectContaining({
             userId: 'user-uuid',
-            name: 'Resultado del Ejercicio',
+            name: 'Capital',
             type: 'EQUITY',
-            systemRole: 'NET_INCOME',
-          }),
-          expect.objectContaining({
-            userId: 'user-uuid',
-            name: 'Resultados Acumulados',
-            type: 'EQUITY',
-            systemRole: 'RETAINED_EARNINGS',
+            systemRole: 'CAPITAL',
           }),
         ]),
       );

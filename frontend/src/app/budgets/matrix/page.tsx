@@ -91,7 +91,7 @@ export default function BudgetMatrixPage() {
           api.fiscalYears.list(),
           api.currencies.list(),
         ]);
-        const list = Array.isArray(fyList) ? fyList : fyList?.data || [];
+        const list: any[] = Array.isArray(fyList) ? fyList : [];
         setFiscalYears(list);
         setCurrencies(curList || []);
         if (list.length > 0) {

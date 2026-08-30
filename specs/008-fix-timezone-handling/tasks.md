@@ -123,11 +123,13 @@
 ## Implementation Strategy
 
 ### MVP First (P1 User Stories)
+
 1. Complete Setup and Foundational.
 2. Complete US1 (Calendar View) and US2 (Monthly View & stats endpoint range fixes).
 3. Validate independent rendering correctness of existing database entries.
 
 ### Incremental Delivery
+
 1. Add US3 to allow creating new entries with timezone offsets.
 2. Verify existing and new entries render consistently together.
 3. Validate and clean codebase in Phase 6.

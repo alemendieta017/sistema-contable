@@ -5,6 +5,7 @@ This document defines the REST API endpoints to manage fiscal years, accounting 
 ---
 
 ## 1. List Fiscal Years
+
 Retrieves a list of all fiscal years for the authenticated user.
 
 - **URL**: `/api/fiscal-years`
@@ -13,7 +14,9 @@ Retrieves a list of all fiscal years for the authenticated user.
   - `Authorization: Bearer <JWT_TOKEN>`
 
 ### Responses
+
 #### 200 OK
+
 ```json
 [
   {
@@ -29,6 +32,7 @@ Retrieves a list of all fiscal years for the authenticated user.
 ---
 
 ## 2. Create Fiscal Year
+
 Creates a new fiscal year and automatically generates 12 monthly periods nested inside it.
 
 - **URL**: `/api/fiscal-years`
@@ -37,6 +41,7 @@ Creates a new fiscal year and automatically generates 12 monthly periods nested 
   - `Authorization: Bearer <JWT_TOKEN>`
   - `Content-Type: application/json`
 - **Body**:
+
 ```json
 {
   "year": 2026
@@ -44,7 +49,9 @@ Creates a new fiscal year and automatically generates 12 monthly periods nested 
 ```
 
 ### Responses
+
 #### 201 Created
+
 ```json
 {
   "id": "7b8e19ab-34cd-56ef-7890-abcdef123456",
@@ -68,6 +75,7 @@ Creates a new fiscal year and automatically generates 12 monthly periods nested 
 ---
 
 ## 3. List Periods
+
 Retrieves all periods, optionally filtered by fiscal year.
 
 - **URL**: `/api/periods`
@@ -78,7 +86,9 @@ Retrieves all periods, optionally filtered by fiscal year.
   - `fiscalYearId` (optional): Filter periods belonging to a specific fiscal year.
 
 ### Responses
+
 #### 200 OK
+
 ```json
 [
   {
@@ -95,6 +105,7 @@ Retrieves all periods, optionally filtered by fiscal year.
 ---
 
 ## 4. Open/Close a Period
+
 Locks or unlocks a monthly period.
 
 - **URL**: `/api/periods/:id`
@@ -103,6 +114,7 @@ Locks or unlocks a monthly period.
   - `Authorization: Bearer <JWT_TOKEN>`
   - `Content-Type: application/json`
 - **Body**:
+
 ```json
 {
   "status": "CLOSED"
@@ -110,7 +122,9 @@ Locks or unlocks a monthly period.
 ```
 
 ### Responses
+
 #### 200 OK
+
 ```json
 {
   "id": "period-uuid-1",
@@ -125,6 +139,7 @@ Locks or unlocks a monthly period.
 ---
 
 ## 5. Close Fiscal Year (Annual Close Procedure)
+
 Triggers the automatic year-end closing process for a fiscal year.
 
 - **URL**: `/api/fiscal-years/:id/close`
@@ -133,6 +148,7 @@ Triggers the automatic year-end closing process for a fiscal year.
   - `Authorization: Bearer <JWT_TOKEN>`
   - `Content-Type: application/json`
 - **Body**:
+
 ```json
 {
   "retainedEarningsAccountId": "acc-uuid-retained-earnings"
@@ -140,7 +156,9 @@ Triggers the automatic year-end closing process for a fiscal year.
 ```
 
 ### Responses
+
 #### 200 OK
+
 ```json
 {
   "message": "Fiscal year closed successfully",
@@ -149,7 +167,9 @@ Triggers the automatic year-end closing process for a fiscal year.
 ```
 
 #### 400 Bad Request
+
 Returned if the fiscal year is already closed or invalid.
+
 ```json
 {
   "statusCode": 400,
@@ -160,6 +180,7 @@ Returned if the fiscal year is already closed or invalid.
 ---
 
 ## 6. Reconstruct Balances
+
 Manually triggers the full reconstruction of the `account_period_balances` table from raw journal entries.
 
 - **URL**: `/api/reports/reconstruct-balances`
@@ -168,7 +189,9 @@ Manually triggers the full reconstruction of the `account_period_balances` table
   - `Authorization: Bearer <JWT_TOKEN>`
 
 ### Responses
+
 #### 200 OK
+
 ```json
 {
   "success": true,
@@ -179,6 +202,7 @@ Manually triggers the full reconstruction of the `account_period_balances` table
 ---
 
 ## 7. Fetch Balance Sheet Report
+
 Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances) for a given date or period(s).
 
 - **URL**: `/api/reports/balance-sheet`
@@ -193,29 +217,28 @@ Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances
   - `depth` (optional, default `4`, deprecated): Account level depth (1 to 4).
 
 ### Responses
+
 #### 200 OK (Standard mode: `by-period` or `as-of-date`)
+
 ```json
 {
   "period": "2026-03",
   "mode": "by-period",
-  "assets": [
-    { "accountId": "acc-uuid-caja", "name": "Caja", "balance": 1500.00 }
-  ],
-  "liabilities": [
-    { "accountId": "acc-uuid-proveedores", "name": "Proveedores", "balance": 300.00 }
-  ],
+  "assets": [{ "accountId": "acc-uuid-caja", "name": "Caja", "balance": 1500.0 }],
+  "liabilities": [{ "accountId": "acc-uuid-proveedores", "name": "Proveedores", "balance": 300.0 }],
   "equity": [
-    { "accountId": "acc-uuid-capital", "name": "Capital Social", "balance": 1000.00 },
-    { "accountId": "virtual-net-income", "name": "Resultado del Ejercicio", "balance": 200.00 }
+    { "accountId": "acc-uuid-capital", "name": "Capital Social", "balance": 1000.0 },
+    { "accountId": "virtual-net-income", "name": "Resultado del Ejercicio", "balance": 200.0 }
   ],
-  "totalAssets": 1500.00,
-  "totalLiabilities": 300.00,
-  "totalEquity": 1200.00,
+  "totalAssets": 1500.0,
+  "totalLiabilities": 300.0,
+  "totalEquity": 1200.0,
   "balanced": true
 }
 ```
 
 #### 200 OK (Comparative mode: `comparative`)
+
 ```json
 {
   "mode": "comparative",
@@ -228,8 +251,8 @@ Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances
       "accountId": "acc-uuid-caja",
       "name": "Caja",
       "balances": {
-        "period-uuid-1": 1500.00,
-        "period-uuid-2": 1200.00
+        "period-uuid-1": 1500.0,
+        "period-uuid-2": 1200.0
       }
     }
   ],
@@ -238,8 +261,8 @@ Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances
       "accountId": "acc-uuid-proveedores",
       "name": "Proveedores",
       "balances": {
-        "period-uuid-1": 300.00,
-        "period-uuid-2": 250.00
+        "period-uuid-1": 300.0,
+        "period-uuid-2": 250.0
       }
     }
   ],
@@ -248,31 +271,31 @@ Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances
       "accountId": "acc-uuid-capital",
       "name": "Capital Social",
       "balances": {
-        "period-uuid-1": 1000.00,
-        "period-uuid-2": 1000.00
+        "period-uuid-1": 1000.0,
+        "period-uuid-2": 1000.0
       }
     },
     {
       "accountId": "virtual-net-income",
       "name": "Resultado del Ejercicio",
       "balances": {
-        "period-uuid-1": 200.00,
-        "period-uuid-2": -50.00
+        "period-uuid-1": 200.0,
+        "period-uuid-2": -50.0
       }
     }
   ],
   "totals": {
     "totalAssets": {
-      "period-uuid-1": 1500.00,
-      "period-uuid-2": 1200.00
+      "period-uuid-1": 1500.0,
+      "period-uuid-2": 1200.0
     },
     "totalLiabilities": {
-      "period-uuid-1": 300.00,
-      "period-uuid-2": 250.00
+      "period-uuid-1": 300.0,
+      "period-uuid-2": 250.0
     },
     "totalEquity": {
-      "period-uuid-1": 1200.00,
-      "period-uuid-2": 950.00
+      "period-uuid-1": 1200.0,
+      "period-uuid-2": 950.0
     }
   },
   "balanced": {
@@ -285,6 +308,7 @@ Retrieves the balance sheet report (Assets, Liabilities, Equity closing balances
 ---
 
 ## 8. Fetch Income Statement Report
+
 Retrieves the income statement (Income, Expenses, Net Profit/Loss) for a specific period.
 
 - **URL**: `/api/reports/income-statement`
@@ -295,18 +319,16 @@ Retrieves the income statement (Income, Expenses, Net Profit/Loss) for a specifi
   - `periodId`: The target period UUID.
 
 ### Responses
+
 #### 200 OK
+
 ```json
 {
   "period": "2026-03",
-  "income": [
-    { "accountId": "acc-uuid-ventas", "name": "Ventas", "amount": 2000.00 }
-  ],
-  "expenses": [
-    { "accountId": "acc-uuid-sueldos", "name": "Sueldos y Jornales", "amount": 1200.00 }
-  ],
-  "totalIncome": 2000.00,
-  "totalExpenses": 1200.00,
-  "netProfit": 800.00
+  "income": [{ "accountId": "acc-uuid-ventas", "name": "Ventas", "amount": 2000.0 }],
+  "expenses": [{ "accountId": "acc-uuid-sueldos", "name": "Sueldos y Jornales", "amount": 1200.0 }],
+  "totalIncome": 2000.0,
+  "totalExpenses": 1200.0,
+  "netProfit": 800.0
 }
 ```

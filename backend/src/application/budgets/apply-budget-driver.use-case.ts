@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
@@ -21,29 +21,14 @@ export class ApplyBudgetDriverUseCase {
     userId: string,
     params: IBudgetDriverApplyParams,
   ): Promise<{ success: boolean; accountId: string; monthlyAmounts: Record<string, number> }> {
-    const {
-      fiscalYearId,
-      accountId,
-      subRowId,
-      driverType,
-      annualTotal,
-      growthPercentage,
-      sourcePeriodId,
-    } = params;
+    const { accountId, subRowId, driverType, annualTotal, growthPercentage, sourcePeriodId } =
+      params;
 
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periods = await manager.find(PeriodEntity, {
+        where: { userId },
+        order: { startDate: 'ASC' },
       });
-
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
-      }
-
-      const periods = (fiscalYear.periods || []).sort((a, b) =>
-        a.startDate.localeCompare(b.startDate),
-      );
       const openPeriods = periods.filter((p) => p.status !== 'CLOSED');
 
       if (openPeriods.length === 0) {
@@ -122,8 +107,10 @@ export class ApplyBudgetDriverUseCase {
         }
       } else if (driverType === 'WEIGHTED_HISTORICAL' || driverType === 'PRIOR_YEAR_ACTUAL') {
         const account = await manager.findOne(AccountEntity, { where: { id: accountId } });
-        const priorYearStart = this.shiftYear(fiscalYear.startDate, -1);
-        const priorYearEnd = this.shiftYear(fiscalYear.endDate, -1);
+        const firstPeriod = periods[0];
+        const lastPeriod = periods[periods.length - 1];
+        const priorYearStart = this.shiftYear(firstPeriod?.startDate || '2025-01-01', -1);
+        const priorYearEnd = this.shiftYear(lastPeriod?.endDate || '2025-12-31', -1);
 
         const priorEntries = await manager
           .createQueryBuilder(JournalEntryEntity, 'entry')

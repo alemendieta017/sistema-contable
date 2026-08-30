@@ -18,7 +18,6 @@ import { ApplyBudgetDriverUseCase } from '../../application/budgets/apply-budget
 import { GetPriorYearActualsUseCase } from '../../application/budgets/get-prior-year-actuals.use-case';
 import { GetBudgetControlUseCase } from '../../application/budgets/get-budget-control.use-case';
 import { TransferBudgetFundsUseCase } from '../../application/budgets/transfer-budget-funds.use-case';
-import { FiscalYearEntity } from '../database/entities/fiscal-year.entity';
 import { BudgetReassignmentEntity } from '../database/entities/budget-reassignment.entity';
 import { BudgetController } from '../controllers/budget.controller';
 import { AuthModule } from '../auth/auth.module';
@@ -31,7 +30,6 @@ import { AuthModule } from '../auth/auth.module';
       BudgetItemEntity,
       PeriodEntity,
       AccountEntity,
-      FiscalYearEntity,
       BudgetReassignmentEntity,
     ]),
     AuthModule,

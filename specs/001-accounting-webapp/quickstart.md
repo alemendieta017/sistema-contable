@@ -15,12 +15,14 @@ This guide outlines the steps to spin up the local development environment and r
 
 1. **Clone and Initialize**:
    Initialize the npm workspaces from the root of the project:
+
    ```bash
    npm install
    ```
 
 2. **Spin Up via Docker Compose**:
    Run the following command from the root directory to build and start the PostgreSQL database, the NestJS backend, and the Next.js frontend with hot-reload enabled:
+
    ```bash
    docker-compose up --build
    ```
@@ -36,7 +38,9 @@ This guide outlines the steps to spin up the local development environment and r
 We verify the accounting engine using strict integration tests defined in the backend service.
 
 ### Scenario 1: Double-Entry Balancing Verification (Positive Path)
+
 Verify that balanced transactions are successfully posted and update the account balances correctly.
+
 - **Run command**:
   ```bash
   npm run test:integration --prefix backend -- --grep "Double-Entry Balance"
@@ -48,7 +52,9 @@ Verify that balanced transactions are successfully posted and update the account
   - Comida and Ropa expense accounts increase by $70,000 and $30,000 respectively.
 
 ### Scenario 2: Double-Entry Unbalanced Rejection (Negative Path)
+
 Verify that unbalanced transactions are rejected with validation errors.
+
 - **Run command**:
   ```bash
   npm run test:integration --prefix backend -- --grep "Unbalanced Rejection"
@@ -59,7 +65,9 @@ Verify that unbalanced transactions are rejected with validation errors.
   - Database rolls back the transaction. No record is stored.
 
 ### Scenario 3: Budget Tracking
+
 Verify that budget consumption updates dynamically in response to new transactions.
+
 - **Run command**:
   ```bash
   npm run test:integration --prefix backend -- --grep "Budget Consumption"

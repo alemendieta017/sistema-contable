@@ -232,15 +232,15 @@ describe('Balance Roll Forward Integration Tests', () => {
 
     // Expense account propagation checks:
     // Period 2 (p-2):
-    // Expected opening balance: 30 (closing of p-1)
+    // In continuous ledger, EXPENSE is temporary so opening balance is 0.
     // debits = 20, credits = 0. Nature is EXPENSE (debit).
-    // Expected closing: 30 + 20 - 0 = 50
+    // Expected closing: 0 + 20 - 0 = 20
     const expenseP2 = savedBalances.find(
       (b) => b.accountId === 'acc-expense' && b.periodId === 'p-2',
     );
     expect(expenseP2).toBeDefined();
-    expect(expenseP2.openingBalance).toBe(30);
-    expect(expenseP2.closingBalance).toBe(50);
+    expect(expenseP2.openingBalance).toBe(0);
+    expect(expenseP2.closingBalance).toBe(20);
 
     // Period 3 (p-3):
     // Expected opening balance: 0. Since EXPENSE is temporary and p-3 is the first period of a new fiscal year (fy-2027).

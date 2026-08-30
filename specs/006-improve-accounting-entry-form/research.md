@@ -3,6 +3,7 @@
 ## Findings & Layout Decision
 
 ### 1. Current State Assessment
+
 - **Asiento Libre page** (`AsientoLibrePage`):
   - Uses `max-w-md` (448px) container width which makes it feel like a mobile-only layout even on desktop.
   - Renders each entry as a card (`rounded-2xl p-4 border border-slate-100`).
@@ -14,6 +15,7 @@
   - The labels and text buttons for DEBE and HABER are styled with heavy upper-case fonts, and in some screens they feel disproportionately large.
 
 ### 2. Redesign Decisions
+
 - **Grid-Based Row Layout**:
   - Replace the card loop in `AsientoLibrePage` with a clean, grid-based row system.
   - On larger screens, the columns (Account, Type, Amount, Actions) will sit on a single line.

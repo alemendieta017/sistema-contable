@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { FiscalYearEntity } from '../../infrastructure/database/entities/fiscal-year.entity';
+import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 
@@ -10,21 +10,16 @@ export class DeleteBudgetMatrixRowUseCase {
 
   async execute(
     userId: string,
-    fiscalYearId: string,
+    _fiscalYearId: string,
     accountId: string,
     subRowId?: string | null,
   ): Promise<{ success: boolean; deletedCount: number }> {
     return this.dataSource.transaction(async (manager) => {
-      const fiscalYear = await manager.findOne(FiscalYearEntity, {
-        where: { id: fiscalYearId },
-        relations: ['periods'],
+      const periods = await manager.find(PeriodEntity, {
+        where: { userId },
       });
 
-      if (!fiscalYear) {
-        throw new NotFoundException(`Fiscal year with ID '${fiscalYearId}' not found.`);
-      }
-
-      const periodIds = (fiscalYear.periods || []).map((p) => p.id);
+      const periodIds = periods.map((p) => p.id);
       if (periodIds.length === 0) {
         return { success: true, deletedCount: 0 };
       }

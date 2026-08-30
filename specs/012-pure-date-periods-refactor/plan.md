@@ -30,7 +30,7 @@ Refactor the dates and periods system to use PostgreSQL `DATE` types (represente
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Principle I: Double-Entry Bookkeeping & Ledger Integrity**: Pass. Refactoring the chronological date axis to `accountingDate` preserves the immutable, double-entry transaction values and balances.
 - **Principle II: Clean Architecture & SOLID**: Pass. Domain models (`Transaction`, `Period`, `FiscalYear`) will handle dates as primitive strings, ensuring no framework-specific or zone-specific JS `Date` offsets pollute the core domain layer.
@@ -88,4 +88,4 @@ frontend/
 
 ## Complexity Tracking
 
-*No violations detected.*
+_No violations detected._

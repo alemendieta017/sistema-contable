@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { TransactionEntity } from '../../infrastructure/database/entities/transaction.entity';
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
-import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { BalanceUpdateService } from '../periods/balance-update.service';
+import { EnsurePeriodService } from '../periods/ensure-period.service';
 
 @Injectable()
 export class ReverseTransactionUseCase {
@@ -15,6 +15,7 @@ export class ReverseTransactionUseCase {
     private readonly journalEntryRepository: Repository<JournalEntryEntity>,
     private readonly dataSource: DataSource,
     private readonly balanceUpdateService: BalanceUpdateService,
+    private readonly ensurePeriodService: EnsurePeriodService,
   ) {}
 
   async execute(userId: string, transactionId: string) {
@@ -44,23 +45,20 @@ export class ReverseTransactionUseCase {
         reversalOfId: originalTx.id,
       });
 
-      // 1. Check period lock on reversal date
-      const period = await entityManager
-        .createQueryBuilder(PeriodEntity, 'period')
-        .innerJoin('period.fiscalYear', 'fiscalYear')
-        .where('fiscalYear.userId = :userId', { userId })
-        .andWhere('period.startDate <= :date', { date: reversalDate })
-        .andWhere('period.endDate >= :date', { date: reversalDate })
-        .getOne();
+      // 1. Auto-provision or obtain period for reversal date
+      const period = await this.ensurePeriodService.ensurePeriod(
+        entityManager,
+        userId,
+        reversalDate.substring(0, 7),
+      );
 
-      if (!period) {
-        throw new BadRequestException('No accounting period found for the reversal date');
-      }
       if (period.status === 'CLOSED') {
         throw new BadRequestException('The accounting period for the reversal date is closed');
       }
       if (period.status === 'PLANNING') {
-        throw new BadRequestException('The accounting period for the reversal date is in planning status');
+        throw new BadRequestException(
+          'The accounting period for the reversal date is in planning status',
+        );
       }
 
       // Mark original transaction as reversed
