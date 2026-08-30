@@ -327,21 +327,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('income')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                          (+) Ingresos Operativos
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                        (+) Ingresos Operativos
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.income ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -357,21 +355,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('assetInflow')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                          (+) Entradas de Activo / Pasivo
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
+                        (+) Entradas de Activo / Pasivo
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.assetInflow ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -415,21 +411,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('expenses')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                          (-) Egresos Operativos
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
+                        (-) Egresos Operativos
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.expenses ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -445,21 +439,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('assetOutflow')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                          (-) Salidas de Activo / Pasivo
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30">
+                        (-) Salidas de Activo / Pasivo
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.assetOutflow ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -570,21 +562,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('income')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                          (+) Ingresos Devengados
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                        (+) Ingresos Devengados
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.income ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -624,21 +614,19 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td
                     colSpan={months.length + 2}
                     onClick={() => toggleSection('expenses')}
-                    className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10 cursor-pointer select-none"
+                    className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950 cursor-pointer select-none"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                          (-) Gastos Devengados
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                    <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
+                        (-) Gastos Devengados
+                      </span>
+                      <span className="text-slate-400">
                         {collapsedSections.expenses ? (
                           <ChevronRight className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
                         )}
-                      </div>
+                      </span>
                     </div>
                   </td>
                 </tr>

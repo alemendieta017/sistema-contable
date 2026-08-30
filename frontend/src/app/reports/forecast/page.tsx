@@ -21,28 +21,19 @@ function ForecastRedirectHandler() {
 }
 
 export default function ForecastRedirectPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center h-full w-full py-24">
-          <div className="flex flex-col items-center space-y-2">
-            <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
-            <span className="text-xs font-semibold text-slate-400">
-              Redirigiendo a Proyecciones...
-            </span>
-          </div>
-        </div>
-      }
-    >
-      <ForecastRedirectHandler />
-      <div className="flex items-center justify-center h-full w-full py-24">
-        <div className="flex flex-col items-center space-y-2">
-          <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
-          <span className="text-xs font-semibold text-slate-400">
-            Redirigiendo a Proyecciones...
-          </span>
-        </div>
+  const loadingIndicator = (
+    <div className="flex items-center justify-center h-full w-full py-24">
+      <div className="flex flex-col items-center space-y-2">
+        <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin" />
+        <span className="text-xs font-semibold text-slate-400">Redirigiendo a Proyecciones...</span>
       </div>
+    </div>
+  );
+
+  return (
+    <Suspense fallback={loadingIndicator}>
+      <ForecastRedirectHandler />
+      {loadingIndicator}
     </Suspense>
   );
 }

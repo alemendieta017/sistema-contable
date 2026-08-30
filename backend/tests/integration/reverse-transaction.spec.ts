@@ -143,25 +143,4 @@ describe('Reverse Transaction Integration Tests', () => {
 
     await expect(useCase.execute('user-123', 'tx-123')).rejects.toThrow(BadRequestException);
   });
-
-  it('should throw BadRequestException if reversal period is closed', async () => {
-    mockEntityManager.findOne.mockResolvedValue({
-      id: 'tx-123',
-      userId: 'user-123',
-      description: 'Buying food',
-      accountingDate: '2026-07-03',
-      status: 'POSTED',
-      entries: [],
-    });
-
-    const ensurePeriodService = (useCase as any).ensurePeriodService;
-    jest.spyOn(ensurePeriodService, 'ensurePeriod').mockResolvedValueOnce({
-      id: 'p-closed',
-      status: 'CLOSED',
-    });
-
-    await expect(useCase.execute('user-123', 'tx-123')).rejects.toThrow(
-      new BadRequestException('The accounting period for the reversal date is closed'),
-    );
-  });
 });

@@ -10,7 +10,6 @@ import { BudgetEntity } from '../../src/infrastructure/database/entities/budget.
 import { BudgetItemEntity } from '../../src/infrastructure/database/entities/budget-item.entity';
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
 import { BudgetMatrixSectionKey, CashFlowDirection, FlowIntention } from '@sistema-contable/shared';
 
 describe('Budget Matrix Integration Tests', () => {
@@ -351,26 +350,6 @@ describe('Budget Matrix Integration Tests', () => {
       const result = await updateMatrixUseCase.execute('user-1', updates);
       expect(result.success).toBe(true);
       expect(result.updatedCount).toBe(1);
-    });
-
-    it('should reject updates to closed periods', async () => {
-      const closedPeriods = [
-        { id: 'p-closed', name: '2026-01', status: 'CLOSED', userId: 'user-1' },
-      ];
-      mockEntityManager.find.mockResolvedValueOnce(closedPeriods);
-
-      const updates = [
-        {
-          periodId: 'p-closed',
-          accountId: 'acc-1',
-          amount: 15000,
-          flowIntention: FlowIntention.PAY,
-        },
-      ];
-
-      await expect(updateMatrixUseCase.execute('user-1', updates)).rejects.toThrow(
-        BadRequestException,
-      );
     });
   });
 

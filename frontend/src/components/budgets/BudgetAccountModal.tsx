@@ -89,12 +89,20 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
         const filtered = rawAccounts.filter((acc) => {
           if (acc.status && acc.status !== 'ACTIVE' && (!editRow || editRow.accountId !== acc.id))
             return false;
+          // Capital / Equity and system accounts cannot be budgeted
+          if (
+            (acc as any).isSystem ||
+            acc.type === 'EQUITY' ||
+            acc.name.toLowerCase() === 'capital'
+          ) {
+            return false;
+          }
           if (isAsset) {
             return acc.type === 'ASSET' && !acc.isCashOrBank;
           } else if (isLiability) {
-            return acc.type === 'LIABILITY' || acc.type === 'EQUITY';
+            return acc.type === 'LIABILITY';
           } else {
-            return ['ASSET', 'LIABILITY', 'EQUITY'].includes(acc.type) && !acc.isCashOrBank;
+            return (acc.type === 'ASSET' || acc.type === 'LIABILITY') && !acc.isCashOrBank;
           }
         });
 
@@ -270,15 +278,15 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
                 {isEditMode
                   ? 'Editar Fila Presupuestaria'
                   : isAsset
-                    ? 'Presupuestar Activo (Ahorro e Inversiones)'
-                    : 'Presupuestar Deuda (Financiación)'}
+                    ? 'Presupuestar Ahorro o Inversión'
+                    : 'Presupuestar Deuda o Préstamo'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isEditMode
-                  ? 'Modifique el concepto o la dirección del flujo de efectivo para esta cuenta.'
+                  ? 'Modifique el concepto o la dirección del flujo para esta partida.'
                   : isAsset
-                    ? 'Agregue una cuenta de activo para aportes a fondos, ahorros o inversiones.'
-                    : 'Agregue una cuenta de pasivo para amortización de cuotas o nueva financiación.'}
+                    ? 'Agregue una cuenta de activo para aportes o rescates de fondos.'
+                    : 'Agregue una cuenta de pasivo para pagos de cuotas o nuevos préstamos.'}
               </p>
             </div>
           </div>
@@ -298,12 +306,12 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-              <span>Cuenta Contable de Balance:</span>
+              <span>Cuenta Contable:</span>
             </label>
             {isEditMode ? (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 min-h-[44px] flex items-center">
-                {editRow.accountCode ? `${editRow.accountCode} - ` : ''}
-                {editRow.accountName} ({editRow.accountType || (isAsset ? 'ACTIVO' : 'PASIVO')})
+                {editRow.accountCode ? `${editRow.accountCode} — ` : ''}
+                {editRow.accountName}
               </div>
             ) : isLoadingAccounts ? (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 min-h-[44px] flex items-center">
@@ -328,21 +336,21 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
                     value={acc.id}
                     className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
-                    {acc.code ? `${acc.code} - ` : ''}
-                    {acc.name} ({acc.type})
+                    {acc.code ? `${acc.code} — ` : ''}
+                    {acc.name}
                   </option>
                 ))}
               </select>
             )}
           </div>
 
-          {/* 2. Flow Direction Selection (Salida de efectivo vs Entrada de efectivo) */}
+          {/* 2. Flow Direction Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Dirección del Flujo de Efectivo:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Option 1: Salida de efectivo (EGRESO_EFECTIVO) */}
+              {/* Option 1: Salida de efectivo */}
               <button
                 type="button"
                 onClick={() => handleDirectionChange(CashFlowDirection.EGRESO_EFECTIVO)}
@@ -354,19 +362,21 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               >
                 <div className="flex items-center space-x-1.5 font-bold text-xs mb-0.5">
                   <ArrowDownRight className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
-                  <span>Salida de efectivo</span>
+                  <span>{isAsset ? 'Aporte / Inversión' : 'Pago de Cuota / Amortización'}</span>
                 </div>
-                <span className="text-[11px] text-rose-600 dark:text-rose-400/80 font-mono font-medium">
-                  {isAsset ? '[-] Aporte / Inversión' : '[-] Pago / Amortización'}
+                <span className="text-[11px] text-rose-600 dark:text-rose-400/80 font-medium">
+                  {isAsset
+                    ? '[-] Salida de dinero hacia el activo'
+                    : '[-] Salida de dinero para pagar deuda'}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   {isAsset
-                    ? 'Compra de activos, aportes a fondos mutuos o ahorro'
-                    : 'Pago de cuotas de créditos, tarjetas o préstamos'}
+                    ? 'Ahorro, aportes a fondos mutuos o compra de activos'
+                    : 'Amortización de préstamos, créditos o tarjetas'}
                 </span>
               </button>
 
-              {/* Option 2: Entrada de efectivo (INGRESO_EFECTIVO) */}
+              {/* Option 2: Entrada de efectivo */}
               <button
                 type="button"
                 onClick={() => handleDirectionChange(CashFlowDirection.INGRESO_EFECTIVO)}
@@ -378,15 +388,19 @@ export const BudgetAccountModal: React.FC<BudgetAccountModalProps> = ({
               >
                 <div className="flex items-center space-x-1.5 font-bold text-xs mb-0.5">
                   <ArrowUpRight className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                  <span>Entrada de efectivo</span>
+                  <span>
+                    {isAsset ? 'Rescate / Desinversión' : 'Nuevo Préstamo / Financiación'}
+                  </span>
                 </div>
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400/80 font-mono font-medium">
-                  {isAsset ? '[+] Rescate / Desinversión' : '[+] Nuevo Préstamo / Financiación'}
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400/80 font-medium">
+                  {isAsset
+                    ? '[+] Entrada de dinero a caja'
+                    : '[+] Entrada de dinero por nuevo crédito'}
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                   {isAsset
-                    ? 'Venta de activos, rescates o retiro de inversiones'
-                    : 'Desembolso de nuevo préstamo, crédito o financiación'}
+                    ? 'Retiro de fondos, venta de activos o rescates'
+                    : 'Desembolso de nuevo préstamo o financiación'}
                 </span>
               </button>
             </div>

@@ -264,23 +264,6 @@ describe('Budget Details and Items Update Integration Tests', () => {
       expect(mockEntityManager.save).toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if trying to update budget items in a CLOSED period', async () => {
-      const userId = 'user-1';
-      const periodId = 'period-1';
-      const dto = { items: [{ accountId: 'acc-1', amount: 1000 }] };
-
-      // Mock Period check -> status CLOSED
-      mockEntityManager.findOne.mockResolvedValueOnce({
-        id: periodId,
-        status: 'CLOSED',
-        fiscalYear: { userId },
-      });
-
-      await expect(updateItemsUseCase.execute(userId, periodId, dto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
     it('should throw BadRequestException if any account is ineligible (e.g. cash/bank or EQUITY)', async () => {
       const userId = 'user-1';
       const periodId = 'period-1';
@@ -423,21 +406,6 @@ describe('Budget Details and Items Update Integration Tests', () => {
       });
       // Verify new items were saved
       expect(mockEntityManager.save).toHaveBeenCalled();
-    });
-
-    it('should throw BadRequestException if current period is closed', async () => {
-      const userId = 'user-1';
-      const periodId = 'period-1';
-
-      mockEntityManager.findOne.mockResolvedValueOnce({
-        id: periodId,
-        status: 'CLOSED',
-        fiscalYear: { userId },
-      });
-
-      await expect(copyPreviousUseCase.execute(userId, periodId)).rejects.toThrow(
-        BadRequestException,
-      );
     });
   });
 });

@@ -43,17 +43,12 @@ export class UpdateBudgetMatrixUseCase {
         periodMap.set(p.id, p);
       }
 
-      // Validate all periods in updates belong to this user and are OPEN
+      // Validate all periods in updates belong to this user
       for (const update of updates) {
         const period = periodMap.get(update.periodId);
         if (!period) {
           throw new BadRequestException(
             `Period '${update.periodId}' does not exist for this user.`,
-          );
-        }
-        if (period.status === 'CLOSED') {
-          throw new BadRequestException(
-            `Cannot modify budget for closed accounting period '${period.name}'.`,
           );
         }
       }

@@ -35,12 +35,7 @@ export class UpdateBudgetItemsUseCase {
         throw new NotFoundException('Period not found');
       }
 
-      // 2. Block updates if period is closed
-      if (period.status === 'CLOSED') {
-        throw new BadRequestException('Cannot update budget items for a closed period');
-      }
-
-      // 3. Find or create the budget for this period
+      // 2. Find or create the budget for this period
       let budget = await entityManager.findOne(BudgetEntity, {
         where: { userId, periodId },
       });

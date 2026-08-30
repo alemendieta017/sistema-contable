@@ -1,8 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateTransactionUseCase } from '../../src/application/ledger/create-transaction.use-case';
-import { DeleteTransactionUseCase } from '../../src/application/ledger/delete-transaction.use-case';
-import { UpdateTransactionUseCase } from '../../src/application/ledger/update-transaction.use-case';
-import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-transaction.use-case';
 import { ReconstructBalancesUseCase } from '../../src/application/periods/reconstruct-balances.use-case';
 import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -14,12 +10,8 @@ import { PeriodEntity } from '../../src/infrastructure/database/entities/period.
 import { AccountPeriodBalanceEntity } from '../../src/infrastructure/database/entities/account-period-balance.entity';
 import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
 
 describe('Balance Propagation and Period Locking Integration Tests', () => {
-  let createUseCase: CreateTransactionUseCase;
-  let deleteUseCase: DeleteTransactionUseCase;
-  let reverseUseCase: ReverseTransactionUseCase;
   let reconstructUseCase: ReconstructBalancesUseCase;
   let balanceUpdateService: BalanceUpdateService;
 
@@ -64,10 +56,6 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CreateTransactionUseCase,
-        DeleteTransactionUseCase,
-        UpdateTransactionUseCase,
-        ReverseTransactionUseCase,
         ReconstructBalancesUseCase,
         BalanceUpdateService,
         {
@@ -105,81 +93,8 @@ describe('Balance Propagation and Period Locking Integration Tests', () => {
       ],
     }).compile();
 
-    createUseCase = module.get<CreateTransactionUseCase>(CreateTransactionUseCase);
-    deleteUseCase = module.get<DeleteTransactionUseCase>(DeleteTransactionUseCase);
-    reverseUseCase = module.get<ReverseTransactionUseCase>(ReverseTransactionUseCase);
     reconstructUseCase = module.get<ReconstructBalancesUseCase>(ReconstructBalancesUseCase);
     balanceUpdateService = module.get<BalanceUpdateService>(BalanceUpdateService);
-  });
-
-  describe('Period Locking Guard', () => {
-    it('should block creating a transaction in a closed period', async () => {
-      const userId = 'user-1';
-      const dto = {
-        accountingDate: '2026-03-15',
-        description: 'Buying supplies',
-        entries: [
-          { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 50 },
-          { accountId: 'acc-supplies', entryType: 'DEBIT' as const, amount: 50 },
-        ],
-      };
-
-      // Mock Period lookup to return a CLOSED period
-      mockEnsurePeriodService.ensurePeriod.mockResolvedValueOnce({
-        id: 'period-1',
-        status: 'CLOSED',
-      });
-
-      await expect(createUseCase.execute(userId, dto)).rejects.toThrow(
-        new BadRequestException('The accounting period for the transaction date is closed'),
-      );
-    });
-
-    it('should block deleting a transaction in a closed period', async () => {
-      const userId = 'user-1';
-      const txId = 'tx-1';
-
-      mockEntityManager.findOne.mockResolvedValue({
-        id: txId,
-        userId,
-        accountingDate: '2026-03-15',
-        entries: [],
-      });
-
-      const mockQueryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({ id: 'period-1', status: 'CLOSED' }),
-      };
-      mockEntityManager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
-
-      await expect(deleteUseCase.execute(userId, txId)).rejects.toThrow(
-        new BadRequestException('The accounting period for the transaction date is closed'),
-      );
-    });
-
-    it('should block reversing a transaction if reversal date is closed', async () => {
-      const userId = 'user-1';
-      const txId = 'tx-1';
-
-      mockEntityManager.findOne.mockResolvedValue({
-        id: txId,
-        userId,
-        accountingDate: '2026-03-15',
-        status: 'POSTED',
-        entries: [],
-      });
-
-      mockEnsurePeriodService.ensurePeriod.mockResolvedValueOnce({
-        id: 'period-1',
-        status: 'CLOSED',
-      });
-
-      await expect(reverseUseCase.execute(userId, txId)).rejects.toThrow(
-        new BadRequestException('The accounting period for the reversal date is closed'),
-      );
-    });
   });
 
   describe('Real-time Balance Updates', () => {

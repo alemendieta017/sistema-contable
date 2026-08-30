@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
@@ -30,12 +30,7 @@ export class CopyPreviousBudgetUseCase {
         throw new NotFoundException('Period not found');
       }
 
-      // 2. Block if period is closed
-      if (currentPeriod.status === 'CLOSED') {
-        throw new BadRequestException('Cannot copy budget to a closed period');
-      }
-
-      // 3. Find the previous period
+      // 2. Find the previous period
       const previousPeriod = await entityManager
         .getRepository(PeriodEntity)
         .createQueryBuilder('period')

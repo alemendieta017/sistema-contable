@@ -303,7 +303,7 @@ export class CashFlowStatementForecastUseCase {
 
       for (let i = 0; i < periods.length; i++) {
         const period = periods[i];
-        const isReal = period.status === 'CLOSED' || period.startDate < todayStr;
+        const isReal = period.startDate <= todayStr;
 
         let initialCash = 0;
         let ingresosOperativos = 0;

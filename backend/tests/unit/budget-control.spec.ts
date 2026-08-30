@@ -306,28 +306,6 @@ describe('Budget Execution Control & Fund Transfers Unit Tests', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should reject transfer if period is closed', async () => {
-      mockEntityManager.findOne.mockImplementation((entityClass, options) => {
-        if (entityClass === PeriodEntity || entityClass.name === 'PeriodEntity') {
-          return Promise.resolve({ ...samplePeriod, status: 'CLOSED' });
-        }
-        if (entityClass === AccountEntity || entityClass.name === 'AccountEntity') {
-          const accId = options?.where?.id;
-          return Promise.resolve(sampleAccounts.find((a) => a.id === accId) || null);
-        }
-        return Promise.resolve(null);
-      });
-
-      await expect(
-        transferFundsUseCase.execute('user-1', {
-          periodId: 'p-2026-08',
-          sourceAccountId: 'acc-exp-1',
-          targetAccountId: 'acc-exp-2',
-          amount: 1000,
-        }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('should reject transfer between accounts with different cash flow directions (e.g. Expense to Income)', async () => {
       await expect(
         transferFundsUseCase.execute('user-1', {

@@ -12,8 +12,12 @@ import {
   MoreHorizontal,
   ChevronDown,
   ChevronRight,
-  FastForward,
   History,
+  Edit2,
+  Trash2,
+  Repeat,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { BudgetAccountModal } from './BudgetAccountModal';
@@ -117,8 +121,8 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
   onPasteBatch: _onPasteBatch,
   onOpenAutofill,
   onAddBalanceRow,
-  onEditBalanceRow: _onEditBalanceRow,
-  onDeleteRow: _onDeleteRow,
+  onEditBalanceRow,
+  onDeleteRow,
   dirtyCells,
 }) => {
   const { periods, sections } = matrixData;
@@ -220,19 +224,35 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     }
   };
 
-  // Quick replicate action: copies amount of active month to all future months
-  const handleQuickReplicate = (row: BudgetMatrixRow, fromPeriodId: string) => {
-    const fromAmount = row.amounts[fromPeriodId] ?? 0;
-    const fromIdx = periods.findIndex((p) => p.id === fromPeriodId);
-    if (fromIdx < 0) return;
-
-    const futurePeriods = periods.slice(fromIdx);
-    futurePeriods.forEach((p) => {
+  // Replicate to all open periods across the entire matrix
+  const handleReplicateAllPeriods = (row: BudgetMatrixRow, fromPeriodId?: string) => {
+    const pId = fromPeriodId || currentPeriod?.id || periods[0]?.id;
+    const fromAmount = row.amounts[pId] ?? 0;
+    periods.forEach((p) => {
       if (p.status !== 'CLOSED') {
         onCellChange(row.accountId, p.id, fromAmount, row.subRowId || null);
       }
     });
     setOpenMenuRowKey(null);
+  };
+
+  const handleOpenEditBalanceModal = (row: BudgetMatrixRow, secKey: BudgetMatrixSectionKey) => {
+    setOpenMenuRowKey(null);
+    setAccountModalState({
+      isOpen: true,
+      targetSection: secKey,
+      editRow: row,
+    });
+  };
+
+  const handleDeleteRowClick = (row: BudgetMatrixRow) => {
+    setOpenMenuRowKey(null);
+    const itemName = row.subRowLabel || row.accountName;
+    if (confirm(`¿Desea eliminar la partida "${itemName}" de este presupuesto?`)) {
+      if (onDeleteRow) {
+        onDeleteRow(row.accountId, row.subRowId || null);
+      }
+    }
   };
 
   // ==========================================
@@ -244,7 +264,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
     const prevPeriod = activeIdx > 0 ? periods[activeIdx - 1] : null;
 
     return (
-      <div className="flex flex-col h-full w-full space-y-4 overflow-y-auto pr-1">
+      <div className="flex flex-col h-full w-full space-y-4 overflow-y-auto pr-1 pb-20">
         {(sections && sections.length > 0 ? sections : []).map((sec) => {
           const isCollapsed = collapsedSections.has(sec.sectionKey as string);
           const totalActive = sec.sectionTotals[activeP?.id || ''] || 0;
@@ -278,12 +298,14 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           return (
             <div
               key={sec.sectionKey}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs"
             >
               {/* Section Header */}
               <div
                 onClick={() => toggleSectionCollapse(sec.sectionKey as string)}
-                className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-slate-800 cursor-pointer select-none"
+                className={`flex items-center justify-between px-5 py-3.5 bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-slate-800 cursor-pointer select-none rounded-t-2xl ${
+                  isCollapsed ? 'rounded-b-2xl border-b-0' : ''
+                }`}
               >
                 <div className="flex items-center space-x-3">
                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeColor}`}>
@@ -312,8 +334,8 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
 
               {/* Section Rows (Cards style) */}
               {!isCollapsed && (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {sec.rows.map((row) => {
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-b-2xl">
+                  {sec.rows.map((row, rowIndex) => {
                     const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
                     const currentAmt = row.amounts[activeP?.id || ''] ?? 0;
                     const prevAmt = prevPeriod ? (row.amounts[prevPeriod.id] ?? 0) : null;
@@ -321,20 +343,47 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                       `${activeP?.id}_${row.accountId}${row.subRowId ? `_${row.subRowId}` : ''}`,
                     );
                     const isMenuOpen = openMenuRowKey === rowKey;
+                    const isBalanceRow =
+                      isBalanceSec ||
+                      row.accountType === 'ASSET' ||
+                      row.accountType === 'LIABILITY' ||
+                      row.accountType === 'EQUITY' ||
+                      Boolean(row.subRowId) ||
+                      Boolean(row.cashFlowDirection);
+
+                    const isBottomRow = rowIndex >= sec.rows.length - 2 && sec.rows.length > 2;
 
                     return (
                       <div
                         key={rowKey}
                         className={`flex items-center justify-between px-5 py-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors ${
                           row.isParent ? 'bg-slate-50/40 dark:bg-slate-900/60 font-semibold' : ''
-                        }`}
+                        } ${isMenuOpen ? 'relative z-40' : 'relative z-0'}`}
                       >
                         {/* Account Name & Sub-label */}
                         <div className="flex items-center space-x-3 min-w-0 pr-4">
                           <div className="truncate">
-                            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 block truncate">
-                              {row.subRowLabel || row.accountName}
-                            </span>
+                            <div className="flex items-center space-x-1.5 truncate">
+                              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200 block truncate">
+                                {row.subRowLabel || row.accountName}
+                              </span>
+                              {isBalanceSec && row.cashFlowDirection && (
+                                <span
+                                  className="inline-flex items-center shrink-0 select-none"
+                                  title={
+                                    row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                      ? 'Salida de efectivo'
+                                      : 'Entrada de efectivo'
+                                  }
+                                >
+                                  {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                    <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                  ) : (
+                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                             {row.subRowLabel && (
                               <span className="text-xs text-slate-400 block truncate">
                                 {row.accountName}
@@ -343,7 +392,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                           </div>
                         </div>
 
-                        {/* Input & Context */}
+                        {/* Right: Comparative vs Previous Month + Amount Input + Options Menu */}
                         <div className="flex items-center space-x-4 shrink-0">
                           {/* Comparative Pill */}
                           {prevAmt !== null && (
@@ -402,27 +451,62 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                               </button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-8 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 text-xs animate-in fade-in duration-100">
-                                  <button
-                                    type="button"
-                                    onClick={() => activeP && handleQuickReplicate(row, activeP.id)}
-                                    className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
-                                  >
-                                    <FastForward className="w-4 h-4 text-indigo-500" />
-                                    <span>Replicar al resto del año</span>
-                                  </button>
+                                <div
+                                  className={`absolute right-0 ${
+                                    isBottomRow ? 'bottom-8 mb-1' : 'top-8 mt-1'
+                                  } w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-in fade-in duration-100`}
+                                >
+                                  {isBalanceRow && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleOpenEditBalanceModal(
+                                            row,
+                                            sec.sectionKey as BudgetMatrixSectionKey,
+                                          )
+                                        }
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors text-left cursor-pointer"
+                                      >
+                                        <Edit2 className="w-4 h-4 text-amber-500 shrink-0" />
+                                        <span>Editar cuenta / naturaleza</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRowClick(row)}
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                                        <span>Eliminar partida</span>
+                                      </button>
+
+                                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                    </>
+                                  )}
 
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setOpenMenuRowKey(null);
-                                      if (onOpenAutofill) onOpenAutofill(row);
-                                    }}
-                                    className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors"
+                                    onClick={() => handleReplicateAllPeriods(row, activeP?.id)}
+                                    className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
                                   >
-                                    <History className="w-4 h-4 text-indigo-500" />
-                                    <span>Traer del año anterior</span>
+                                    <Repeat className="w-4 h-4 text-indigo-500 shrink-0" />
+                                    <span>Replicar a todo el año</span>
                                   </button>
+
+                                  {onOpenAutofill && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenMenuRowKey(null);
+                                        onOpenAutofill(row);
+                                      }}
+                                      className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                    >
+                                      <History className="w-4 h-4 text-indigo-500 shrink-0" />
+                                      <span>Traer del año anterior</span>
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -434,7 +518,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
 
                   {/* Add balance account button at the bottom of the section */}
                   {isBalanceSec && onAddBalanceRow && (
-                    <div className="p-3 bg-slate-50/40 dark:bg-slate-800/20 text-center">
+                    <div className="p-3 bg-slate-50/40 dark:bg-slate-800/20 text-center rounded-b-2xl">
                       <button
                         type="button"
                         onClick={() =>
@@ -474,7 +558,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           {/* Table Header */}
           <thead className="bg-slate-100/90 dark:bg-slate-950 sticky top-0 z-20 font-sans border-b border-slate-200 dark:border-slate-800 backdrop-blur-xs">
             <tr>
-              <th className="p-3 w-56 sm:w-72 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60 sticky left-0 bg-slate-100 dark:bg-slate-950 z-30 truncate">
+              <th className="p-3 w-64 sm:w-80 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60 sticky left-0 bg-slate-100 dark:bg-slate-950 z-30 truncate">
                 Partida Presupuestaria
               </th>
               {periods.map((p) => (
@@ -520,15 +604,19 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                 secTitle = 'Deudas y Financiación';
               }
 
+              const isBalanceSec =
+                sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES ||
+                sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION;
+
               return (
                 <React.Fragment key={sec.sectionKey}>
                   {/* Section Header Row */}
                   <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                     <td
                       colSpan={periods.length + 2}
-                      className="px-4 py-2.5 font-sans sticky left-0 bg-slate-100/90 dark:bg-slate-950 z-10"
+                      className="p-0 font-sans bg-slate-100/90 dark:bg-slate-950"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="sticky left-0 px-4 py-2.5 flex items-center justify-between w-max max-w-full space-x-4 z-10">
                         <div className="flex items-center space-x-2">
                           <span
                             className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${secBadgeColor}`}
@@ -566,19 +654,138 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                   </tr>
 
                   {/* Rows */}
-                  {sec.rows.map((row) => {
+                  {sec.rows.map((row, rowIndex) => {
                     const isParent = row.isParent;
+                    const rowKey = `${row.accountId}_${row.subRowId || 'main'}`;
+                    const isMenuOpen = openMenuRowKey === rowKey;
+                    const isBalanceRow =
+                      isBalanceSec ||
+                      row.accountType === 'ASSET' ||
+                      row.accountType === 'LIABILITY' ||
+                      row.accountType === 'EQUITY' ||
+                      Boolean(row.subRowId) ||
+                      Boolean(row.cashFlowDirection);
+
+                    const isBottomRow = rowIndex >= sec.rows.length - 2 && sec.rows.length > 2;
+
                     return (
                       <tr
-                        key={`${row.accountId}_${row.subRowId || 'main'}`}
+                        key={rowKey}
                         className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors h-9 ${
                           isParent ? 'bg-slate-50/50 dark:bg-slate-900/60 font-bold' : ''
                         }`}
                       >
-                        <td className="px-3 py-1.5 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 bg-white dark:bg-slate-900 truncate">
-                          <span className="text-slate-800 dark:text-slate-200 truncate block">
-                            {row.subRowLabel || row.accountName}
-                          </span>
+                        <td
+                          className={`px-3 py-1.5 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 bg-white dark:bg-slate-900 ${
+                            isMenuOpen ? 'z-40' : 'z-10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between group gap-1.5 min-w-0">
+                            <div className="truncate flex-1 min-w-0">
+                              <div className="flex items-center space-x-1.5 truncate">
+                                <span className="text-slate-800 dark:text-slate-200 truncate block font-medium">
+                                  {row.subRowLabel || row.accountName}
+                                </span>
+                                {isBalanceSec && row.cashFlowDirection && (
+                                  <span
+                                    className="inline-flex items-center shrink-0 select-none"
+                                    title={
+                                      row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                        ? 'Salida de efectivo'
+                                        : 'Entrada de efectivo'
+                                    }
+                                  >
+                                    {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                      <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                    ) : (
+                                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              {row.subRowLabel && (
+                                <span className="text-3xs text-slate-400 dark:text-slate-500 block truncate">
+                                  {row.accountName}
+                                </span>
+                              )}
+                            </div>
+
+                            {!isParent && (
+                              <div className="relative row-options-menu-container shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuRowKey(isMenuOpen ? null : rowKey);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title="Opciones de partida"
+                                >
+                                  <MoreHorizontal className="w-3.5 h-3.5" />
+                                </button>
+
+                                {isMenuOpen && (
+                                  <div
+                                    className={`absolute left-0 ${
+                                      isBottomRow ? 'bottom-8 mb-1' : 'top-8 mt-1'
+                                    } w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-1.5 z-50 text-xs font-sans animate-in fade-in duration-100`}
+                                  >
+                                    {isBalanceRow && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleOpenEditBalanceModal(
+                                              row,
+                                              sec.sectionKey as BudgetMatrixSectionKey,
+                                            )
+                                          }
+                                          className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors text-left cursor-pointer"
+                                        >
+                                          <Edit2 className="w-4 h-4 text-amber-500 shrink-0" />
+                                          <span>Editar cuenta / naturaleza</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteRowClick(row)}
+                                          className="w-full flex items-center space-x-2 px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                                        >
+                                          <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                                          <span>Eliminar partida</span>
+                                        </button>
+
+                                        <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                      </>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReplicateAllPeriods(row)}
+                                      className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                    >
+                                      <Repeat className="w-4 h-4 text-indigo-500 shrink-0" />
+                                      <span>Replicar a todo el año</span>
+                                    </button>
+
+                                    {onOpenAutofill && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenMenuRowKey(null);
+                                          onOpenAutofill(row);
+                                        }}
+                                        className="w-full flex items-center space-x-2 px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors text-left cursor-pointer"
+                                      >
+                                        <History className="w-4 h-4 text-indigo-500 shrink-0" />
+                                        <span>Traer del año anterior</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
 
                         {periods.map((p) => {
@@ -678,8 +885,12 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
           onClose={() =>
             setAccountModalState({ isOpen: false, targetSection: null, editRow: null })
           }
-          onSave={({ account, label, direction }) => {
-            if (onAddBalanceRow) onAddBalanceRow(account, label, direction);
+          onSave={({ account, label, direction, subRowId }) => {
+            if (accountModalState.editRow) {
+              if (onEditBalanceRow) onEditBalanceRow(account, label, direction, subRowId);
+            } else {
+              if (onAddBalanceRow) onAddBalanceRow(account, label, direction);
+            }
             setAccountModalState({ isOpen: false, targetSection: null, editRow: null });
           }}
         />

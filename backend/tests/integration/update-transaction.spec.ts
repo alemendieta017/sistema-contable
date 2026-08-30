@@ -389,44 +389,4 @@ describe('Update Transaction Integration Tests', () => {
     expect(result.accountingDate).toBe('2027-04-15');
     expect(result.description).toBe('Future Expense');
   });
-
-  it('should throw BadRequestException if new transaction date is in a closed period', async () => {
-    const userId = 'user-123';
-    const transactionId = 'tx-123';
-
-    const originalTx = {
-      id: transactionId,
-      userId,
-      accountingDate: '2026-06-01',
-      description: 'Old Description',
-      status: 'POSTED',
-      reversalOfId: null,
-      entries: [],
-    };
-
-    const dto = {
-      accountingDate: '2025-12-15',
-      description: 'Closed Month Move',
-      entries: [
-        { accountId: 'acc-cash', entryType: 'CREDIT' as const, amount: 100 },
-        { accountId: 'acc-food', entryType: 'DEBIT' as const, amount: 100 },
-      ],
-    };
-
-    mockEntityManager.findOne.mockImplementation(async (cls) => {
-      if (cls === TransactionEntity) return originalTx;
-      return null;
-    });
-
-    // Provide a closed period for ensurePeriod
-    const ensurePeriodService = (useCase as any).ensurePeriodService;
-    jest.spyOn(ensurePeriodService, 'ensurePeriod').mockResolvedValueOnce({
-      id: 'p-closed',
-      status: 'CLOSED',
-    });
-
-    await expect(useCase.execute(userId, transactionId, dto)).rejects.toThrow(
-      new BadRequestException('The accounting period for the new transaction date is closed'),
-    );
-  });
 });

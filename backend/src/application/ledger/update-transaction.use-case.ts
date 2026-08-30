@@ -5,7 +5,6 @@ import { TransactionEntity } from '../../infrastructure/database/entities/transa
 import { JournalEntryEntity } from '../../infrastructure/database/entities/journal-entry.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
 import { CurrencyEntity } from '../../infrastructure/database/entities/currency.entity';
-import { PeriodEntity } from '../../infrastructure/database/entities/period.entity';
 import { Transaction, JournalEntry } from '../../domain/ledger/ledger.model';
 import { CreateTransactionDto } from './create-transaction.use-case';
 import { BalanceUpdateService } from '../periods/balance-update.service';
@@ -50,51 +49,12 @@ export class UpdateTransactionUseCase {
         throw new BadRequestException('Cannot update a reversal transaction');
       }
 
-      // 1. Check period lock on old transaction date
+      // 1. Ensure period exists for new transaction date
       const oldTxDate = originalTx.accountingDate;
-      const oldPeriod = await entityManager
-        .createQueryBuilder(PeriodEntity, 'period')
-        .where('period.userId = :userId', { userId })
-        .andWhere('period.startDate <= :date', { date: oldTxDate })
-        .andWhere('period.endDate >= :date', { date: oldTxDate })
-        .getOne();
-
-      if (!oldPeriod) {
-        throw new BadRequestException(
-          'No accounting period found for the original transaction date',
-        );
-      }
-      if (oldPeriod.status === 'CLOSED') {
-        throw new BadRequestException(
-          'The accounting period for the original transaction date is closed',
-        );
-      }
-      if (oldPeriod.status === 'PLANNING') {
-        throw new BadRequestException(
-          'The accounting period for the original transaction date is in planning status',
-        );
-      }
-
-      // 2. Auto-provision or obtain period for new transaction date
       const newTxDate = dto.accountingDate;
-      const newPeriod = await this.ensurePeriodService.ensurePeriod(
-        entityManager,
-        userId,
-        newTxDate.substring(0, 7),
-      );
+      await this.ensurePeriodService.ensurePeriod(entityManager, userId, newTxDate.substring(0, 7));
 
-      if (newPeriod.status === 'CLOSED') {
-        throw new BadRequestException(
-          'The accounting period for the new transaction date is closed',
-        );
-      }
-      if (newPeriod.status === 'PLANNING') {
-        throw new BadRequestException(
-          'The accounting period for the new transaction date is in planning status',
-        );
-      }
-
-      // 3. Call balance-update.service to subtract old balances
+      // 2. Call balance-update.service to subtract old balances
       const oldBalanceChanges = originalTx.entries.map((e) => ({
         accountId: e.accountId,
         debitDiff: e.entryType === 'DEBIT' ? -Number(e.amountBase) : 0,

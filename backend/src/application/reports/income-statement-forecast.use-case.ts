@@ -300,7 +300,7 @@ export class IncomeStatementForecastUseCase {
       const months = [];
 
       for (const period of periods) {
-        const isReal = period.status === 'CLOSED' || period.startDate < todayStr;
+        const isReal = period.startDate <= todayStr;
 
         let income = 0;
         let expense = 0;

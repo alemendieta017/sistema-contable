@@ -39,6 +39,14 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
       isCashOrBank: false,
       status: 'ACTIVE',
     },
+    {
+      id: 'acc-capital',
+      name: 'Capital',
+      code: '3.1.01',
+      type: 'EQUITY',
+      isSystem: true,
+      status: 'ACTIVE',
+    },
   ];
 
   const defaultProps = {
@@ -57,23 +65,23 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
     render(<BudgetAccountModal {...defaultProps} />);
 
     // Check header for Asset section
-    expect(screen.getByText('Presupuestar Activo (Ahorro e Inversiones)')).toBeInTheDocument();
+    expect(screen.getByText('Presupuestar Ahorro o Inversión')).toBeInTheDocument();
 
     // 1. Account selector
     await waitFor(() => {
       expect(api.accounts.list).toHaveBeenCalledWith('ACTIVE');
-      expect(screen.getByText(/1.2.01.01 - Fondo Mutuo Renta Fija/)).toBeInTheDocument();
+      expect(screen.getByText(/1.2.01.01.*Fondo Mutuo Renta Fija/)).toBeInTheDocument();
     });
 
     // 2. Flow direction selectors
-    expect(screen.getByText('Salida de efectivo')).toBeInTheDocument();
-    expect(screen.getByText('Entrada de efectivo')).toBeInTheDocument();
+    expect(screen.getByText(/Aporte \/ Inversión/)).toBeInTheDocument();
+    expect(screen.getByText(/Rescate \/ Desinversión/)).toBeInTheDocument();
 
     // 3. Concept / Label input
     expect(screen.getByPlaceholderText(/Ej: Aporte Fondo Mutuo/i)).toBeInTheDocument();
   });
 
-  test('should exclude inactive accounts from selection list', async () => {
+  test('should exclude inactive accounts and Capital/system accounts from selection list', async () => {
     (api.accounts.list as jest.Mock).mockResolvedValue([
       {
         id: 'acc-active',
@@ -91,26 +99,35 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
         isCashOrBank: false,
         status: 'INACTIVE',
       },
+      {
+        id: 'acc-capital',
+        name: 'Capital',
+        code: '3.1.01',
+        type: 'EQUITY',
+        isSystem: true,
+        status: 'ACTIVE',
+      },
     ]);
 
     render(<BudgetAccountModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/1.2.01.01 - Inversión Activa/)).toBeInTheDocument();
+      expect(screen.getByText(/1.2.01.01.*Inversión Activa/)).toBeInTheDocument();
     });
 
     expect(screen.queryByText(/Inversión Inactiva/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Capital/)).not.toBeInTheDocument();
   });
 
   test('should submit correctly with selected account, direction, and concept', async () => {
     render(<BudgetAccountModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/1.2.01.01 - Fondo Mutuo Renta Fija/)).toBeInTheDocument();
+      expect(screen.getByText(/1.2.01.01.*Fondo Mutuo Renta Fija/)).toBeInTheDocument();
     });
 
-    // Select direction: Entrada de efectivo
-    fireEvent.click(screen.getByText('Entrada de efectivo'));
+    // Select direction: Entrada de efectivo (Rescate)
+    fireEvent.click(screen.getByText(/Rescate \/ Desinversión/));
 
     // Edit concept
     const conceptInput = screen.getByPlaceholderText(/Ej: Aporte Fondo Mutuo/i);
@@ -174,7 +191,7 @@ describe('BudgetAccountModal Component (T022 & T042)', () => {
     render(<BudgetAccountModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/1.2.01.01 - Fondo Mutuo Renta Fija/)).toBeInTheDocument();
+      expect(screen.getByText(/1.2.01.01.*Fondo Mutuo Renta Fija/)).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }));

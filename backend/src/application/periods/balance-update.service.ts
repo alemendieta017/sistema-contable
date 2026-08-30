@@ -15,7 +15,7 @@ export class BalanceUpdateService {
     userId: string,
     date: string,
     changes: { accountId: string; debitDiff: number; creditDiff: number }[],
-    bypassLock: boolean = false,
+    _bypassLock: boolean = false,
   ): Promise<void> {
     if (changes.length === 0) {
       return;
@@ -37,15 +37,6 @@ export class BalanceUpdateService {
 
     if (!targetPeriod) {
       throw new BadRequestException('No accounting period found for the transaction date');
-    }
-
-    if (!bypassLock && targetPeriod.status === 'CLOSED') {
-      throw new BadRequestException('The accounting period for the transaction date is closed');
-    }
-    if (!bypassLock && targetPeriod.status === 'PLANNING') {
-      throw new BadRequestException(
-        'The accounting period for the transaction date is in planning status',
-      );
     }
 
     // 3. Fetch all accounts affected by the changes

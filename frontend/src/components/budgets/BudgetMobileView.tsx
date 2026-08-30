@@ -13,14 +13,16 @@ import {
   ChevronDown,
   ChevronUp,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
   CreditCard,
   PiggyBank,
   Check,
   X,
   FastForward,
   Lock,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 
 export interface BudgetMobileViewProps {
@@ -79,7 +81,7 @@ const SECTION_CONFIGS: SectionConfig[] = [
   {
     key: BudgetMatrixSectionKey.INGRESOS,
     title: 'Ingresos',
-    icon: ArrowUpRight,
+    icon: TrendingUp,
     badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     textColor: 'text-emerald-600 dark:text-emerald-400',
     borderColor: 'border-emerald-500/30',
@@ -88,7 +90,7 @@ const SECTION_CONFIGS: SectionConfig[] = [
   {
     key: BudgetMatrixSectionKey.EGRESOS,
     title: 'Egresos',
-    icon: ArrowDownRight,
+    icon: TrendingDown,
     badgeColor: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
     textColor: 'text-rose-600 dark:text-rose-400',
     borderColor: 'border-rose-500/30',
@@ -130,7 +132,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
   onOpenAutofill,
   onAddBalanceRow,
   onEditBalanceRow,
-  onDeleteRow: _onDeleteRow,
+  onDeleteRow,
   isSaving = false,
   dirtyCells,
   saveSuccessMessage: _saveSuccessMessage,
@@ -194,41 +196,75 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
     const pId = activePeriod.id;
     let ing = 0;
     let egr = 0;
-    let aho = 0;
-    let deu = 0;
+    let ahorroOutflows = 0;
+    let ahorroInflows = 0;
+    let deudaOutflows = 0;
+    let deudaInflows = 0;
 
     if (sections && sections.length > 0) {
       for (const sec of sections) {
-        const val = sec.sectionTotals[pId] || 0;
-        if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) ing = val;
-        else if (
-          sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
-          sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
-        )
-          egr = val;
-        else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) aho = val;
-        else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) deu = val;
+        for (const r of sec.rows) {
+          if (r.isParent) continue;
+          const val = r.amounts[pId] || 0;
+          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) {
+            ing += val;
+          } else if (
+            sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
+            sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
+          ) {
+            egr += val;
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              ahorroInflows += val;
+            } else {
+              ahorroOutflows += val;
+            }
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              deudaInflows += val;
+            } else {
+              deudaOutflows += val;
+            }
+          }
+        }
       }
     } else {
       for (const r of rows || []) {
         if (r.isParent) continue;
         const val = r.amounts[pId] || 0;
-        if (r.accountType === 'INCOME') ing += val;
-        else if (r.accountType === 'EXPENSE') egr += val;
-        else if (r.accountType === 'ASSET') aho += val;
-        else deu += val;
+        if (r.accountType === 'INCOME') {
+          ing += val;
+        } else if (r.accountType === 'EXPENSE') {
+          egr += val;
+        } else if (r.accountType === 'ASSET') {
+          if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+            ahorroInflows += val;
+          } else {
+            ahorroOutflows += val;
+          }
+        } else {
+          if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+            deudaInflows += val;
+          } else {
+            deudaOutflows += val;
+          }
+        }
       }
     }
 
     const resultado = ing - egr;
-    const margenLibre = resultado - aho - deu;
+    const netAhorros = ahorroOutflows - ahorroInflows;
+    const netDeudas = deudaOutflows - deudaInflows;
+    const totalInflows = ing + ahorroInflows + deudaInflows;
+    const totalOutflows = egr + ahorroOutflows + deudaOutflows;
+    const margenLibre = totalInflows - totalOutflows;
 
     return {
       ingresos: ing,
       egresos: egr,
       resultado,
-      ahorros: aho,
-      deudas: deu,
+      ahorros: netAhorros,
+      deudas: netDeudas,
       margenLibre,
     };
   }, [activePeriod, sections, rows]);
@@ -443,11 +479,29 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                           } transition-colors`}
                         >
                           <div className="flex-1 pr-2 min-w-0">
-                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block truncate">
-                              {row.subRowLabel || row.accountName}
-                            </span>
+                            <div className="flex items-center space-x-1.5 truncate">
+                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block truncate">
+                                {row.subRowLabel || row.accountName}
+                              </span>
+                              {config.isBalance && row.cashFlowDirection && (
+                                <span
+                                  className="inline-flex items-center shrink-0 select-none"
+                                  title={
+                                    row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO
+                                      ? 'Salida de efectivo'
+                                      : 'Entrada de efectivo'
+                                  }
+                                >
+                                  {row.cashFlowDirection === CashFlowDirection.EGRESO_EFECTIVO ? (
+                                    <TrendingDown className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                                  ) : (
+                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                             {row.subRowLabel && (
-                              <span className="text-[10px] text-slate-400 block truncate">
+                              <span className="text-2xs text-slate-400 block truncate">
                                 {row.accountName}
                               </span>
                             )}
@@ -586,6 +640,56 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                 Limpiar
               </button>
             </div>
+
+            {/* Balance row actions if applicable */}
+            {(selectedRow.accountType === 'ASSET' ||
+              selectedRow.accountType === 'LIABILITY' ||
+              selectedRow.accountType === 'EQUITY' ||
+              Boolean(selectedRow.subRowId) ||
+              Boolean(selectedRow.cashFlowDirection)) && (
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = selectedRow;
+                    setSelectedRow(null);
+                    setAccountModalState({
+                      isOpen: true,
+                      targetSection:
+                        r.accountType === 'ASSET'
+                          ? BudgetMatrixSectionKey.AHORRO_INVERSIONES
+                          : BudgetMatrixSectionKey.DEUDAS_FINANCIACION,
+                      editRow: r,
+                    });
+                  }}
+                  className="flex-1 py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Editar cuenta / flujo</span>
+                </button>
+
+                {onDeleteRow && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const r = selectedRow;
+                      setSelectedRow(null);
+                      if (
+                        confirm(
+                          `¿Desea eliminar la partida "${r.subRowLabel || r.accountName}" de este presupuesto?`,
+                        )
+                      ) {
+                        onDeleteRow(r.accountId, r.subRowId || null);
+                      }
+                    }}
+                    className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Confirm button */}
             <button

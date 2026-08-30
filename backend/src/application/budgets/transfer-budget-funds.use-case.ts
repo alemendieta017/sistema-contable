@@ -39,12 +39,6 @@ export class TransferBudgetFundsUseCase {
         throw new NotFoundException(`Period with ID '${periodId}' not found.`);
       }
 
-      if (period.status === 'CLOSED') {
-        throw new BadRequestException(
-          `Cannot transfer budget funds in a closed period '${period.name}'.`,
-        );
-      }
-
       // Fetch source and target account entities
       const sourceAccount = await manager.findOne(AccountEntity, {
         where: { id: sourceAccountId, userId },

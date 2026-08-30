@@ -42,20 +42,7 @@ export class CreateTransactionUseCase {
     return this.dataSource.transaction('SERIALIZABLE', async (entityManager) => {
       // 1. Auto-provision or obtain period for transaction date
       const txDate = dto.accountingDate;
-      const period = await this.ensurePeriodService.ensurePeriod(
-        entityManager,
-        userId,
-        txDate.substring(0, 7),
-      );
-
-      if (period.status === 'CLOSED') {
-        throw new BadRequestException('The accounting period for the transaction date is closed');
-      }
-      if (period.status === 'PLANNING') {
-        throw new BadRequestException(
-          'The accounting period for the transaction date is in planning status',
-        );
-      }
+      await this.ensurePeriodService.ensurePeriod(entityManager, userId, txDate.substring(0, 7));
 
       const journalEntries: JournalEntry[] = [];
       const dbEntriesToSave: JournalEntryEntity[] = [];

@@ -46,20 +46,11 @@ export class ReverseTransactionUseCase {
       });
 
       // 1. Auto-provision or obtain period for reversal date
-      const period = await this.ensurePeriodService.ensurePeriod(
+      await this.ensurePeriodService.ensurePeriod(
         entityManager,
         userId,
         reversalDate.substring(0, 7),
       );
-
-      if (period.status === 'CLOSED') {
-        throw new BadRequestException('The accounting period for the reversal date is closed');
-      }
-      if (period.status === 'PLANNING') {
-        throw new BadRequestException(
-          'The accounting period for the reversal date is in planning status',
-        );
-      }
 
       // Mark original transaction as reversed
       originalTx.status = 'REVERSED';

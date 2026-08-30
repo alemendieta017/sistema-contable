@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../../../services/api';
 import {
   RollingBudgetMatrixResponse,
@@ -99,16 +99,19 @@ export default function BudgetMatrixPage() {
   const [isAutofillModalOpen, setIsAutofillModalOpen] = useState<boolean>(false);
 
   // Warn user on unload if dirty changes exist
+  const dirtyCellsRef = useRef(dirtyCells);
+  dirtyCellsRef.current = dirtyCells;
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirtyCells.size > 0) {
+      if (dirtyCellsRef.current.size > 0) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dirtyCells.size]);
+  }, []);
 
   // Load Currencies on mount
   useEffect(() => {
@@ -277,7 +280,7 @@ export default function BudgetMatrixPage() {
     return getSpanishMonthName(currentYearMonth);
   }, [viewMode, currentYearMonth, matrixData]);
 
-  // Compute Hero Summary KPI Totals dynamically from full matrixData
+  // Compute Hero Summary KPI Totals dynamically from full matrixData with accurate flow direction
   const heroSummary = useMemo(() => {
     if (!matrixData) {
       return {
@@ -292,59 +295,68 @@ export default function BudgetMatrixPage() {
 
     let ing = 0;
     let egr = 0;
-    let aho = 0;
-    let deu = 0;
+    let ahorroOutflows = 0;
+    let ahorroInflows = 0;
+    let deudaOutflows = 0;
+    let deudaInflows = 0;
 
-    if (viewMode === 'monthly') {
-      const targetPeriod =
-        matrixData.periods.find((p) => p.name === currentYearMonth) || matrixData.periods[0];
-      if (!targetPeriod) {
-        return { ingresos: 0, egresos: 0, resultado: 0, ahorros: 0, deudas: 0, margenLibre: 0 };
-      }
-      const pId = targetPeriod.id;
+    const targetPeriodIds =
+      viewMode === 'monthly'
+        ? [
+            matrixData.periods.find((p) => p.name === currentYearMonth)?.id ||
+              matrixData.periods[0]?.id,
+          ].filter(Boolean)
+        : matrixData.periods.map((p) => p.id);
 
-      if (matrixData.sections && matrixData.sections.length > 0) {
-        for (const sec of matrixData.sections) {
-          const val = sec.sectionTotals[pId] || 0;
-          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) ing = val;
-          else if (
-            sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
-            sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
-          )
-            egr = val;
-          else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) aho = val;
-          else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) deu = val;
-        }
-      }
-    } else {
-      // 4M, 6M or 12M sum
-      if (matrixData.sections && matrixData.sections.length > 0) {
-        for (const sec of matrixData.sections) {
-          let secSum = 0;
-          for (const p of matrixData.periods) {
-            secSum += sec.sectionTotals[p.id] || 0;
+    if (matrixData.sections && matrixData.sections.length > 0) {
+      for (const sec of matrixData.sections) {
+        for (const r of sec.rows) {
+          if (r.isParent) continue;
+          let rowSum = 0;
+          for (const pId of targetPeriodIds) {
+            if (pId) rowSum += r.amounts[pId] || 0;
           }
-          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) ing = secSum;
-          else if (
+
+          if (sec.sectionKey === BudgetMatrixSectionKey.INGRESOS) {
+            ing += rowSum;
+          } else if (
             sec.sectionKey === BudgetMatrixSectionKey.EGRESOS ||
             sec.sectionKey === BudgetMatrixSectionKey.GASTOS_VIDA
-          )
-            egr = secSum;
-          else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) aho = secSum;
-          else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) deu = secSum;
+          ) {
+            egr += rowSum;
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.AHORRO_INVERSIONES) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              ahorroInflows += rowSum;
+            } else {
+              ahorroOutflows += rowSum;
+            }
+          } else if (sec.sectionKey === BudgetMatrixSectionKey.DEUDAS_FINANCIACION) {
+            if (r.cashFlowDirection === CashFlowDirection.INGRESO_EFECTIVO) {
+              deudaInflows += rowSum;
+            } else {
+              deudaOutflows += rowSum;
+            }
+          }
         }
       }
     }
 
     const resultado = ing - egr;
-    const margenLibre = resultado - aho - deu;
+    // Net cash dedicated to savings (Aportes - Rescates)
+    const netAhorros = ahorroOutflows - ahorroInflows;
+    // Net cash dedicated to debt repayment (Pagos - Financiación recibida)
+    const netDeudas = deudaOutflows - deudaInflows;
+    // Margen Libre: real available cash = Total Inflows - Total Outflows
+    const totalInflows = ing + ahorroInflows + deudaInflows;
+    const totalOutflows = egr + ahorroOutflows + deudaOutflows;
+    const margenLibre = totalInflows - totalOutflows;
 
     return {
       ingresos: ing,
       egresos: egr,
       resultado,
-      ahorros: aho,
-      deudas: deu,
+      ahorros: netAhorros,
+      deudas: netDeudas,
       margenLibre,
     };
   }, [matrixData, currentYearMonth, viewMode]);
@@ -475,6 +487,25 @@ export default function BudgetMatrixPage() {
       });
       return { ...prev, sections: newSections };
     });
+
+    // Register into pending updates for active period so it can be saved
+    if (matrixData.periods && matrixData.periods.length > 0) {
+      const pId = activePeriodId || matrixData.periods[0].id;
+      const cellKey = `${pId}_${account.id}_${newSubRowId}`;
+      setPendingUpdates((prev) => {
+        const next = new Map(prev);
+        next.set(cellKey, {
+          periodId: pId,
+          accountId: account.id,
+          amount: 0,
+          subRowId: newSubRowId,
+          subRowLabel: label,
+          cashFlowDirection: direction,
+        });
+        return next;
+      });
+      setDirtyCells((prev) => new Set(prev).add(cellKey));
+    }
   };
 
   const handleEditBalanceRow = (
@@ -500,6 +531,41 @@ export default function BudgetMatrixPage() {
       });
       return { ...prev, sections: newSections };
     });
+
+    // Register all periods for this row in pendingUpdates and dirtyCells
+    if (matrixData.periods && matrixData.periods.length > 0) {
+      const allRows = matrixData.sections?.flatMap((s) => s.rows) || [];
+      const targetRow = allRows.find(
+        (r) =>
+          r.accountId === account.id && (r.subRowId === subRowId || (!r.subRowId && !subRowId)),
+      );
+
+      setPendingUpdates((prev) => {
+        const next = new Map(prev);
+        matrixData.periods.forEach((p) => {
+          const cellKey = `${p.id}_${account.id}${subRowId ? `_${subRowId}` : ''}`;
+          const existing = next.get(cellKey);
+          const currentAmt = targetRow?.amounts[p.id] ?? 0;
+          next.set(cellKey, {
+            periodId: p.id,
+            accountId: account.id,
+            amount: existing ? existing.amount : currentAmt,
+            subRowId: subRowId || null,
+            subRowLabel: label,
+            cashFlowDirection: direction,
+          });
+        });
+        return next;
+      });
+
+      setDirtyCells((prev) => {
+        const next = new Set(prev);
+        matrixData.periods.forEach((p) => {
+          next.add(`${p.id}_${account.id}${subRowId ? `_${subRowId}` : ''}`);
+        });
+        return next;
+      });
+    }
   };
 
   const handleDeleteRow = async (accountId: string, subRowId?: string | null) => {

@@ -29,11 +29,9 @@ export class ApplyBudgetDriverUseCase {
         where: { userId },
         order: { startDate: 'ASC' },
       });
-      const openPeriods = periods.filter((p) => p.status !== 'CLOSED');
-
-      if (openPeriods.length === 0) {
+      if (periods.length === 0) {
         throw new BadRequestException(
-          'No open periods available in fiscal year for driver application.',
+          'No periods available in fiscal year for driver application.',
         );
       }
 
@@ -41,13 +39,13 @@ export class ApplyBudgetDriverUseCase {
 
       if (driverType === 'FLAT_PRORATE') {
         const total = annualTotal ?? 0;
-        const perPeriod = Math.floor((total / openPeriods.length) * 100) / 100;
-        const remainder = Number((total - perPeriod * openPeriods.length).toFixed(2));
+        const perPeriod = Math.floor((total / periods.length) * 100) / 100;
+        const remainder = Number((total - perPeriod * periods.length).toFixed(2));
 
-        for (let i = 0; i < openPeriods.length; i++) {
-          const p = openPeriods[i];
+        for (let i = 0; i < periods.length; i++) {
+          const p = periods[i];
           const val =
-            i === openPeriods.length - 1 ? Number((perPeriod + remainder).toFixed(2)) : perPeriod;
+            i === periods.length - 1 ? Number((perPeriod + remainder).toFixed(2)) : perPeriod;
           monthlyAmounts[p.id] = Math.max(0, val);
         }
       } else if (driverType === 'FORWARD_FILL') {
@@ -70,9 +68,7 @@ export class ApplyBudgetDriverUseCase {
         const targetPeriods = sourceIdx >= 0 ? periods.slice(sourceIdx) : periods;
 
         for (const p of targetPeriods) {
-          if (p.status !== 'CLOSED') {
-            monthlyAmounts[p.id] = fillAmount;
-          }
+          monthlyAmounts[p.id] = fillAmount;
         }
       } else if (driverType === 'PERCENTAGE_GROWTH') {
         if (!sourcePeriodId) {
@@ -100,9 +96,7 @@ export class ApplyBudgetDriverUseCase {
         let currentVal = baseAmount;
         for (let i = 0; i < targetPeriods.length; i++) {
           const p = targetPeriods[i];
-          if (p.status !== 'CLOSED') {
-            monthlyAmounts[p.id] = Number(currentVal.toFixed(2));
-          }
+          monthlyAmounts[p.id] = Number(currentVal.toFixed(2));
           currentVal = currentVal * (1 + growthRate);
         }
       } else if (driverType === 'WEIGHTED_HISTORICAL' || driverType === 'PRIOR_YEAR_ACTUAL') {
@@ -149,19 +143,19 @@ export class ApplyBudgetDriverUseCase {
 
         if (driverType === 'WEIGHTED_HISTORICAL') {
           const targetTotal = annualTotal ?? 0;
-          for (let i = 0; i < openPeriods.length; i++) {
-            const p = openPeriods[i];
+          for (let i = 0; i < periods.length; i++) {
+            const p = periods[i];
             const weight =
               totalPriorActual > 0
                 ? (periodActuals[p.id] || 0) / totalPriorActual
-                : 1 / openPeriods.length;
+                : 1 / periods.length;
             monthlyAmounts[p.id] = Number((targetTotal * weight).toFixed(2));
           }
         } else {
           // PRIOR_YEAR_ACTUAL
           const mult = 1 + (growthPercentage || 0) / 100;
-          for (let i = 0; i < openPeriods.length; i++) {
-            const p = openPeriods[i];
+          for (let i = 0; i < periods.length; i++) {
+            const p = periods[i];
             const actualVal = Math.max(0, periodActuals[p.id] || 0);
             monthlyAmounts[p.id] = Number((actualVal * mult).toFixed(2));
           }

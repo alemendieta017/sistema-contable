@@ -42,8 +42,14 @@ export class DeleteBudgetMatrixRowUseCase {
         .where('budget_id IN (:...budgetIds)', { budgetIds })
         .andWhere('account_id = :accountId', { accountId });
 
-      if (subRowId) {
-        query.andWhere('sub_row_id = :subRowId', { subRowId });
+      const hasValidSubRow =
+        subRowId !== undefined &&
+        subRowId !== null &&
+        subRowId.trim() !== '' &&
+        subRowId !== 'null';
+
+      if (hasValidSubRow) {
+        query.andWhere('sub_row_id = :subRowId', { subRowId: subRowId.trim() });
       } else {
         query.andWhere('sub_row_id IS NULL');
       }
