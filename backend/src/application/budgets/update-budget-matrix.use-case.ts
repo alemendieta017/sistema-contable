@@ -4,7 +4,7 @@ import { PeriodEntity } from '../../infrastructure/database/entities/period.enti
 import { BudgetEntity } from '../../infrastructure/database/entities/budget.entity';
 import { BudgetItemEntity } from '../../infrastructure/database/entities/budget-item.entity';
 import { AccountEntity } from '../../infrastructure/database/entities/account.entity';
-import { MatrixCellUpdate } from '@sistema-contable/shared';
+import { MatrixCellUpdate, BatchUpdateBudgetMatrixRequest } from '@sistema-contable/shared';
 
 @Injectable()
 export class UpdateBudgetMatrixUseCase {
@@ -12,12 +12,22 @@ export class UpdateBudgetMatrixUseCase {
 
   async execute(
     userId: string,
-    fiscalYearIdOrUpdates: string | MatrixCellUpdate[],
+    updatesOrBodyOrFiscalYear: string | MatrixCellUpdate[] | BatchUpdateBudgetMatrixRequest,
     maybeUpdates?: MatrixCellUpdate[],
   ): Promise<{ success: boolean; updatedCount: number }> {
-    const updates = Array.isArray(fiscalYearIdOrUpdates)
-      ? fiscalYearIdOrUpdates
-      : maybeUpdates || [];
+    let updates: MatrixCellUpdate[] = [];
+
+    if (Array.isArray(updatesOrBodyOrFiscalYear)) {
+      updates = updatesOrBodyOrFiscalYear;
+    } else if (
+      typeof updatesOrBodyOrFiscalYear === 'object' &&
+      updatesOrBodyOrFiscalYear !== null &&
+      'updates' in updatesOrBodyOrFiscalYear
+    ) {
+      updates = updatesOrBodyOrFiscalYear.updates || [];
+    } else if (typeof updatesOrBodyOrFiscalYear === 'string') {
+      updates = maybeUpdates || [];
+    }
 
     if (!updates || updates.length === 0) {
       return { success: true, updatedCount: 0 };
@@ -33,7 +43,7 @@ export class UpdateBudgetMatrixUseCase {
         periodMap.set(p.id, p);
       }
 
-      // Validate all periods in updates belong to this user and are OPEN/PLANNING
+      // Validate all periods in updates belong to this user and are OPEN
       for (const update of updates) {
         const period = periodMap.get(update.periodId);
         if (!period) {

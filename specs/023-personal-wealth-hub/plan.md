@@ -142,9 +142,8 @@ frontend/src/
 │   └── api.ts                             # Pure rolling methods, removed api.fiscalYears
 ├── components/
 │   ├── budgets/
-│   │   ├── BudgetMatrixGrid.tsx           # Continuous rolling 12-month grid with dynamic extension
-│   │   ├── BudgetCashFlowFooter.tsx       # Sticky 4-quadrant liquidity footer with negative alerts
-│   │   └── AddNextMonthButton.tsx         # [ + Planificar Siguiente Mes ] action
+│   │   ├── BudgetMatrixGrid.tsx           # Continuous rolling matrix grid with 4-quadrant grouping
+│   │   └── BudgetMobileView.tsx           # Continuous mobile matrix and executive view
 │   ├── commitments/
 │   │   ├── CommitmentCalendarPreview.tsx  # Tactical 30-90 day timeline with one-click settle
 │   │   └── CommitmentModal.tsx            # Schedule creation and edit modal

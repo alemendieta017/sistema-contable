@@ -3,9 +3,12 @@ import {
   UpdateAccountRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  BudgetMatrixResponse,
+  RollingBudgetMatrixResponse,
   UpdateBudgetMatrixRequest,
-  UpdateBudgetMatrixResponse,
+  BatchUpdateBudgetMatrixRequest,
+  BatchUpdateBudgetMatrixResponse,
+  ExtendBudgetMatrixRequest,
+  ExtendBudgetMatrixResponse,
   MatrixCellUpdate,
   ApplyBudgetDriverRequest,
   ApplyBudgetDriverResponse,
@@ -306,11 +309,56 @@ export const api = {
       return handleResponse(res);
     },
 
-    async getMatrix(fiscalYearId: string, categoryId?: string): Promise<BudgetMatrixResponse> {
-      let url = `${API_BASE_URL}/budgets/matrix?fiscalYearId=${encodeURIComponent(fiscalYearId)}`;
-      if (categoryId) {
-        url += `&categoryId=${encodeURIComponent(categoryId)}`;
+    async getRollingMatrix(
+      startPeriod?: string,
+      months?: number,
+      categoryId?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix`;
+      const params = new URLSearchParams();
+      if (startPeriod) params.append('startPeriod', startPeriod);
+      if (months) params.append('months', String(months));
+      if (categoryId) params.append('categoryId', categoryId);
+
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+
+    async getMatrix(
+      startPeriodOrFiscalYear?: string,
+      monthsOrCategory?: number | string,
+      categoryIdParam?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      let url = `${API_BASE_URL}/budgets/matrix`;
+      const params = new URLSearchParams();
+      if (startPeriodOrFiscalYear) {
+        if (/^\d{4}-(0[1-9]|1[0-2])$/.test(startPeriodOrFiscalYear)) {
+          params.append('startPeriod', startPeriodOrFiscalYear);
+        } else {
+          params.append('fiscalYearId', startPeriodOrFiscalYear);
+        }
       }
+      if (typeof monthsOrCategory === 'number') {
+        params.append('months', String(monthsOrCategory));
+        if (categoryIdParam) params.append('categoryId', categoryIdParam);
+      } else if (typeof monthsOrCategory === 'string') {
+        if (/^\d+$/.test(monthsOrCategory)) {
+          params.append('months', monthsOrCategory);
+          if (categoryIdParam) params.append('categoryId', categoryIdParam);
+        } else {
+          params.append('categoryId', monthsOrCategory);
+        }
+      }
+
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+
       const res = await fetch(url, {
         method: 'GET',
         headers: getHeaders(),
@@ -319,20 +367,23 @@ export const api = {
     },
 
     async getBudgetMatrix(
-      fiscalYearId: string,
-      categoryId?: string,
-    ): Promise<BudgetMatrixResponse> {
-      return this.getMatrix(fiscalYearId, categoryId);
+      startPeriodOrFiscalYear?: string,
+      monthsOrCategory?: number | string,
+      categoryIdParam?: string,
+    ): Promise<RollingBudgetMatrixResponse> {
+      return this.getMatrix(startPeriodOrFiscalYear, monthsOrCategory, categoryIdParam);
     },
 
     async updateMatrixBatch(
-      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      dataOrFiscalYear: string | BatchUpdateBudgetMatrixRequest | UpdateBudgetMatrixRequest,
       updates?: MatrixCellUpdate[],
-    ): Promise<UpdateBudgetMatrixResponse> {
+    ): Promise<BatchUpdateBudgetMatrixResponse> {
       const body =
-        typeof fiscalYearIdOrData === 'string'
-          ? { fiscalYearId: fiscalYearIdOrData, updates: updates || [] }
-          : fiscalYearIdOrData;
+        typeof dataOrFiscalYear === 'string'
+          ? { updates: updates || [] }
+          : Array.isArray((dataOrFiscalYear as any).updates)
+            ? dataOrFiscalYear
+            : { updates: [] };
       const res = await fetch(`${API_BASE_URL}/budgets/matrix/batch-update`, {
         method: 'PUT',
         headers: getHeaders(),
@@ -342,10 +393,19 @@ export const api = {
     },
 
     async updateBudgetMatrix(
-      fiscalYearIdOrData: string | UpdateBudgetMatrixRequest,
+      dataOrFiscalYear: string | BatchUpdateBudgetMatrixRequest | UpdateBudgetMatrixRequest,
       updates?: MatrixCellUpdate[],
-    ): Promise<UpdateBudgetMatrixResponse> {
-      return this.updateMatrixBatch(fiscalYearIdOrData, updates);
+    ): Promise<BatchUpdateBudgetMatrixResponse> {
+      return this.updateMatrixBatch(dataOrFiscalYear, updates);
+    },
+
+    async extendBudgetMatrix(data: ExtendBudgetMatrixRequest): Promise<ExtendBudgetMatrixResponse> {
+      const res = await fetch(`${API_BASE_URL}/budgets/matrix/extend`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
     },
 
     async deleteMatrixRow(

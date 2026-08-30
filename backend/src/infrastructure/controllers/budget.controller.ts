@@ -13,6 +13,7 @@ import { GetBudgetExecutionUseCase } from '../../application/budgets/get-budget-
 import { CopyPreviousBudgetUseCase } from '../../application/budgets/copy-previous-budget.use-case';
 import { GetBudgetMatrixUseCase } from '../../application/budgets/get-budget-matrix.use-case';
 import { UpdateBudgetMatrixUseCase } from '../../application/budgets/update-budget-matrix.use-case';
+import { ExtendBudgetMatrixUseCase } from '../../application/budgets/extend-budget-matrix.use-case';
 import { DeleteBudgetMatrixRowUseCase } from '../../application/budgets/delete-budget-matrix-row.use-case';
 import { ApplyBudgetDriverUseCase } from '../../application/budgets/apply-budget-driver.use-case';
 import { GetPriorYearActualsUseCase } from '../../application/budgets/get-prior-year-actuals.use-case';
@@ -23,6 +24,8 @@ import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { ReplicateBudgetItemDto } from './dto/replicate-budget-item.dto';
 import {
   UpdateBudgetMatrixRequest,
+  BatchUpdateBudgetMatrixRequest,
+  ExtendBudgetMatrixRequest,
   ApplyBudgetDriverRequest,
   BaselineActualsRequest,
   TransferBudgetFundsRequest,
@@ -40,6 +43,7 @@ export class BudgetController {
     private readonly copyPreviousBudgetUseCase: CopyPreviousBudgetUseCase,
     private readonly getBudgetMatrixUseCase: GetBudgetMatrixUseCase,
     private readonly updateBudgetMatrixUseCase: UpdateBudgetMatrixUseCase,
+    private readonly extendBudgetMatrixUseCase: ExtendBudgetMatrixUseCase,
     private readonly deleteBudgetMatrixRowUseCase: DeleteBudgetMatrixRowUseCase,
     private readonly applyBudgetDriverUseCase: ApplyBudgetDriverUseCase,
     private readonly getPriorYearActualsUseCase: GetPriorYearActualsUseCase,
@@ -52,18 +56,29 @@ export class BudgetController {
   @Get('matrix')
   async getBudgetMatrix(
     @CurrentUser() user: UserEntity,
-    @Query('fiscalYearId') fiscalYearId: string,
+    @Query('startPeriod') startPeriod?: string,
+    @Query('months') months?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('fiscalYearId') fiscalYearId?: string,
   ) {
-    return this.getBudgetMatrixUseCase.execute(user.id, fiscalYearId, categoryId);
+    const periodArg = startPeriod || fiscalYearId;
+    return this.getBudgetMatrixUseCase.execute(user.id, periodArg, months, categoryId);
   }
 
   @Put('matrix/batch-update')
   async updateBudgetMatrix(
     @CurrentUser() user: UserEntity,
-    @Body() body: UpdateBudgetMatrixRequest,
+    @Body() body: BatchUpdateBudgetMatrixRequest | UpdateBudgetMatrixRequest,
   ) {
-    return this.updateBudgetMatrixUseCase.execute(user.id, body.fiscalYearId, body.updates);
+    return this.updateBudgetMatrixUseCase.execute(user.id, body);
+  }
+
+  @Post('matrix/extend')
+  async extendBudgetMatrix(
+    @CurrentUser() user: UserEntity,
+    @Body() body: ExtendBudgetMatrixRequest,
+  ) {
+    return this.extendBudgetMatrixUseCase.execute(user.id, body);
   }
 
   @Delete('matrix/row')

@@ -73,7 +73,7 @@ describe('BottomNav & MobileNavDrawer (US2)', () => {
     expect(screen.getByRole('region', { name: /Gestión y Configuración/i })).toBeInTheDocument();
 
     // Items
-    const planItem = screen.getByRole('link', { name: /Planificación Presupuestaria/i });
+    const planItem = screen.getByRole('link', { name: /Planificación/i });
     expect(planItem).toBeInTheDocument();
     expect(planItem.className).toContain('min-h-[48px]');
 

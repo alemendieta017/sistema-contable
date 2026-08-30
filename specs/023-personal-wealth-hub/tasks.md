@@ -72,19 +72,19 @@
 
 ### Tests for User Story 2 (Strict TDD - Write and ensure FAIL first) ⚠️
 
-- [ ] T018 [P] [US2] Unit tests for four-quadrant categorization, Operating Surplus, and rolling liquidity mathematical engine in `backend/tests/unit/cash-flow-forecast.spec.ts`
-- [ ] T019 [P] [US2] Integration tests for rolling budget matrix retrieval across year boundaries in `backend/tests/integration/budget-matrix.spec.ts`
-- [ ] T020 [P] [US2] Integration tests for matrix batch cell updates and dynamic timeline extension in `backend/tests/integration/budget-replication.spec.ts`
+- [x] T018 [P] [US2] Unit tests for four-quadrant categorization, Operating Surplus, and rolling liquidity mathematical engine in `backend/tests/unit/cash-flow-forecast.spec.ts`
+- [x] T019 [P] [US2] Integration tests for rolling budget matrix retrieval across year boundaries in `backend/tests/integration/budget-matrix.spec.ts`
+- [x] T020 [P] [US2] Integration tests for matrix batch cell updates and dynamic timeline extension in `backend/tests/integration/budget-replication.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement `GetBudgetMatrixUseCase` in `backend/src/application/budgets/get-budget-matrix.use-case.ts` supporting `(startPeriod, months)` rolling window, 4-quadrant grouping, and cash flow liquidity roll-forward
-- [ ] T022 [US2] Implement `UpdateBudgetMatrixUseCase` in `backend/src/application/budgets/update-budget-matrix.use-case.ts` for cell batch updates without `fiscalYearId`
-- [ ] T023 [US2] Implement `ExtendBudgetMatrixUseCase` in `backend/src/application/budgets/extend-budget-matrix.use-case.ts` for dynamic month provisioning and optional previous month cloning
-- [ ] T024 [US2] Update `BudgetController` in `backend/src/infrastructure/controllers/budget.controller.ts` to expose `GET /api/budgets/matrix`, `PUT /api/budgets/matrix/batch-update`, and `POST /api/budgets/matrix/extend`
-- [ ] T025 [P] [US2] Implement `BudgetCashFlowFooter.tsx` in `frontend/src/components/budgets/BudgetCashFlowFooter.tsx` with sticky 4-quadrant liquidity summary, tabular numbers, and negative cash alerts
-- [ ] T026 [P] [US2] Implement `AddNextMonthButton.tsx` in `frontend/src/components/budgets/AddNextMonthButton.tsx` to trigger dynamic month extension
-- [ ] T027 [US2] Refactor `BudgetMatrixGrid.tsx` in `frontend/src/components/budgets/BudgetMatrixGrid.tsx` and matrix page in `frontend/src/app/budgets/matrix/page.tsx` to remove fiscal year selectors and provide continuous 12-month rolling navigation
+- [x] T021 [US2] Implement `GetBudgetMatrixUseCase` in `backend/src/application/budgets/get-budget-matrix.use-case.ts` supporting `(startPeriod, months)` rolling window, 4-quadrant grouping, and cash flow liquidity roll-forward
+- [x] T022 [US2] Implement `UpdateBudgetMatrixUseCase` in `backend/src/application/budgets/update-budget-matrix.use-case.ts` for cell batch updates without `fiscalYearId`
+- [x] T023 [US2] Implement `ExtendBudgetMatrixUseCase` in `backend/src/application/budgets/extend-budget-matrix.use-case.ts` for dynamic month provisioning and optional previous month cloning
+- [x] T024 [US2] Update `BudgetController` in `backend/src/infrastructure/controllers/budget.controller.ts` to expose `GET /api/budgets/matrix`, `PUT /api/budgets/matrix/batch-update`, and `POST /api/budgets/matrix/extend`
+- [x] T025 [US2] Refactor `BudgetMobileView.tsx` in `frontend/src/components/budgets/BudgetMobileView.tsx` with 4-quadrant accordion grouping and executive KPI summary bar
+- [x] T026 [US2] Refactor `BudgetMatrixGrid.tsx` in `frontend/src/components/budgets/BudgetMatrixGrid.tsx` for continuous rolling matrix navigation across months
+- [x] T027 [US2] Refactor matrix page in `frontend/src/app/budgets/matrix/page.tsx` to remove fiscal year selectors and provide continuous rolling navigation (1M, 4M, 6M, 12M) with dynamic Hero KPI metrics
 
 **Checkpoint**: At this point, User Stories 1 AND 2 are both functional and testable independently.
 
@@ -247,10 +247,6 @@ Task T012: "Integration tests for unconstrained transaction posting in backend/t
 Task T018: "Unit tests for four-quadrant categorization in backend/tests/unit/cash-flow-forecast.spec.ts"
 Task T019: "Integration tests for rolling budget matrix in backend/tests/integration/budget-matrix.spec.ts"
 Task T020: "Integration tests for matrix batch cell updates in backend/tests/integration/budget-replication.spec.ts"
-
-# Launch frontend presentational components in parallel:
-Task T025: "Implement BudgetCashFlowFooter.tsx in frontend/src/components/budgets/BudgetCashFlowFooter.tsx"
-Task T026: "Implement AddNextMonthButton.tsx in frontend/src/components/budgets/AddNextMonthButton.tsx"
 ```
 
 ---

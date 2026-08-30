@@ -60,7 +60,7 @@ describe('Sidebar Component', () => {
       // Click to expand
       fireEvent.click(budgetButton);
       expect(budgetButton).toHaveAttribute('aria-expanded', 'true');
-      expect(screen.getByText('Planificación Presupuestaria')).toBeInTheDocument();
+      expect(screen.getByText('Planificación')).toBeInTheDocument();
       expect(screen.getByText('Control de Ejecución')).toBeInTheDocument();
 
       // Click to collapse
@@ -106,7 +106,7 @@ describe('Sidebar Component', () => {
       expect(popover).toBeInTheDocument();
 
       // Subitems inside menu
-      const subItem = screen.getByRole('menuitem', { name: /Planificación Presupuestaria/i });
+      const subItem = screen.getByRole('menuitem', { name: /Planificación/i });
       expect(subItem).toBeInTheDocument();
 
       // Click subitem closes popover
