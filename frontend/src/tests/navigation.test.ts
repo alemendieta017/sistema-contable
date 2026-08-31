@@ -111,5 +111,27 @@ describe('Navigation Helpers & Types', () => {
       expect(isNavGroupActive(reportGroup, '/reports/income-statement/forecast')).toBe(true);
       expect(isNavGroupActive(reportGroup, '/reports/forecast')).toBe(true);
     });
+
+    test('SCO-51: reports-income-statement is not active when on forecast route', () => {
+      const reportGroup = navigationRegistry.find((e) => e.id === 'reports') as NavGroup;
+      const incomeStatementItem = reportGroup.items.find(
+        (i) => i.id === 'reports-income-statement',
+      )!;
+      const forecastItem = reportGroup.items.find((i) => i.id === 'reports-forecast')!;
+
+      // On /reports/income-statement
+      expect(isNavItemActive(incomeStatementItem, '/reports/income-statement')).toBe(true);
+      expect(isNavItemActive(forecastItem, '/reports/income-statement')).toBe(false);
+
+      // On /reports/income-statement/forecast
+      expect(isNavItemActive(incomeStatementItem, '/reports/income-statement/forecast')).toBe(
+        false,
+      );
+      expect(isNavItemActive(forecastItem, '/reports/income-statement/forecast')).toBe(true);
+
+      // On alias /reports/forecast
+      expect(isNavItemActive(incomeStatementItem, '/reports/forecast')).toBe(false);
+      expect(isNavItemActive(forecastItem, '/reports/forecast')).toBe(true);
+    });
   });
 });

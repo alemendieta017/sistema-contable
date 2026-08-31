@@ -161,6 +161,7 @@ export const navigationRegistry: NavEntry[] = [
         id: 'reports-income-statement',
         name: 'Estado de Resultados',
         href: '/reports/income-statement',
+        matchExact: true,
         icon: FileText,
         mobilePlacement: 'drawer',
       },
