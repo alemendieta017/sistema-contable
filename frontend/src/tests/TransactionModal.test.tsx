@@ -166,7 +166,7 @@ describe('TransactionModal Integration', () => {
     fireEvent.click(comidaOption);
 
     // Step 4: Amount
-    const amountInput = screen.getByRole('spinbutton');
+    const amountInput = screen.getByLabelText(/Monto/i);
     fireEvent.change(amountInput, { target: { value: '150.50' } });
 
     // Step 5: Description
@@ -211,7 +211,7 @@ describe('TransactionModal Integration', () => {
     const optEfectivo = await screen.findByText('Efectivo');
     fireEvent.click(optEfectivo);
 
-    const debitInput = screen.getAllByRole('spinbutton', { name: /Debe/i })[0];
+    const debitInput = screen.getAllByLabelText(/Debe/i)[0];
     fireEvent.change(debitInput, { target: { value: '500' } });
 
     // Select account 2 (Sueldo) and set Credit to 500
@@ -220,7 +220,7 @@ describe('TransactionModal Integration', () => {
     const optSueldo = await screen.findByText('Sueldo');
     fireEvent.click(optSueldo);
 
-    const creditInput = screen.getAllByRole('spinbutton', { name: /Haber/i })[1];
+    const creditInput = screen.getAllByLabelText(/Haber/i)[1];
     fireEvent.change(creditInput, { target: { value: '500' } });
 
     // Verify Cuadrado status badge

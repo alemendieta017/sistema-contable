@@ -331,7 +331,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
             {/* Ingresos */}
             <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
               <span className="text-[11px] text-slate-500">Ingresos</span>
-              <p className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-xs sm:text-sm truncate">
+              <p className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums text-xs sm:text-sm truncate">
                 {formatCurrency(activeTotals.ingresos, baseCurrency)}
               </p>
             </div>
@@ -339,7 +339,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
             {/* Egresos */}
             <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
               <span className="text-[11px] text-slate-500">Egresos</span>
-              <p className="font-bold text-slate-800 dark:text-slate-200 font-mono text-xs sm:text-sm truncate">
+              <p className="font-bold text-slate-800 dark:text-slate-200 tabular-nums text-xs sm:text-sm truncate">
                 {formatCurrency(activeTotals.egresos, baseCurrency)}
               </p>
             </div>
@@ -350,7 +350,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                 = Resultado
               </span>
               <p
-                className={`font-bold font-mono text-xs sm:text-sm truncate ${
+                className={`font-bold tabular-nums text-xs sm:text-sm truncate ${
                   activeTotals.resultado >= 0
                     ? 'text-indigo-700 dark:text-indigo-300'
                     : 'text-rose-600 dark:text-rose-400'
@@ -363,7 +363,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
             {/* Ahorros e Inversiones */}
             <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
               <span className="text-[11px] text-slate-500">Ahorros e Inversiones</span>
-              <p className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs sm:text-sm truncate">
+              <p className="font-bold text-blue-600 dark:text-blue-400 tabular-nums text-xs sm:text-sm truncate">
                 {formatCurrency(activeTotals.ahorros, baseCurrency)}
               </p>
             </div>
@@ -371,7 +371,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
             {/* Deudas y Financiación */}
             <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
               <span className="text-[11px] text-slate-500">Deudas y Financiación</span>
-              <p className="font-bold text-purple-600 dark:text-purple-400 font-mono text-xs sm:text-sm truncate">
+              <p className="font-bold text-purple-600 dark:text-purple-400 tabular-nums text-xs sm:text-sm truncate">
                 {formatCurrency(activeTotals.deudas, baseCurrency)}
               </p>
             </div>
@@ -382,7 +382,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                 = Margen Libre
               </span>
               <p
-                className={`font-bold font-mono text-xs sm:text-sm truncate ${
+                className={`font-bold tabular-nums text-xs sm:text-sm truncate ${
                   activeTotals.margenLibre >= 0
                     ? 'text-emerald-700 dark:text-emerald-300'
                     : 'text-rose-600 dark:text-rose-400'
@@ -443,7 +443,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                   <span className="text-xs text-slate-400">({sectionRows.length})</span>
                 </div>
 
-                <div className="flex items-center space-x-2 font-mono">
+                <div className="flex items-center space-x-2 tabular-nums">
                   <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                     {formatCurrency(totalAmount, baseCurrency)}
                   </span>
@@ -507,7 +507,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                             )}
                           </div>
 
-                          <div className="flex items-center space-x-2 shrink-0 font-mono">
+                          <div className="flex items-center space-x-2 shrink-0 tabular-nums">
                             <span
                               className={`text-xs px-2.5 py-1 rounded-lg font-bold ${
                                 isDirty
@@ -599,7 +599,7 @@ export const BudgetMobileView: React.FC<BudgetMobileViewProps> = ({
                 placeholder="0"
                 value={editAmountStr}
                 onChange={(e) => setEditAmountStr(e.target.value)}
-                className="w-full text-center text-2xl font-bold font-mono bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-center text-2xl font-bold tabular-nums bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
 

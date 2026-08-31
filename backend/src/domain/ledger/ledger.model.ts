@@ -1,4 +1,4 @@
-export type SystemRole = 'NET_INCOME' | 'RETAINED_EARNINGS';
+export type SystemRole = 'CAPITAL' | 'NET_INCOME' | 'RETAINED_EARNINGS';
 
 export class Account {
   constructor(

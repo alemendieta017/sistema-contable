@@ -317,7 +317,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-1.5 font-mono">
+                  <div className="flex items-center space-x-1.5 tabular-nums">
                     <span className="text-xs text-slate-400">Total:</span>
                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrency(totalActive, baseCurrency)}
@@ -396,14 +396,14 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                         <div className="flex items-center space-x-4 shrink-0">
                           {/* Comparative Pill */}
                           {prevAmt !== null && (
-                            <span className="hidden md:inline-flex items-center text-xs text-slate-400 font-mono">
+                            <span className="hidden md:inline-flex items-center text-xs text-slate-400 tabular-nums">
                               mes ant: {formatCurrency(prevAmt, baseCurrency)}
                             </span>
                           )}
 
                           {/* Editable Amount Input */}
                           {row.isParent ? (
-                            <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100 w-36 text-right px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                            <span className="tabular-nums text-sm font-bold text-slate-900 dark:text-slate-100 w-36 text-right px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
                               {formatCurrency(currentAmt, baseCurrency)}
                             </span>
                           ) : (
@@ -426,7 +426,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                                     );
                                   }
                                 }}
-                                className={`w-36 text-right font-mono text-sm font-bold px-3 py-1.5 rounded-xl border transition-all outline-none ${
+                                className={`w-36 text-right tabular-nums text-sm font-bold px-3 py-1.5 rounded-xl border transition-all outline-none ${
                                   isDirty
                                     ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-300'
                                     : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900'
@@ -577,7 +577,7 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {(sections || []).map((sec) => {
               let secBadgeColor =
                 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
@@ -826,11 +826,11 @@ export const BudgetMatrixGrid: React.FC<BudgetMatrixGridProps> = ({
                                   }}
                                   onKeyDown={handleKeyDown}
                                   onBlur={commitEdit}
-                                  className="w-full h-7 text-right bg-white dark:bg-slate-950 font-mono text-xs font-bold border border-indigo-500 rounded px-2 py-0 outline-none text-slate-900 dark:text-white ring-1 ring-indigo-500 box-border"
+                                  className="w-full h-7 text-right bg-white dark:bg-slate-950 tabular-nums text-xs font-bold border border-indigo-500 rounded px-2 py-0 outline-none text-slate-900 dark:text-white ring-1 ring-indigo-500 box-border"
                                 />
                               ) : (
                                 <span
-                                  className={`block w-full h-7 leading-7 px-2 rounded font-mono text-xs text-right truncate ${
+                                  className={`block w-full h-7 leading-7 px-2 rounded tabular-nums text-xs text-right truncate ${
                                     isDirty
                                       ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-500/10'
                                       : amt === 0

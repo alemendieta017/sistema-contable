@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '../../services/api';
 import AccountsList, { AccountSummary } from '../../components/AccountsList';
 import AccountModal from '../../components/AccountModal';
+import AdjustBalanceModal from '../../components/AdjustBalanceModal';
 import {
   Plus,
   Wallet,
@@ -13,7 +15,6 @@ import {
   EyeOff,
   Briefcase,
   Tags,
-  Layers,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ type SummaryData = {
 };
 
 export default function AccountsPage() {
+  const router = useRouter();
   const { searchQuery } = useSearch();
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [currencies, setCurrencies] = useState<any[]>([]);
@@ -38,8 +40,9 @@ export default function AccountsPage() {
   const [saving, setSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState<AccountSummary | null>(null);
+  const [accountToAdjust, setAccountToAdjust] = useState<AccountSummary | null>(null);
   const [subaccountParent, setSubaccountParent] = useState<AccountSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<'FINANCIAL' | 'CATEGORIES' | 'ALL'>('FINANCIAL');
+  const [activeTab, setActiveTab] = useState<'FINANCIAL' | 'CATEGORIES'>('FINANCIAL');
   const [showInactive, setShowInactive] = useState(false);
   const [deletingId, setDeletingId] = useState('');
   const [reactivatingId, setReactivatingId] = useState('');
@@ -136,7 +139,6 @@ export default function AccountsPage() {
         { name: 'Efectivo', type: 'ASSET', isCashOrBank: true },
         { name: 'Cuenta Bancaria', type: 'ASSET', isCashOrBank: true },
         { name: 'Tarjeta de Crédito', type: 'LIABILITY', isCashOrBank: false },
-        { name: 'Capital Inicial', type: 'EQUITY', isCashOrBank: false },
         { name: 'Sueldo', type: 'INCOME', isCashOrBank: false },
         { name: 'Otros Ingresos', type: 'INCOME', isCashOrBank: false },
         { name: 'Comida', type: 'EXPENSE', isCashOrBank: false },
@@ -196,19 +198,16 @@ export default function AccountsPage() {
         return false;
       }
       // 3. Tab Filter
-      if (activeTab === 'FINANCIAL') {
-        return a.type === 'ASSET' || a.type === 'LIABILITY';
-      }
       if (activeTab === 'CATEGORIES') {
         return a.type === 'INCOME' || a.type === 'EXPENSE';
       }
-      return true;
+      return a.type === 'ASSET' || a.type === 'LIABILITY';
     }) || [];
 
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Cuentas y Rubros
@@ -218,17 +217,34 @@ export default function AccountsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setAccountToEdit(null);
-            setSubaccountParent(null);
-            setShowAddModal(true);
-          }}
-          className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Agregar Cuenta</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {inactiveCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowInactive(!showInactive)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-3xs font-bold border transition ${
+                showInactive
+                  ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shadow-sm'
+              }`}
+            >
+              {showInactive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{showInactive ? 'Ocultar inactivas' : `Ver inactivas (${inactiveCount})`}</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setAccountToEdit(null);
+              setSubaccountParent(null);
+              setShowAddModal(true);
+            }}
+            className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Agregar</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -248,132 +264,105 @@ export default function AccountsPage() {
         </div>
       )}
 
-      {/* Net Worth Dashboard Card */}
+      {/* KPI Summary Cards Grid */}
       {(() => {
         const baseCurrency = currencies.find((c) => c.isBase) || {
           code: 'PYG',
           symbol: '₲',
           decimalPlaces: 0,
         };
-        const totalA = Math.max(summary?.totalAssets || 0, 0);
-        const totalL = Math.max(summary?.totalLiabilities || 0, 0);
-        const totalSum = totalA + totalL;
-        const assetPct = totalSum > 0 ? Math.round((totalA / totalSum) * 100) : 100;
-        const liabilityPct = totalSum > 0 ? 100 - assetPct : 0;
 
         return (
-          <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 relative overflow-hidden">
-            <div className="absolute right-4 bottom-4 opacity-5 pointer-events-none">
-              <Wallet className="w-40 h-40" />
-            </div>
-            <p className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
-              Patrimonio Neto
-            </p>
-            <h2 className="text-3xl font-extrabold mt-1 tabular-nums">
-              {formatCurrency(summary?.netWorth || 0, baseCurrency)}
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4 mt-6 border-t border-indigo-500/40 pt-4 text-xs">
-              <div>
-                <div className="flex items-center gap-1 text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-                  <ArrowUpRight className="w-3 h-3 text-emerald-300" />
-                  <span>Total Activos</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Patrimonio Neto */}
+            <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
+                  Patrimonio Neto
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-indigo-100" />
                 </div>
-                <p className="font-bold text-base mt-0.5 tabular-nums text-emerald-100">
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-bold tracking-tight tabular-nums">
+                  {formatCurrency(summary?.netWorth || 0, baseCurrency)}
+                </span>
+                <p className="text-4xs text-indigo-200 mt-0.5">Activos menos Pasivos</p>
+              </div>
+            </div>
+
+            {/* Total Activos */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-3xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  Total Activos
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                  <ArrowUpRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100">
                   {formatCurrency(summary?.totalAssets || 0, baseCurrency)}
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center gap-1 text-indigo-200 font-semibold text-3xs uppercase tracking-wider">
-                  <ArrowDownRight className="w-3 h-3 text-red-300" />
-                  <span>Total Pasivos</span>
-                </div>
-                <p className="font-bold text-base mt-0.5 tabular-nums text-red-100">
-                  {formatCurrency(summary?.totalLiabilities || 0, baseCurrency)}
+                </span>
+                <p className="text-4xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-semibold">
+                  Bienes, bancos y efectivo
                 </p>
               </div>
             </div>
 
-            {totalSum > 0 && (
-              <div className="mt-4 pt-3 border-t border-indigo-500/30">
-                <div className="flex justify-between items-center text-4xs font-bold text-indigo-200 uppercase tracking-wider mb-1.5">
-                  <span>Solvencia ({assetPct}%)</span>
-                  <span>Endeudamiento ({liabilityPct}%)</span>
-                </div>
-                <div className="w-full bg-indigo-900/50 rounded-full h-1.5 overflow-hidden flex">
-                  <div
-                    style={{ width: `${assetPct}%` }}
-                    className="bg-emerald-400 h-full rounded-l-full transition-all duration-500"
-                  />
-                  <div
-                    style={{ width: `${liabilityPct}%` }}
-                    className="bg-red-400 h-full rounded-r-full transition-all duration-500"
-                  />
+            {/* Total Pasivos */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-3xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  Total Pasivos
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center">
+                  <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 </div>
               </div>
-            )}
+              <div className="mt-3">
+                <span className="text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100">
+                  {formatCurrency(summary?.totalLiabilities || 0, baseCurrency)}
+                </span>
+                <p className="text-4xs text-rose-500 dark:text-rose-400 mt-0.5 font-semibold">
+                  Deudas y obligaciones
+                </p>
+              </div>
+            </div>
           </div>
         );
       })()}
 
-      {/* Segmented Controls & Inactive Filter */}
+      {/* Tabs Filter Bar */}
       {summary && summary.accounts.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs font-bold w-full sm:w-auto overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab('FINANCIAL')}
-              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
-                activeTab === 'FINANCIAL'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Cuentas de Dinero</span>
-            </button>
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700/80 pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('FINANCIAL')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'FINANCIAL'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200/80 dark:border-slate-700'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Cuentas de Dinero</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('CATEGORIES')}
-              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
-                activeTab === 'CATEGORIES'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
-            >
-              <Tags className="w-3.5 h-3.5" />
-              <span>Categorías (PyG)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl transition flex-1 sm:flex-initial whitespace-nowrap ${
-                activeTab === 'ALL'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Plan Completo</span>
-            </button>
-          </div>
-
-          {inactiveCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowInactive(!showInactive)}
-              className={`self-start sm:self-auto flex items-center gap-1.5 px-3 py-2 rounded-xl text-3xs font-bold border transition ${
-                showInactive
-                  ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
-            >
-              {showInactive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{showInactive ? 'Ocultar inactivas' : `Ver inactivas (${inactiveCount})`}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setActiveTab('CATEGORIES')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'CATEGORIES'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200/80 dark:border-slate-700'
+            }`}
+          >
+            <Tags className="w-3.5 h-3.5" />
+            <span>Categorías</span>
+          </button>
         </div>
       )}
 
@@ -415,9 +404,15 @@ export default function AccountsPage() {
             onDeactivate={handleDeactivateAccount}
             reactivatingId={reactivatingId}
             deactivatingId={deactivatingId}
+            onAccountClick={(acc) => {
+              router.push(`/transactions?accountId=${acc.id}`);
+            }}
             onEdit={(acc) => {
               setAccountToEdit(acc);
               setShowAddModal(true);
+            }}
+            onAdjustBalance={(acc) => {
+              setAccountToAdjust(acc);
             }}
             onAddSubaccount={(parent) => {
               setSubaccountParent(parent);
@@ -443,7 +438,20 @@ export default function AccountsPage() {
             setAccountToEdit(null);
             setSubaccountParent(null);
           }}
-          onSuccess={loadSummary}
+          onSuccess={(created) => {
+            loadSummary();
+            if (created) {
+              if (created.type === 'INCOME' || created.type === 'EXPENSE') {
+                setActiveTab('CATEGORIES');
+              } else if (
+                created.type === 'ASSET' ||
+                created.type === 'LIABILITY' ||
+                created.type === 'EQUITY'
+              ) {
+                setActiveTab('FINANCIAL');
+              }
+            }
+          }}
           parentCandidates={summary?.accounts || []}
           accountToEdit={
             accountToEdit
@@ -462,7 +470,18 @@ export default function AccountsPage() {
                 ? 'EXPENSE'
                 : 'ASSET'
           }
-          initialParentId={subaccountParent ? subaccountParent.id : undefined}
+          initialParentId={subaccountParent?.id}
+        />
+      )}
+
+      {/* Adjust Balance Modal */}
+      {accountToAdjust && (
+        <AdjustBalanceModal
+          isOpen={!!accountToAdjust}
+          onClose={() => setAccountToAdjust(null)}
+          onSuccess={loadSummary}
+          account={accountToAdjust}
+          allAccounts={summary?.accounts || []}
         />
       )}
     </div>

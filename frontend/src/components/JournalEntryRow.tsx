@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trash2, Search, ChevronDown, Plus } from 'lucide-react';
-import { formatCurrency, type CurrencyInfo } from '../lib/utils';
+import { formatCurrency, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../lib/utils';
 import { AccountOption as Account } from '../types/account';
 
 interface Entry {
@@ -66,9 +66,8 @@ export default function JournalEntryRow({
     }
   }
 
-  // Dynamic placeholder and step based on decimal places
-  const placeholder = decimalPlaces > 0 ? '0.' + '0'.repeat(decimalPlaces) : '0';
-  const step = decimalPlaces === 0 ? '1' : (1 / Math.pow(10, decimalPlaces)).toFixed(decimalPlaces);
+  // Dynamic placeholder based on decimal places
+  const placeholder = decimalPlaces > 0 ? '0,00' : '0';
 
   const formatAccountName = (a: Account) => {
     if (a.parentId) {
@@ -566,13 +565,14 @@ export default function JournalEntryRow({
             {currencySymbol}
           </span>
           <input
-            type="number"
-            step={step}
+            type="text"
+            inputMode="decimal"
             placeholder={placeholder}
-            value={entry.amount}
+            value={formatInputDisplay(entry.amount)}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => {
-              const val = e.target.value;
-              onUpdate(index, { amount: val === '' ? '' : Number(val) });
+              const parsed = parseInputRaw(e.target.value);
+              onUpdate(index, { amount: parsed === '' ? '' : Number(parsed) });
             }}
             className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-sm p-1.5 ${
               currencySymbol.length > 2 ? 'pl-11' : currencySymbol.length > 1 ? 'pl-9' : 'pl-7'

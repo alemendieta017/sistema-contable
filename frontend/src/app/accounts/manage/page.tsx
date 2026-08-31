@@ -3,7 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import AccountModal from '../../../components/AccountModal';
-import { ArrowLeft, Plus, Check, AlertTriangle, RotateCcw } from 'lucide-react';
+import AdjustBalanceModal from '../../../components/AdjustBalanceModal';
+import {
+  ArrowLeft,
+  Plus,
+  Check,
+  AlertTriangle,
+  RotateCcw,
+  Pencil,
+  SlidersHorizontal,
+} from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '../../../lib/utils';
 import { useSearch } from '../../../lib/search-context';
@@ -30,6 +39,8 @@ export default function AccountsManagePage() {
   const [suggestedDeactivateId, setSuggestedDeactivateId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [accountToEdit, setAccountToEdit] = useState<AccountSummary | null>(null);
+  const [accountToAdjust, setAccountToAdjust] = useState<AccountSummary | null>(null);
 
   useEffect(() => {
     fetchAccounts();
@@ -218,38 +229,63 @@ export default function AccountsManagePage() {
                     )}
                   </td>
                   <td className="p-4 text-center">
-                    {a.systemRole ? (
-                      <span
-                        className="text-3xs text-slate-400 font-bold"
-                        title="Cuenta especial reservada por el sistema"
-                      >
-                        Sistema
-                      </span>
-                    ) : isInactive ? (
-                      <button
-                        onClick={() => handleReactivate(a.id)}
-                        disabled={updatingId === a.id}
-                        className="text-3xs font-bold py-1 px-3 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
-                      >
-                        {updatingId === a.id ? (
-                          <span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <RotateCcw className="w-3 h-3" />
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      {!a.systemRole &&
+                        !isInactive &&
+                        (a.type === 'ASSET' || a.type === 'LIABILITY') && (
+                          <button
+                            onClick={() => setAccountToAdjust(a)}
+                            className="text-3xs font-bold py-1 px-2.5 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition inline-flex items-center gap-1"
+                          >
+                            <SlidersHorizontal className="w-3 h-3 text-indigo-500" />
+                            <span>Modificar Saldo</span>
+                          </button>
                         )}
-                        <span>Reactivar</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDeactivate(a.id)}
-                        disabled={updatingId === a.id}
-                        className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
-                      >
-                        {updatingId === a.id ? (
-                          <span className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                        ) : null}
-                        <span>Desactivar</span>
-                      </button>
-                    )}
+                      {!a.systemRole && (
+                        <button
+                          onClick={() => {
+                            setAccountToEdit(a);
+                            setShowAddModal(true);
+                          }}
+                          className="text-3xs font-bold py-1 px-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition inline-flex items-center gap-1"
+                        >
+                          <Pencil className="w-3 h-3 text-slate-400" />
+                          <span>Editar</span>
+                        </button>
+                      )}
+                      {a.systemRole ? (
+                        <span
+                          className="text-3xs text-slate-400 font-bold"
+                          title="Cuenta especial reservada por el sistema"
+                        >
+                          Sistema
+                        </span>
+                      ) : isInactive ? (
+                        <button
+                          onClick={() => handleReactivate(a.id)}
+                          disabled={updatingId === a.id}
+                          className="text-3xs font-bold py-1 px-3 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {updatingId === a.id ? (
+                            <span className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-3 h-3" />
+                          )}
+                          <span>Reactivar</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeactivate(a.id)}
+                          disabled={updatingId === a.id}
+                          className="text-3xs font-bold py-1 px-3 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {updatingId === a.id ? (
+                            <span className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                          ) : null}
+                          <span>Desactivar</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -267,9 +303,32 @@ export default function AccountsManagePage() {
 
       {showAddModal && (
         <AccountModal
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setAccountToEdit(null);
+          }}
           onSuccess={fetchAccounts}
           parentCandidates={accounts}
+          accountToEdit={
+            accountToEdit
+              ? {
+                  id: accountToEdit.id,
+                  name: accountToEdit.name,
+                  type: accountToEdit.type,
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {/* Adjust Balance Modal */}
+      {accountToAdjust && (
+        <AdjustBalanceModal
+          isOpen={!!accountToAdjust}
+          onClose={() => setAccountToAdjust(null)}
+          onSuccess={fetchAccounts}
+          account={accountToAdjust}
+          allAccounts={accounts}
         />
       )}
     </div>

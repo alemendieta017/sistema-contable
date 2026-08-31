@@ -11,6 +11,9 @@ import { ReverseTransactionUseCase } from '../../src/application/ledger/reverse-
 import { GetAccountsSummaryUseCase } from '../../src/application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../src/application/accounts/delete-account.use-case';
 import { UpdateAccountUseCase } from '../../src/application/accounts/update-account.use-case';
+import { AdjustAccountBalanceUseCase } from '../../src/application/accounts/adjust-account-balance.use-case';
+import { BalanceUpdateService } from '../../src/application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../src/application/periods/ensure-period.service';
 import { LedgerController } from '../../src/infrastructure/controllers/ledger.controller';
 import { AccountController } from '../../src/infrastructure/controllers/account.controller';
 import { JwtAuthGuard } from '../../src/infrastructure/auth/jwt-auth.guard';
@@ -30,41 +33,58 @@ describe('Ledger Endpoints Contract Tests', () => {
       .mockResolvedValue({ id: 'tx-123', description: 'Test transaction', entries: [] }),
   };
   const mockAccountRepo = {
-    find: jest.fn().mockResolvedValue([]),
-    create: jest.fn().mockImplementation((obj) => obj),
-    save: jest.fn().mockImplementation((obj) => Promise.resolve({ id: 'saved-acc-id', ...obj })),
+    find: jest.fn().mockResolvedValue([{ id: 'acc-1', name: 'Test Account' }]),
+    create: jest.fn().mockImplementation((data) => data),
+    save: jest.fn().mockImplementation((data) => Promise.resolve({ id: 'acc-new', ...data })),
+    manager: {
+      transaction: jest.fn().mockImplementation((isolationOrCb, maybeCb) => {
+        const cb = typeof isolationOrCb === 'function' ? isolationOrCb : maybeCb;
+        return cb({
+          findOne: jest.fn().mockResolvedValue(null),
+          create: jest.fn().mockImplementation((entity, data) => data),
+          save: jest
+            .fn()
+            .mockImplementation((entity, data) => Promise.resolve({ id: 'acc-new', ...data })),
+        });
+      }),
+      getRepository: jest.fn().mockReturnValue({
+        findOne: jest.fn().mockResolvedValue({ id: 'curr-1' }),
+      }),
+    },
   };
 
   const mockCreateTransactionUseCase = {
-    execute: jest.fn().mockResolvedValue({ id: 'tx-123', entries: [] }),
+    execute: jest.fn().mockResolvedValue({ id: 'tx-new', description: 'Created' }),
   };
 
   const mockUpdateTransactionUseCase = {
-    execute: jest.fn().mockResolvedValue({ id: 'tx-123', entries: [] }),
+    execute: jest.fn().mockResolvedValue({ id: 'tx-123', description: 'Updated' }),
   };
 
   const mockDeleteTransactionUseCase = {
-    execute: jest.fn().mockResolvedValue({ id: 'tx-123', success: true }),
+    execute: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockReverseTransactionUseCase = {
-    execute: jest
-      .fn()
-      .mockResolvedValue({ id: 'tx-reversal-123', reversalOfId: 'tx-123', entries: [] }),
+    execute: jest.fn().mockResolvedValue({ id: 'tx-rev', description: 'Reversed' }),
   };
 
   const mockGetAccountsSummaryUseCase = {
-    execute: jest
-      .fn()
-      .mockResolvedValue({ netWorth: 0, totalAssets: 0, totalLiabilities: 0, accounts: [] }),
+    execute: jest.fn().mockResolvedValue({ totalBalance: 1000 }),
   };
 
   const mockDeleteAccountUseCase = {
-    execute: jest.fn().mockResolvedValue({ success: true, action: 'DEACTIVATED' }),
+    execute: jest.fn().mockResolvedValue({ success: true, action: 'DELETED' }),
   };
 
   const mockUpdateAccountUseCase = {
     execute: jest.fn().mockResolvedValue({ success: true }),
+  };
+
+  const mockAdjustAccountBalanceUseCase = {
+    execute: jest
+      .fn()
+      .mockResolvedValue({ success: true, message: 'Saldo ajustado exitosamente.' }),
   };
 
   beforeAll(async () => {
@@ -98,6 +118,18 @@ describe('Ledger Endpoints Contract Tests', () => {
         {
           provide: UpdateAccountUseCase,
           useValue: mockUpdateAccountUseCase,
+        },
+        {
+          provide: AdjustAccountBalanceUseCase,
+          useValue: mockAdjustAccountBalanceUseCase,
+        },
+        {
+          provide: BalanceUpdateService,
+          useValue: { updateBalances: jest.fn() },
+        },
+        {
+          provide: EnsurePeriodService,
+          useValue: { ensurePeriod: jest.fn() },
         },
         {
           provide: getRepositoryToken(TransactionEntity),

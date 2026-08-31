@@ -224,14 +224,14 @@ export const BudgetDeepDiveDrawer: React.FC<BudgetDeepDiveDrawerProps> = ({
             <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400 mt-1">
               <div>
                 Total Anual:{' '}
-                <strong className="text-slate-900 dark:text-slate-100 font-mono font-bold">
+                <strong className="text-slate-900 dark:text-slate-100 tabular-nums font-bold">
                   {formatCurrency(totalAnnual, baseCurrency)}
                 </strong>
               </div>
               <span>•</span>
               <div>
                 Promedio:{' '}
-                <strong className="text-slate-900 dark:text-slate-100 font-mono font-bold">
+                <strong className="text-slate-900 dark:text-slate-100 tabular-nums font-bold">
                   {formatCurrency(monthlyAverage, baseCurrency)}
                 </strong>
               </div>
@@ -317,7 +317,7 @@ export const BudgetDeepDiveDrawer: React.FC<BudgetDeepDiveDrawerProps> = ({
                   onChange={(e) => setActionInput(e.target.value.replace(/[^0-9]/g, ''))}
                   onFocus={handleInputFocus}
                   placeholder="Ej: 1200000"
-                  className="flex-1 bg-slate-50 dark:bg-slate-950 font-mono text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-emerald-500 min-h-[44px]"
+                  className="flex-1 bg-slate-50 dark:bg-slate-950 tabular-nums text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-emerald-500 min-h-[44px]"
                 />
                 <button
                   type="button"
@@ -346,7 +346,7 @@ export const BudgetDeepDiveDrawer: React.FC<BudgetDeepDiveDrawerProps> = ({
                   onChange={(e) => setActionInput(e.target.value)}
                   onFocus={handleInputFocus}
                   placeholder="0 para mantener real"
-                  className="flex-1 bg-slate-50 dark:bg-slate-950 font-mono text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-purple-500 min-h-[44px]"
+                  className="flex-1 bg-slate-50 dark:bg-slate-950 tabular-nums text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none focus:border-purple-500 min-h-[44px]"
                 />
                 <button
                   type="button"
@@ -383,7 +383,7 @@ export const BudgetDeepDiveDrawer: React.FC<BudgetDeepDiveDrawerProps> = ({
               >
                 {/* Month Name and Status */}
                 <div className="flex items-center space-x-2.5 min-w-[100px]">
-                  <span className="w-10 text-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-1 rounded">
+                  <span className="w-10 text-center text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-1 rounded">
                     {monthInfo.abbr}
                   </span>
                   <div>
@@ -413,7 +413,7 @@ export const BudgetDeepDiveDrawer: React.FC<BudgetDeepDiveDrawerProps> = ({
                       const num = parseFloat(e.target.value.replace(/[^0-9]/g, '')) || 0;
                       onAmountChange(account.accountId, period.id, num, account.subRowId);
                     }}
-                    className={`w-full min-h-[44px] text-right font-mono text-sm font-bold px-3 py-2 rounded-xl border outline-none transition-all ${
+                    className={`w-full min-h-[44px] text-right tabular-nums text-sm font-bold px-3 py-2 rounded-xl border outline-none transition-all ${
                       isClosed
                         ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 border-transparent cursor-not-allowed'
                         : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'

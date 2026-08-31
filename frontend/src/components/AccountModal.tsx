@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { api } from '../services/api';
+import { formatInputDisplay, parseInputRaw } from '../lib/utils';
 
 interface Currency {
   id: string;
@@ -17,6 +18,7 @@ interface ParentAccount {
   name: string;
   type: string;
   parentId?: string | null;
+  systemRole?: string | null;
 }
 
 interface Account {
@@ -53,18 +55,19 @@ export default function AccountModal({
   initialParentId,
   accountToEdit,
 }: AccountModalProps) {
+  const isEditing = !!accountToEdit;
+
   const [name, setName] = useState(accountToEdit?.name || initialName || '');
   const [type, setType] = useState<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>(
     accountToEdit?.type || initialType || 'ASSET',
   );
   const [isCashOrBank, setIsCashOrBank] = useState<boolean>(accountToEdit?.isCashOrBank ?? false);
+  const [initialBalance, setInitialBalance] = useState<string>('');
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [selectedCurrencyId, setSelectedCurrencyId] = useState('');
   const [selectedParentId, setSelectedParentId] = useState(initialParentId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const isEditing = !!accountToEdit;
   const isLocked = isEditing && accountToEdit?.hasTransactions;
 
   useEffect(() => {
@@ -136,6 +139,7 @@ export default function AccountModal({
           currencyId: selectedCurrencyId,
           parentId: selectedParentId || null,
           isCashOrBank,
+          initialBalance: initialBalance !== '' ? Number(initialBalance) : undefined,
         });
         onSuccess(created);
       }
@@ -147,8 +151,58 @@ export default function AccountModal({
     }
   };
 
-  // Filter possible parent accounts (same type and no parent itself)
-  const filteredParents = parentCandidates.filter((a) => a.type === type && !a.parentId);
+  const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+  const typeMenuRef = React.useRef<HTMLDivElement>(null);
+
+  const accountTypeOptions = [
+    {
+      value: 'ASSET' as const,
+      label: 'ACTIVO',
+      description: 'Efectivo, cuentas bancarias, inversiones y bienes',
+    },
+    {
+      value: 'LIABILITY' as const,
+      label: 'PASIVO',
+      description: 'Deudas, préstamos y tarjetas de crédito',
+    },
+    {
+      value: 'INCOME' as const,
+      label: 'INGRESO',
+      description: 'Sueldos, ventas, honorarios y entradas de dinero',
+    },
+    {
+      value: 'EXPENSE' as const,
+      label: 'EGRESO',
+      description: 'Gastos, compras, servicios, comida y transporte',
+    },
+  ];
+
+  const currentTypeOption =
+    accountTypeOptions.find((opt) => opt.value === type) || accountTypeOptions[0];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (typeMenuRef.current && !typeMenuRef.current.contains(e.target as Node)) {
+        setIsTypeMenuOpen(false);
+      }
+    };
+    if (isTypeMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTypeMenuOpen]);
+
+  // Filter possible parent accounts (same type, no parent itself, and not system/capital/equity)
+  const filteredParents = parentCandidates.filter(
+    (a) =>
+      a.type === type &&
+      !a.parentId &&
+      !a.systemRole &&
+      a.type !== 'EQUITY' &&
+      a.name.trim().toLowerCase() !== 'capital',
+  );
 
   return (
     <div
@@ -157,27 +211,24 @@ export default function AccountModal({
       }}
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <div>
             <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
               {isEditing ? 'Editar Cuenta o Categoría' : 'Crear Cuenta o Categoría'}
             </h2>
-            <p className="text-4xs text-slate-400 uppercase font-bold tracking-wider mt-0.5">
-              Administración de Rubros
-            </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
           >
             <X className="w-4.5 h-4.5 text-slate-500" />
           </button>
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSave} className="p-6 space-y-4">
+        <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -199,23 +250,90 @@ export default function AccountModal({
             />
           </div>
 
-          <div>
+          <div ref={typeMenuRef} className="relative">
             <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
-              Tipo de Rubro
+              Tipo
             </label>
-            <select
-              value={type}
-              disabled={isEditing}
-              onChange={(e) => handleTypeChange(e.target.value as any)}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-semibold text-slate-700 dark:text-slate-200 disabled:opacity-60"
-            >
-              <option value="ASSET">ACTIVO (Efectivo, Cuentas Bancarias)</option>
-              <option value="LIABILITY">PASIVO (Deudas, Tarjetas de Crédito)</option>
-              <option value="INCOME">INGRESO (Sueldo, Ventas, etc.)</option>
-              <option value="EXPENSE">EGRESO (Gastos, Comida, Servicios)</option>
-              <option value="EQUITY">PATRIMONIO NETO</option>
-            </select>
+            {isEditing ? (
+              <div className="w-full bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center justify-between opacity-80 cursor-not-allowed">
+                <span>{currentTypeOption.label}</span>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  aria-label="Tipo"
+                  aria-expanded={isTypeMenuOpen}
+                  onClick={() => setIsTypeMenuOpen(!isTypeMenuOpen)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between text-left transition hover:bg-slate-100/70 dark:hover:bg-slate-800"
+                >
+                  <span>{currentTypeOption.label}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      isTypeMenuOpen ? 'rotate-180 text-indigo-500' : ''
+                    }`}
+                  />
+                </button>
+
+                {isTypeMenuOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-20 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100 dark:divide-slate-700/50">
+                    {accountTypeOptions.map((opt) => {
+                      const isSelected = opt.value === type;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            handleTypeChange(opt.value);
+                            setIsTypeMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 flex items-start justify-between gap-2 transition ${
+                            isSelected
+                              ? 'bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200'
+                          }`}
+                        >
+                          <div>
+                            <span className="block text-xs font-bold">{opt.label}</span>
+                            <span className="block text-4xs text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">
+                              {opt.description}
+                            </span>
+                          </div>
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
+
+          {/* Saldo Field only on Account Creation for ASSET or LIABILITY */}
+          {!isEditing && (type === 'ASSET' || type === 'LIABILITY') && (
+            <div>
+              <label className="block text-3xs font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">
+                Saldo (Opcional)
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={formatInputDisplay(initialBalance)}
+                placeholder="0"
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const parsed = parseInputRaw(e.target.value);
+                  setInitialBalance(parsed);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-200 font-semibold tabular-nums"
+              />
+              <p className="text-4xs text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                Saldo inicial con el que empieza esta cuenta.
+              </p>
+            </div>
+          )}
 
           {type === 'ASSET' && (
             <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">

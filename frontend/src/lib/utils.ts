@@ -113,3 +113,54 @@ export function formatLocalDateTimeWithOffset(dateTimeStr: string): string {
   const formattedMinute = String(minute).padStart(2, '0');
   return `${year}-${formattedMonth}-${formattedDay}T${formattedHour}:${formattedMinute}:00.000${offsetStr}`;
 }
+
+export function formatInputDisplay(val: string | number | null | undefined): string {
+  if (val === null || val === undefined || val === '') return '';
+  const str = String(val);
+  if (str === '-') return '-';
+  const isNegative = str.startsWith('-');
+  const clean = str.replace(/^-/, '');
+  const [intPart, decPart] = clean.split('.');
+  const formattedInt = intPart === '' ? '' : Number(intPart).toLocaleString('es-PY');
+  if (decPart !== undefined) {
+    return (isNegative ? '-' : '') + formattedInt + (decPart ? ',' + decPart : '');
+  }
+  return (isNegative ? '-' : '') + formattedInt;
+}
+
+export function parseInputRaw(inputStr: string): string {
+  if (!inputStr) return '';
+  if (inputStr === '-') return '-';
+  const isNegative = inputStr.startsWith('-');
+  const clean = inputStr.replace(/^-/, '').trim();
+
+  // If contains comma, comma is decimal and dots are thousand separators: "1.500,50" -> "1500.50"
+  if (clean.includes(',')) {
+    const withoutDots = clean.replace(/\./g, '');
+    const parts = withoutDots.split(',');
+    const intPart = parts[0].replace(/\D/g, '');
+    const decPart = parts.slice(1).join('').replace(/\D/g, '');
+    return (isNegative ? '-' : '') + intPart + (decPart ? '.' + decPart : '');
+  }
+
+  // If contains dots
+  const dotCount = (clean.match(/\./g) || []).length;
+  if (dotCount > 1) {
+    // Multiple dots are always thousand separators: "1.000.000" -> "1000000"
+    const intPart = clean.replace(/\./g, '').replace(/\D/g, '');
+    return (isNegative ? '-' : '') + intPart;
+  } else if (dotCount === 1) {
+    const parts = clean.split('.');
+    const intPart = parts[0].replace(/\D/g, '');
+    const decPart = parts[1].replace(/\D/g, '');
+    // If exactly 3 digits after single dot (like 5.000), it's a thousand separator
+    if (decPart.length === 3) {
+      return (isNegative ? '-' : '') + intPart + decPart;
+    }
+    return (isNegative ? '-' : '') + intPart + (decPart ? '.' + decPart : '');
+  }
+
+  // Only digits
+  const intPart = clean.replace(/\D/g, '');
+  return (isNegative ? '-' : '') + intPart;
+}

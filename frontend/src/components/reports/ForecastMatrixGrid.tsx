@@ -188,7 +188,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
         <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors h-9">
           {/* Sticky left Account Name */}
           <td
-            className="px-3 py-1.5 border-r border-slate-200 dark:border-slate-800 font-sans sticky left-0 z-10 bg-white dark:bg-slate-900 truncate"
+            className="px-3 py-1.5 border-r border-slate-200 dark:border-slate-800 sticky left-0 z-10 bg-white dark:bg-slate-900 truncate"
             style={{ paddingLeft: `${Math.max(12, depth * 20 + 12)}px` }}
           >
             <div className="flex items-center gap-1.5 min-w-0">
@@ -228,7 +228,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
             return (
               <td
                 key={m.periodId}
-                className={`p-2 text-right border-r border-slate-200/60 dark:border-slate-800/60 font-mono text-xs tabular-nums whitespace-nowrap ${
+                className={`p-2 text-right border-r border-slate-200/60 dark:border-slate-800/60 text-xs tabular-nums whitespace-nowrap ${
                   val !== 0
                     ? childrenPresent
                       ? 'font-bold text-slate-900 dark:text-slate-100'
@@ -242,7 +242,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
           })}
 
           {/* Row Total */}
-          <td className="p-2 text-right font-mono text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80 tabular-nums truncate">
+          <td className="p-2 text-right text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80 tabular-nums truncate">
             {rowTotal === 0 ? '-' : formatCurrency(rowTotal, baseCurrency)}
           </td>
         </tr>
@@ -295,7 +295,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {type === 'CASH_FLOW' ? (
               /* ========================================================================= */
               /* --- FLUXO DE CAJA PROYECTADO --- */

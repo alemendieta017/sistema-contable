@@ -300,7 +300,7 @@ export default function PeriodsPage() {
                               <p className="font-extrabold text-xs text-slate-800 dark:text-slate-200">
                                 {formatPeriodLabel(period.name)}
                               </p>
-                              <span className="text-xs text-slate-400 dark:text-slate-500 font-mono tabular-nums">
+                              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                                 ({period.name})
                               </span>
                             </div>

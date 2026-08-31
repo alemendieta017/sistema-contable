@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsUUID, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsUUID, IsOptional, IsNumber } from 'class-validator';
 import { CreateAccountRequest, AccountType, SystemRole } from '@sistema-contable/shared';
 
 export class CreateAccountDto implements CreateAccountRequest {
@@ -19,7 +19,11 @@ export class CreateAccountDto implements CreateAccountRequest {
   @IsOptional()
   metadata?: Record<string, any>;
 
-  @IsEnum(['NET_INCOME', 'RETAINED_EARNINGS'])
+  @IsEnum(['CAPITAL', 'NET_INCOME', 'RETAINED_EARNINGS'])
   @IsOptional()
   systemRole?: SystemRole | null;
+
+  @IsNumber()
+  @IsOptional()
+  initialBalance?: number;
 }

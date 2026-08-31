@@ -14,6 +14,7 @@ import { ReverseTransactionUseCase } from '../../application/ledger/reverse-tran
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
 import { UpdateAccountUseCase } from '../../application/accounts/update-account.use-case';
+import { AdjustAccountBalanceUseCase } from '../../application/accounts/adjust-account-balance.use-case';
 import { UpdatePeriodUseCase } from '../../application/periods/update-period.use-case';
 import { BalanceUpdateService } from '../../application/periods/balance-update.service';
 import { EnsurePeriodService } from '../../application/periods/ensure-period.service';
@@ -44,6 +45,7 @@ import { AuthModule } from '../auth/auth.module';
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
     UpdateAccountUseCase,
+    AdjustAccountBalanceUseCase,
     UpdatePeriodUseCase,
     BalanceUpdateService,
     EnsurePeriodService,
@@ -57,6 +59,7 @@ import { AuthModule } from '../auth/auth.module';
     GetAccountsSummaryUseCase,
     DeleteAccountUseCase,
     UpdateAccountUseCase,
+    AdjustAccountBalanceUseCase,
     UpdatePeriodUseCase,
     BalanceUpdateService,
     EnsurePeriodService,

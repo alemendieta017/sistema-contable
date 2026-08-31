@@ -254,7 +254,7 @@ describe('User Story 2: Free Journal Entry Grid (T011)', () => {
       const allCreditInputs = screen.getAllByLabelText(/haber/i);
       expect(allCreditInputs.length).toBe(3);
       // Newly added line (3rd line) should have Credit pre-filled with 100
-      expect(allCreditInputs[2]).toHaveValue(100);
+      expect(allCreditInputs[2]).toHaveValue('100');
     });
 
     test('multi-line residual auto-fill: Line 1 Debit = 100, Line 2 Credit = 40 -> Line 3 Credit = 60', () => {
@@ -277,7 +277,7 @@ describe('User Story 2: Free Journal Entry Grid (T011)', () => {
       const updatedCreditInputs = screen.getAllByLabelText(/haber/i);
       expect(updatedCreditInputs.length).toBe(3);
       // Line 3 should auto-fill the remaining difference: 60 in Credit
-      expect(updatedCreditInputs[2]).toHaveValue(60);
+      expect(updatedCreditInputs[2]).toHaveValue('60');
     });
 
     test('multi-line residual auto-fill when Credits exceed Debits: Line 1 Credit = 200, Line 2 Debit = 50 -> Line 3 Debit = 150', () => {
@@ -300,7 +300,7 @@ describe('User Story 2: Free Journal Entry Grid (T011)', () => {
       const updatedDebitInputs = screen.getAllByLabelText(/debe/i);
       expect(updatedDebitInputs.length).toBe(3);
       // Line 3 should auto-fill the remaining difference: 150 in Debit
-      expect(updatedDebitInputs[2]).toHaveValue(150);
+      expect(updatedDebitInputs[2]).toHaveValue('150');
     });
 
     test('real-time balance indicator: shows "Sin movimientos" initially, "Descuadrado" when unbalanced, and "Cuadrado" when total Debe === total Haber > 0', () => {

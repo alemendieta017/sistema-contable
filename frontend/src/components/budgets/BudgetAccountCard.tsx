@@ -231,7 +231,7 @@ export const BudgetAccountCard: React.FC<BudgetAccountCardProps> = ({
               onChange={handleInputChange}
               onBlur={handleInputBlur}
               onKeyDown={handleKeyDown}
-              className="w-full min-h-[40px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-mono text-base font-bold px-3 py-1.5 rounded-lg border border-indigo-500 ring-2 ring-indigo-500/30 outline-none transition-all"
+              className="w-full min-h-[40px] bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 tabular-nums text-base font-bold px-3 py-1.5 rounded-lg border border-indigo-500 ring-2 ring-indigo-500/30 outline-none transition-all"
               placeholder="0"
             />
           ) : (
@@ -244,7 +244,7 @@ export const BudgetAccountCard: React.FC<BudgetAccountCardProps> = ({
                   setInputValue(String(currentAmount || ''));
                 }
               }}
-              className={`w-full min-h-[40px] px-3 py-1.5 rounded-lg flex items-center justify-between font-mono text-base font-bold text-left transition-all border ${
+              className={`w-full min-h-[40px] px-3 py-1.5 rounded-lg flex items-center justify-between tabular-nums text-base font-bold text-left transition-all border ${
                 isLocked
                   ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 cursor-not-allowed'
                   : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:indigo-600 cursor-text'
@@ -254,7 +254,7 @@ export const BudgetAccountCard: React.FC<BudgetAccountCardProps> = ({
               {isLocked ? (
                 <Lock className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
               ) : (
-                <span className="text-[11px] font-sans font-normal text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
                   Toca para editar
                 </span>
               )}

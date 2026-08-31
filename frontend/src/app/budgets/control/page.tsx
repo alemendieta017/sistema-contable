@@ -297,7 +297,7 @@ export default function BudgetControlPage() {
                 </span>
                 <DollarSign className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               </div>
-              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono mt-2">
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums mt-2">
                 {formatCurrency(controlData.summary.totalBudgeted, baseCurrency)}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
@@ -312,7 +312,7 @@ export default function BudgetControlPage() {
                 </span>
                 <TrendingUp className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
               </div>
-              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono mt-2">
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums mt-2">
                 {formatCurrency(controlData.summary.totalExecuted, baseCurrency)}
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
@@ -336,7 +336,7 @@ export default function BudgetControlPage() {
                 </span>
               </div>
               <p
-                className={`text-2xl font-bold font-mono mt-2 ${
+                className={`text-2xl font-bold tabular-nums mt-2 ${
                   controlData.summary.totalAvailable >= 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-rose-600 dark:text-rose-400'
@@ -344,7 +344,7 @@ export default function BudgetControlPage() {
               >
                 {formatCurrency(controlData.summary.totalAvailable, baseCurrency)}
               </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                 Disponible = Presupuesto − Real − Comprometido
               </p>
             </div>
@@ -359,7 +359,7 @@ export default function BudgetControlPage() {
                   controlData.summary.overallConsumptionPercentage,
                 )}
               </div>
-              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono mt-2">
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums mt-2">
                 {controlData.summary.overallConsumptionPercentage}%
               </p>
               <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-2 mt-2 overflow-hidden border border-slate-200/50 dark:border-slate-800">
@@ -415,7 +415,7 @@ export default function BudgetControlPage() {
                       {getGaugeBadge(section.gaugeStatus, section.consumptionPercentage, isIncome)}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-mono">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs tabular-nums">
                       <span className="text-slate-500 dark:text-slate-400">
                         Presupuesto:{' '}
                         <strong className="text-slate-800 dark:text-slate-200 font-semibold">
@@ -459,12 +459,12 @@ export default function BudgetControlPage() {
                           <th className="p-3.5 text-center w-16">Acción</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                         {section.items.length === 0 ? (
                           <tr>
                             <td
                               colSpan={isBalanceSection ? 7 : 6}
-                              className="p-6 text-center text-slate-400 dark:text-slate-500 font-sans"
+                              className="p-6 text-center text-slate-400 dark:text-slate-500"
                             >
                               No hay cuentas presupuestadas en esta sección para este periodo.
                             </td>
@@ -480,11 +480,11 @@ export default function BudgetControlPage() {
                                 key={`${item.accountId}_${item.subRowId || idx}`}
                                 className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                               >
-                                <td className="p-3.5 font-sans font-medium text-slate-800 dark:text-slate-200">
+                                <td className="p-3.5 font-medium text-slate-800 dark:text-slate-200">
                                   {item.accountName}
                                 </td>
                                 {isBalanceSection && (
-                                  <td className="p-3.5 text-center font-sans">
+                                  <td className="p-3.5 text-center">
                                     {isItemOutflow ? (
                                       <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                                         <TrendingDown className="w-3 h-3" />
@@ -498,14 +498,14 @@ export default function BudgetControlPage() {
                                     )}
                                   </td>
                                 )}
-                                <td className="p-3.5 text-right text-slate-700 dark:text-slate-300">
+                                <td className="p-3.5 text-right text-slate-700 dark:text-slate-300 tabular-nums">
                                   {formatCurrency(item.budgeted, baseCurrency)}
                                 </td>
-                                <td className="p-3.5 text-right text-slate-700 dark:text-slate-300">
+                                <td className="p-3.5 text-right text-slate-700 dark:text-slate-300 tabular-nums">
                                   {formatCurrency(item.executed, baseCurrency)}
                                 </td>
                                 <td
-                                  className={`p-3.5 text-right font-bold ${
+                                  className={`p-3.5 text-right font-bold tabular-nums ${
                                     item.available >= 0
                                       ? 'text-emerald-600 dark:text-emerald-400'
                                       : 'text-rose-600 dark:text-rose-400'

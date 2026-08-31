@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import { cn, type CurrencyInfo } from '../../lib/utils';
+import { cn, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../../lib/utils';
 import type { AccountOption } from '../../types/account';
 import AccountPickerSheet from './AccountPickerSheet';
 import type { FreeJournalLineState } from './index';
@@ -47,21 +47,23 @@ export function FreeJournalEntryRow({
     (baseCurrency?.code === 'PYG' ? '₲' : baseCurrency?.code === 'USD' ? 'u$s' : '$');
 
   const handleDebitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    const num = Number(val);
+    const raw = e.target.value;
+    const parsed = parseInputRaw(raw);
+    const num = parsed === '' ? '' : Number(parsed);
     onChange({
       ...line,
-      debitAmount: val === '' || isNaN(num) ? '' : num,
+      debitAmount: num,
       creditAmount: '',
     });
   };
 
   const handleCreditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    const num = Number(val);
+    const raw = e.target.value;
+    const parsed = parseInputRaw(raw);
+    const num = parsed === '' ? '' : Number(parsed);
     onChange({
       ...line,
-      creditAmount: val === '' || isNaN(num) ? '' : num,
+      creditAmount: num,
       debitAmount: '',
     });
   };
@@ -141,13 +143,12 @@ export function FreeJournalEntryRow({
             </span>
             <input
               id={`debit-${line.id}`}
-              type="number"
+              type="text"
               inputMode="decimal"
-              step={isZeroDecimal ? '1' : 'any'}
-              min="0"
-              placeholder={isZeroDecimal ? '0' : '0.00'}
-              value={line.debitAmount}
+              placeholder={isZeroDecimal ? '0' : '0,00'}
+              value={formatInputDisplay(line.debitAmount)}
               disabled={disabled}
+              onFocus={(e) => e.target.select()}
               onChange={handleDebitChange}
               onKeyDown={handleAmountKeyDown}
               aria-label="Debe"
@@ -178,13 +179,12 @@ export function FreeJournalEntryRow({
             </span>
             <input
               id={`credit-${line.id}`}
-              type="number"
+              type="text"
               inputMode="decimal"
-              step={isZeroDecimal ? '1' : 'any'}
-              min="0"
-              placeholder={isZeroDecimal ? '0' : '0.00'}
-              value={line.creditAmount}
+              placeholder={isZeroDecimal ? '0' : '0,00'}
+              value={formatInputDisplay(line.creditAmount)}
               disabled={disabled}
+              onFocus={(e) => e.target.select()}
               onChange={handleCreditChange}
               onKeyDown={handleAmountKeyDown}
               aria-label="Haber"

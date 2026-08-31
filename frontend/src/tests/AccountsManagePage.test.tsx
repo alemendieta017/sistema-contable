@@ -31,6 +31,8 @@ jest.mock('lucide-react', () => ({
   Check: () => <span data-testid="check-icon">Check</span>,
   AlertTriangle: () => <span data-testid="alert-icon">Alert</span>,
   RotateCcw: () => <span data-testid="reactivate-icon">Reactivate</span>,
+  Pencil: () => <span data-testid="pencil-icon">Edit</span>,
+  SlidersHorizontal: () => <span data-testid="sliders-icon">Sliders</span>,
 }));
 
 describe('AccountsManagePage Component (US1 & US2)', () => {

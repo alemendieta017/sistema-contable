@@ -6,6 +6,9 @@ import { AccountEntity } from '../database/entities/account.entity';
 import { GetAccountsSummaryUseCase } from '../../application/accounts/get-accounts-summary.use-case';
 import { DeleteAccountUseCase } from '../../application/accounts/delete-account.use-case';
 import { UpdateAccountUseCase } from '../../application/accounts/update-account.use-case';
+import { AdjustAccountBalanceUseCase } from '../../application/accounts/adjust-account-balance.use-case';
+import { BalanceUpdateService } from '../../application/periods/balance-update.service';
+import { EnsurePeriodService } from '../../application/periods/ensure-period.service';
 import { UserEntity } from '../database/entities/user.entity';
 
 describe('AccountController (US3)', () => {
@@ -14,6 +17,7 @@ describe('AccountController (US3)', () => {
   let getSummaryUseCaseMock: any;
   let deleteUseCaseMock: any;
   let updateUseCaseMock: any;
+  let adjustBalanceUseCaseMock: any;
 
   const mockUser: UserEntity = {
     id: 'user-ctrl-1',
@@ -30,6 +34,14 @@ describe('AccountController (US3)', () => {
       save: jest.fn(),
       manager: {
         getRepository: jest.fn(),
+        transaction: jest.fn((isolationOrCb, maybeCb) => {
+          const cb = typeof isolationOrCb === 'function' ? isolationOrCb : maybeCb;
+          return cb({
+            findOne: jest.fn(),
+            create: jest.fn((entity, data) => ({ ...data, id: 'saved-id' })),
+            save: jest.fn((entity, data) => Promise.resolve(data)),
+          });
+        }),
       },
     };
 
@@ -42,6 +54,10 @@ describe('AccountController (US3)', () => {
     };
 
     updateUseCaseMock = {
+      execute: jest.fn(),
+    };
+
+    adjustBalanceUseCaseMock = {
       execute: jest.fn(),
     };
 
@@ -63,6 +79,18 @@ describe('AccountController (US3)', () => {
         {
           provide: UpdateAccountUseCase,
           useValue: updateUseCaseMock,
+        },
+        {
+          provide: AdjustAccountBalanceUseCase,
+          useValue: adjustBalanceUseCaseMock,
+        },
+        {
+          provide: BalanceUpdateService,
+          useValue: { updateBalances: jest.fn() },
+        },
+        {
+          provide: EnsurePeriodService,
+          useValue: { ensurePeriod: jest.fn() },
         },
       ],
     }).compile();
@@ -143,14 +171,18 @@ describe('AccountController (US3)', () => {
     });
   });
 
-  describe('delete', () => {
-    it('should delegate account deletion to DeleteAccountUseCase', async () => {
-      deleteUseCaseMock.execute.mockResolvedValue({ success: true, action: 'DELETED' });
+  describe('adjustBalance', () => {
+    it('should delegate balance adjustment to AdjustAccountBalanceUseCase', async () => {
+      adjustBalanceUseCaseMock.execute.mockResolvedValue({
+        success: true,
+        message: 'Saldo ajustado exitosamente.',
+      });
 
-      const result = await controller.delete(mockUser, 'acc-123');
+      const dto = { targetBalance: 5000, adjustmentType: 'CAPITAL' as const };
+      const result = await controller.adjustBalance(mockUser, 'acc-123', dto);
 
-      expect(deleteUseCaseMock.execute).toHaveBeenCalledWith('user-ctrl-1', 'acc-123');
-      expect(result).toEqual({ success: true, action: 'DELETED' });
+      expect(adjustBalanceUseCaseMock.execute).toHaveBeenCalledWith('user-ctrl-1', 'acc-123', dto);
+      expect(result).toEqual({ success: true, message: 'Saldo ajustado exitosamente.' });
     });
   });
 });

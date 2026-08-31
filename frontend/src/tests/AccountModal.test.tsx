@@ -12,6 +12,7 @@ jest.mock('../services/api', () => ({
     accounts: {
       create: jest.fn(),
       update: jest.fn(),
+      adjustBalance: jest.fn(),
     },
   },
 }));
@@ -20,6 +21,8 @@ jest.mock('lucide-react', () => ({
   X: () => <span data-testid="x-icon">X</span>,
   Plus: () => <span data-testid="plus-icon">+</span>,
   AlertCircle: () => <span data-testid="alert-icon">Alert</span>,
+  ChevronDown: () => <span data-testid="chevron-icon">v</span>,
+  Check: () => <span data-testid="check-icon">Check</span>,
 }));
 
 describe('AccountModal (US2)', () => {
@@ -114,5 +117,79 @@ describe('AccountModal (US2)', () => {
     expect(
       screen.getByText(/Inmutable: La cuenta posee transacciones registradas/i),
     ).toBeInTheDocument();
+  });
+
+  test('should include initialBalance in api.accounts.create when specified', async () => {
+    (api.accounts.create as jest.Mock).mockResolvedValue({ id: 'acc-new' });
+    const onSuccessMock = jest.fn();
+    const onCloseMock = jest.fn();
+
+    render(<AccountModal onClose={onCloseMock} onSuccess={onSuccessMock} parentCandidates={[]} />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/Ej. Efectivo, Comida, Sueldo/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej. Efectivo, Comida, Sueldo/i), {
+      target: { value: 'Ahorros' },
+    });
+
+    const balanceInput = screen.getByPlaceholderText('0');
+    fireEvent.change(balanceInput, { target: { value: '500000' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Crear Cuenta/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(api.accounts.create).toHaveBeenCalledWith({
+        name: 'Ahorros',
+        type: 'ASSET',
+        currencyId: 'cur-base',
+        parentId: null,
+        isCashOrBank: false,
+        initialBalance: 500000,
+      });
+      expect(onSuccessMock).toHaveBeenCalled();
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+
+  test('should update account name and attributes on edit', async () => {
+    (api.accounts.update as jest.Mock).mockResolvedValue({ id: 'acc-edit' });
+    const onSuccessMock = jest.fn();
+    const onCloseMock = jest.fn();
+
+    render(
+      <AccountModal
+        onClose={onCloseMock}
+        onSuccess={onSuccessMock}
+        parentCandidates={[]}
+        accountToEdit={{
+          id: 'acc-edit',
+          name: 'Caja Principal',
+          type: 'ASSET',
+          isCashOrBank: true,
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Caja Principal')).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByDisplayValue('Caja Principal');
+    fireEvent.change(nameInput, { target: { value: 'Caja Central Actualizada' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Guardar Cambios/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(api.accounts.update).toHaveBeenCalledWith('acc-edit', {
+        name: 'Caja Central Actualizada',
+        isCashOrBank: true,
+      });
+      expect(onSuccessMock).toHaveBeenCalled();
+      expect(onCloseMock).toHaveBeenCalled();
+    });
   });
 });

@@ -423,7 +423,7 @@ describe('QuickTransactionForm Component (T007)', () => {
       expect(screen.getByLabelText(/fecha/i)).toHaveValue('2026-08-15');
       expect(screen.getByText('Banco Familiar')).toBeInTheDocument();
       expect(screen.getByText('Útiles de Oficina')).toBeInTheDocument();
-      expect(screen.getByLabelText(/monto/i)).toHaveValue(75.5);
+      expect(screen.getByLabelText(/monto/i)).toHaveValue('75,5');
       expect(screen.getByLabelText(/concepto/i)).toHaveValue('Compra de resmas de papel');
     });
 
@@ -541,7 +541,7 @@ describe('QuickTransactionForm Component (T007)', () => {
       );
 
       const amountInput = screen.getByLabelText(/monto/i);
-      expect(amountInput).toHaveAttribute('step', '1');
+      expect(amountInput).toHaveAttribute('inputmode', 'decimal');
       expect(amountInput).toHaveAttribute('placeholder', '0');
     });
 

@@ -105,7 +105,7 @@ describe('AsientoLibrePage Integration', () => {
     const optEfectivo = await screen.findByText('Efectivo');
     fireEvent.click(optEfectivo);
 
-    const debitInput = screen.getAllByRole('spinbutton', { name: /Debe/i })[0];
+    const debitInput = screen.getAllByLabelText(/Debe/i)[0];
     fireEvent.change(debitInput, { target: { value: '200' } });
 
     // Select account 2 (CREDIT 200)
@@ -114,7 +114,7 @@ describe('AsientoLibrePage Integration', () => {
     const optComida = await screen.findByText('Comida');
     fireEvent.click(optComida);
 
-    const creditInput = screen.getAllByRole('spinbutton', { name: /Haber/i })[1];
+    const creditInput = screen.getAllByLabelText(/Haber/i)[1];
     fireEvent.change(creditInput, { target: { value: '200' } });
 
     const submitBtn = screen.getByRole('button', { name: /Guardar Asiento/i });
