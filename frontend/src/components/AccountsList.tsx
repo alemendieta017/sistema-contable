@@ -397,8 +397,8 @@ export default function AccountsList({
   if (activeTab === 'FINANCIAL') {
     return (
       <div className="space-y-6">
-        {renderGroup('Efectivo y Bancos', liquidAssets)}
-        {renderGroup('Otros Activos e Inversiones', otherAssets)}
+        {renderGroup('Cuentas a la vista', liquidAssets)}
+        {renderGroup('Activos e Inversiones', otherAssets)}
         {renderGroup('Pasivos y Deudas', liabilities)}
         {renderGroup('Patrimonio Neto', equity)}
       </div>
@@ -417,8 +417,8 @@ export default function AccountsList({
   // Default: Financial (Cash, Banks, Assets, Liabilities & Equity)
   return (
     <div className="space-y-6">
-      {renderGroup('Efectivo y Bancos', liquidAssets)}
-      {renderGroup('Otros Activos e Inversiones', otherAssets)}
+      {renderGroup('Cuentas a la vista', liquidAssets)}
+      {renderGroup('Activos e Inversiones', otherAssets)}
       {renderGroup('Pasivos y Deudas', liabilities)}
       {renderGroup('Patrimonio Neto', equity)}
     </div>
