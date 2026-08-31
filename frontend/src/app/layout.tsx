@@ -2,7 +2,6 @@ import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ThemeProvider } from '../lib/theme-context';
 import { SearchProvider } from '../lib/search-context';
-import { ModalProvider } from '../lib/modal-context';
 import { AuthProvider } from '../context/AuthContext';
 import MainLayout from '../components/MainLayout';
 
@@ -24,9 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <ThemeProvider>
             <SearchProvider>
-              <ModalProvider>
-                <MainLayout>{children}</MainLayout>
-              </ModalProvider>
+              <MainLayout>{children}</MainLayout>
             </SearchProvider>
           </ThemeProvider>
         </AuthProvider>

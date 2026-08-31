@@ -4,10 +4,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { FreeJournalEntryGrid } from '../components/transactions/FreeJournalEntryGrid';
 import { FreeJournalEntryRow } from '../components/transactions/FreeJournalEntryRow';
 import NewTransactionPage from '../app/transactions/new/page';
-import TransactionModal from '../components/TransactionModal';
 import { api } from '../services/api';
 import type { AccountOption } from '../types/account';
-import { TransactionMode } from '@sistema-contable/shared';
 
 // Mock next/navigation
 const mockPush = jest.fn();
@@ -285,46 +283,6 @@ describe('User Story 5: Clean Visual Hierarchy & Neutral Accounting Semantics (T
       // Verify no duplicate save buttons in header
       const header = screen.getByRole('banner');
       expect(header).not.toHaveTextContent(/guardar/i);
-    });
-  });
-
-  describe('4. Standardized Action Controls in TransactionModal (T028)', () => {
-    test('renders modal header with title, ModeSelector, and close button, and single action bar in body', async () => {
-      const onCloseMock = jest.fn();
-      render(<TransactionModal onClose={onCloseMock} defaultMode={TransactionMode.QUICK} />);
-
-      // Header components
-      expect(screen.getByTestId('modal-title')).toHaveTextContent('Registrar Asiento Contable');
-      expect(screen.getByRole('tab', { name: /Transacción Rápida/i })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /Asiento Libre/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Cerrar modal/i })).toBeInTheDocument();
-
-      // Only ONE submit button inside modal content
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Guardar Transacción/i })).toBeInTheDocument();
-      });
-      const submitButtons = screen.getAllByRole('button', { name: /Guardar Transacción/i });
-      expect(submitButtons).toHaveLength(1);
-
-      // Close button triggers onClose
-      const closeBtn = screen.getByRole('button', { name: /Cerrar modal/i });
-      fireEvent.click(closeBtn);
-      expect(onCloseMock).toHaveBeenCalledTimes(1);
-    });
-
-    test('switching to Free Journal mode in modal renders single Guardar Asiento action with neutral palette', async () => {
-      render(<TransactionModal onClose={jest.fn()} defaultMode={TransactionMode.FREE_JOURNAL} />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Fecha Contable/i)).toBeInTheDocument();
-      });
-
-      // Exactly ONE submit button: "Guardar Asiento"
-      const submitButtons = screen.getAllByRole('button', { name: /Guardar Asiento/i });
-      expect(submitButtons).toHaveLength(1);
-
-      // Balance badge is present with Sin movimientos initial state
-      expect(screen.getByTestId('balance-badge')).toHaveTextContent('Sin movimientos');
     });
   });
 });
