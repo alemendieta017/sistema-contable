@@ -4,6 +4,7 @@ import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { cn, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../../lib/utils';
 import type { AccountOption } from '../../types/account';
+import { AccountType } from '@sistema-contable/shared';
 import AccountPickerSheet from './AccountPickerSheet';
 import type { FreeJournalLineState } from './index';
 
@@ -16,7 +17,7 @@ export interface FreeJournalEntryRowProps {
   onRemove: () => void;
   canRemove: boolean;
   onEnter?: () => void;
-  onQuickCreateAccount?: (initialName: string) => void;
+  onQuickCreateAccount?: (initialName: string, suggestedType?: AccountType) => void;
   disabled?: boolean;
   isMobile?: boolean;
   error?: {

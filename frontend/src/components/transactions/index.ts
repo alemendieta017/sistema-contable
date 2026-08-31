@@ -1,6 +1,7 @@
 import type { AccountOption } from '../../types/account';
 import type { CurrencyInfo } from '../../lib/utils';
 import type {
+  AccountType,
   TransactionMode,
   QuickOperationType,
   CreateTransactionRequest,
@@ -8,7 +9,13 @@ import type {
 } from '@sistema-contable/shared';
 
 // Re-export shared types for transaction consumers
-export type { TransactionMode, QuickOperationType, CreateTransactionRequest, JournalEntryRequest };
+export type {
+  AccountType,
+  TransactionMode,
+  QuickOperationType,
+  CreateTransactionRequest,
+  JournalEntryRequest,
+};
 
 // Export ModeSelector component and props
 export { ModeSelector } from './ModeSelector';
@@ -39,7 +46,11 @@ export interface QuickTransactionFormProps {
   onSubmit: (payload: CreateTransactionRequest) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
-  onQuickCreateAccount?: (initialName: string, targetField: 'primary' | 'secondary') => void;
+  onQuickCreateAccount?: (
+    initialName: string,
+    targetField: 'primary' | 'secondary',
+    suggestedType?: AccountType,
+  ) => void;
   className?: string;
 }
 
@@ -73,7 +84,7 @@ export interface FreeJournalEntryRowProps {
   onChange: (updatedLine: FreeJournalLineState) => void;
   onRemove: () => void;
   canRemove: boolean;
-  onQuickCreateAccount?: (initialName: string) => void;
+  onQuickCreateAccount?: (initialName: string, suggestedType?: AccountType) => void;
   disabled?: boolean;
   isMobile?: boolean;
   error?: {
@@ -96,7 +107,11 @@ export interface FreeJournalEntryGridProps {
   onSubmit: (payload: CreateTransactionRequest) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
-  onQuickCreateAccount?: (initialName: string, lineIndex: number) => void;
+  onQuickCreateAccount?: (
+    initialName: string,
+    lineIndex: number,
+    suggestedType?: AccountType,
+  ) => void;
   className?: string;
 }
 

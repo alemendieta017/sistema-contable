@@ -267,4 +267,52 @@ describe('TransactionModal Integration', () => {
 
     expect(screen.queryByText('Crear Cuenta o Categoría')).not.toBeInTheDocument();
   });
+
+  test('should open AccountModal with INCOME type when quick creating secondary account in INCOME mode', async () => {
+    render(<TransactionModal onClose={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Seleccionar cuenta de pago (Caja, Banco)...')).toBeInTheDocument();
+    });
+
+    // Switch to INCOME mode
+    const incomeBtn = screen.getByRole('button', { name: /Ingreso/i });
+    fireEvent.click(incomeBtn);
+
+    // Open secondary account picker (Categoría de Ingreso)
+    const categoryPickerBtn = screen.getByText('Seleccionar categoría de ingreso...');
+    fireEvent.click(categoryPickerBtn);
+
+    // Click "Crear nueva cuenta"
+    const quickCreateBtn = await screen.findByText(/Crear nueva cuenta/i);
+    fireEvent.click(quickCreateBtn);
+
+    // AccountModal should be visible and have INGRESO type
+    await waitFor(() => {
+      expect(screen.getByText('Crear Cuenta o Categoría')).toBeInTheDocument();
+      expect(screen.getByText('INGRESO')).toBeInTheDocument();
+    });
+  });
+
+  test('should open AccountModal with EXPENSE type when quick creating secondary account in EXPENSE mode', async () => {
+    render(<TransactionModal onClose={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Seleccionar cuenta de pago (Caja, Banco)...')).toBeInTheDocument();
+    });
+
+    // Open secondary account picker (Categoría de Gasto - default mode is EXPENSE)
+    const categoryPickerBtn = screen.getByText('Seleccionar categoría de gasto...');
+    fireEvent.click(categoryPickerBtn);
+
+    // Click "Crear nueva cuenta"
+    const quickCreateBtn = await screen.findByText(/Crear nueva cuenta/i);
+    fireEvent.click(quickCreateBtn);
+
+    // AccountModal should be visible and have EGRESO type
+    await waitFor(() => {
+      expect(screen.getByText('Crear Cuenta o Categoría')).toBeInTheDocument();
+      expect(screen.getByText('EGRESO')).toBeInTheDocument();
+    });
+  });
 });

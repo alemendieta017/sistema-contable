@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Search, ChevronDown, Plus } from 'lucide-react';
 import { formatCurrency, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../lib/utils';
 import { AccountOption as Account } from '../types/account';
+import { AccountType } from '@sistema-contable/shared';
 
 interface Entry {
   accountId: string;
@@ -19,7 +20,7 @@ interface JournalEntryRowProps {
   onRemove: (index: number) => void;
   canRemove: boolean;
   baseCurrency?: string | CurrencyInfo | null;
-  onQuickCreateAccount?: (initialName: string) => void;
+  onQuickCreateAccount?: (initialName: string, suggestedType?: AccountType) => void;
 }
 
 type DropdownOption =
@@ -126,7 +127,13 @@ export default function JournalEntryRow({
     return matchesSearch && matchesTab && isOperable;
   });
 
-  const groups = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
+  const groups: AccountType[] = [
+    AccountType.ASSET,
+    AccountType.LIABILITY,
+    AccountType.EQUITY,
+    AccountType.INCOME,
+    AccountType.EXPENSE,
+  ];
 
   // Construct flat list of displayed options in the exact rendering order
   const displayOptions: DropdownOption[] = [];
@@ -212,6 +219,9 @@ export default function JournalEntryRow({
     ).length;
   };
 
+  const isAccountType = (val: string): val is AccountType =>
+    Object.values(AccountType).includes(val as AccountType);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
@@ -224,11 +234,11 @@ export default function JournalEntryRow({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex((prev) => (prev + 1 < displayOptions.length ? prev + 1 : 0));
+        setFocusedIndex((prev) => (prev < displayOptions.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setFocusedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : displayOptions.length - 1));
+        setFocusedIndex((prev) => (prev > 0 ? prev - 1 : displayOptions.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -240,7 +250,9 @@ export default function JournalEntryRow({
             setIsOpen(false);
           } else if (selected.kind === 'CREATE_ACCOUNT') {
             setIsOpen(false);
-            onQuickCreateAccount?.(selected.initialName);
+            const suggestedType =
+              activeTab !== 'ALL' && isAccountType(activeTab) ? activeTab : undefined;
+            onQuickCreateAccount?.(selected.initialName, suggestedType);
           }
         }
         break;
@@ -339,11 +351,11 @@ export default function JournalEntryRow({
             <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-slate-100 dark:border-slate-700/40 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0 select-none">
               {[
                 { id: 'ALL', label: 'Todos', dot: null },
-                { id: 'ASSET', label: 'Activos', dot: 'bg-emerald-500' },
-                { id: 'LIABILITY', label: 'Pasivos', dot: 'bg-rose-500' },
-                { id: 'EQUITY', label: 'Patrimonio', dot: 'bg-violet-500' },
-                { id: 'INCOME', label: 'Ingresos', dot: 'bg-sky-500' },
-                { id: 'EXPENSE', label: 'Egresos', dot: 'bg-amber-500' },
+                { id: AccountType.ASSET, label: 'Activos', dot: 'bg-emerald-500' },
+                { id: AccountType.LIABILITY, label: 'Pasivos', dot: 'bg-rose-500' },
+                { id: AccountType.EQUITY, label: 'Patrimonio', dot: 'bg-violet-500' },
+                { id: AccountType.INCOME, label: 'Ingresos', dot: 'bg-sky-500' },
+                { id: AccountType.EXPENSE, label: 'Egresos', dot: 'bg-amber-500' },
               ].map((tab) => {
                 const count = getCount(tab.id);
                 const isActive = activeTab === tab.id;
@@ -395,7 +407,11 @@ export default function JournalEntryRow({
                                 onMouseDown={(e) => {
                                   e.preventDefault();
                                   setIsOpen(false);
-                                  onQuickCreateAccount?.(opt.initialName);
+                                  const suggestedType =
+                                    activeTab !== 'ALL' && isAccountType(activeTab)
+                                      ? activeTab
+                                      : undefined;
+                                  onQuickCreateAccount?.(opt.initialName, suggestedType);
                                 }}
                                 className={`w-full text-left px-3 py-2 rounded-sm text-xs font-bold flex items-center gap-1.5 transition outline-none ${
                                   isFocused

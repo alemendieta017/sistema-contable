@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AccountModal from '../components/AccountModal';
 import { api } from '../services/api';
+import { AccountType } from '@sistema-contable/shared';
 
 jest.mock('../services/api', () => ({
   api: {
@@ -143,7 +144,7 @@ describe('AccountModal (US2)', () => {
     await waitFor(() => {
       expect(api.accounts.create).toHaveBeenCalledWith({
         name: 'Ahorros',
-        type: 'ASSET',
+        type: AccountType.ASSET,
         currencyId: 'cur-base',
         parentId: null,
         isCashOrBank: false,
@@ -155,7 +156,7 @@ describe('AccountModal (US2)', () => {
   });
 
   test('should update account name and attributes on edit', async () => {
-    (api.accounts.update as jest.Mock).mockResolvedValue({ id: 'acc-edit' });
+    (api.accounts.update as jest.Mock).mockResolvedValue({ id: 'acc-1' });
     const onSuccessMock = jest.fn();
     const onCloseMock = jest.fn();
 
@@ -165,31 +166,101 @@ describe('AccountModal (US2)', () => {
         onSuccess={onSuccessMock}
         parentCandidates={[]}
         accountToEdit={{
-          id: 'acc-edit',
-          name: 'Caja Principal',
-          type: 'ASSET',
-          isCashOrBank: true,
+          id: 'acc-1',
+          name: 'Caja Antigua',
+          type: AccountType.ASSET,
+          isCashOrBank: false,
+          hasTransactions: false,
         }}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('Caja Principal')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Caja Antigua')).toBeInTheDocument();
     });
 
-    const nameInput = screen.getByDisplayValue('Caja Principal');
-    fireEvent.change(nameInput, { target: { value: 'Caja Central Actualizada' } });
+    fireEvent.change(screen.getByDisplayValue('Caja Antigua'), {
+      target: { value: 'Caja Principal' },
+    });
+
+    const toggle = screen.getByLabelText(/Es cuenta de Efectivo\/Banco/i);
+    fireEvent.click(toggle);
 
     const submitBtn = screen.getByRole('button', { name: /Guardar Cambios/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(api.accounts.update).toHaveBeenCalledWith('acc-edit', {
-        name: 'Caja Central Actualizada',
+      expect(api.accounts.update).toHaveBeenCalledWith('acc-1', {
+        name: 'Caja Principal',
         isCashOrBank: true,
       });
       expect(onSuccessMock).toHaveBeenCalled();
       expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+
+  test('should initialize with initialType (INCOME) when provided', async () => {
+    (api.accounts.create as jest.Mock).mockResolvedValue({ id: 'acc-inc-new' });
+    const onSuccessMock = jest.fn();
+
+    render(
+      <AccountModal
+        onClose={jest.fn()}
+        onSuccess={onSuccessMock}
+        parentCandidates={[]}
+        initialType={AccountType.INCOME}
+        initialName="Consultoría Externa"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('INGRESO')).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /PYG/i })).toBeInTheDocument();
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /Crear Cuenta/i });
+    fireEvent.submit(submitBtn.closest('form')!);
+
+    await waitFor(() => {
+      expect(api.accounts.create).toHaveBeenCalledWith({
+        name: 'Consultoría Externa',
+        type: AccountType.INCOME,
+        currencyId: 'cur-base',
+        parentId: null,
+        isCashOrBank: false,
+      });
+    });
+  });
+
+  test('should initialize with initialType (EXPENSE) when provided', async () => {
+    (api.accounts.create as jest.Mock).mockResolvedValue({ id: 'acc-exp-new' });
+
+    render(
+      <AccountModal
+        onClose={jest.fn()}
+        onSuccess={jest.fn()}
+        parentCandidates={[]}
+        initialType={AccountType.EXPENSE}
+        initialName="Servicio de Luz"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('EGRESO')).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: /PYG/i })).toBeInTheDocument();
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /Crear Cuenta/i });
+    fireEvent.submit(submitBtn.closest('form')!);
+
+    await waitFor(() => {
+      expect(api.accounts.create).toHaveBeenCalledWith({
+        name: 'Servicio de Luz',
+        type: AccountType.EXPENSE,
+        currencyId: 'cur-base',
+        parentId: null,
+        isCashOrBank: false,
+      });
     });
   });
 });

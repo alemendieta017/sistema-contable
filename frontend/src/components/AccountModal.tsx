@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { api } from '../services/api';
 import { formatInputDisplay, parseInputRaw } from '../lib/utils';
+import { AccountType } from '@sistema-contable/shared';
 
 interface Currency {
   id: string;
@@ -24,7 +25,7 @@ interface ParentAccount {
 interface Account {
   id: string;
   name: string;
-  type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  type: AccountType;
   currencyId: string;
   parentId?: string | null;
   systemRole?: string | null;
@@ -35,12 +36,12 @@ interface AccountModalProps {
   onSuccess: (createdAccount?: Account) => void;
   parentCandidates: ParentAccount[];
   initialName?: string;
-  initialType?: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  initialType?: AccountType;
   initialParentId?: string;
   accountToEdit?: {
     id: string;
     name: string;
-    type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+    type: AccountType;
     isCashOrBank?: boolean;
     hasTransactions?: boolean;
   };
@@ -58,8 +59,8 @@ export default function AccountModal({
   const isEditing = !!accountToEdit;
 
   const [name, setName] = useState(accountToEdit?.name || initialName || '');
-  const [type, setType] = useState<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>(
-    accountToEdit?.type || initialType || 'ASSET',
+  const [type, setType] = useState<AccountType>(
+    accountToEdit?.type || initialType || AccountType.ASSET,
   );
   const [isCashOrBank, setIsCashOrBank] = useState<boolean>(accountToEdit?.isCashOrBank ?? false);
   const [initialBalance, setInitialBalance] = useState<string>('');
@@ -86,7 +87,7 @@ export default function AccountModal({
 
   const handleNameChange = (val: string) => {
     setName(val);
-    if (type === 'ASSET' && !isEditing) {
+    if (type === AccountType.ASSET && !isEditing) {
       const lower = val.toLowerCase();
       const isKeywordMatch =
         lower.includes('efectivo') ||
@@ -97,10 +98,10 @@ export default function AccountModal({
     }
   };
 
-  const handleTypeChange = (newType: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE') => {
+  const handleTypeChange = (newType: AccountType) => {
     setType(newType);
     setSelectedParentId('');
-    if (newType !== 'ASSET') {
+    if (newType !== AccountType.ASSET) {
       setIsCashOrBank(false);
     }
   };
@@ -156,22 +157,22 @@ export default function AccountModal({
 
   const accountTypeOptions = [
     {
-      value: 'ASSET' as const,
+      value: AccountType.ASSET,
       label: 'ACTIVO',
       description: 'Efectivo, cuentas bancarias, inversiones y bienes',
     },
     {
-      value: 'LIABILITY' as const,
+      value: AccountType.LIABILITY,
       label: 'PASIVO',
       description: 'Deudas, préstamos y tarjetas de crédito',
     },
     {
-      value: 'INCOME' as const,
+      value: AccountType.INCOME,
       label: 'INGRESO',
       description: 'Sueldos, ventas, honorarios y entradas de dinero',
     },
     {
-      value: 'EXPENSE' as const,
+      value: AccountType.EXPENSE,
       label: 'EGRESO',
       description: 'Gastos, compras, servicios, comida y transporte',
     },
@@ -200,7 +201,7 @@ export default function AccountModal({
       a.type === type &&
       !a.parentId &&
       !a.systemRole &&
-      a.type !== 'EQUITY' &&
+      a.type !== AccountType.EQUITY &&
       a.name.trim().toLowerCase() !== 'capital',
   );
 

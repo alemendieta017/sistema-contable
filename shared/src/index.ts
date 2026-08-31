@@ -88,8 +88,15 @@ export const SystemRoleSchema = z
   .optional();
 export type SystemRole = 'CAPITAL' | 'NET_INCOME' | 'RETAINED_EARNINGS';
 
-export const AccountTypeSchema = z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']);
-export type AccountType = z.infer<typeof AccountTypeSchema>;
+export const AccountType = {
+  ASSET: 'ASSET',
+  LIABILITY: 'LIABILITY',
+  EQUITY: 'EQUITY',
+  INCOME: 'INCOME',
+  EXPENSE: 'EXPENSE',
+} as const;
+export type AccountType = (typeof AccountType)[keyof typeof AccountType];
+export const AccountTypeSchema = z.nativeEnum(AccountType);
 
 // Create Account Request Schema
 export const CreateAccountRequestSchema = z.object({

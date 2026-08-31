@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../../../services/api';
-import { type CreateTransactionRequest } from '@sistema-contable/shared';
+import { AccountType, type CreateTransactionRequest } from '@sistema-contable/shared';
 import { FreeJournalEntryGrid, type FreeJournalFormValues } from '../../../components/transactions';
 import AccountModal from '../../../components/AccountModal';
 import { AccountOption as Account } from '../../../types/account';
@@ -24,6 +24,7 @@ export default function AsientoLibrePage() {
 
   const [quickCreateState, setQuickCreateState] = useState<{
     initialName: string;
+    initialType?: AccountType;
     lineIndex: number;
   } | null>(null);
 
@@ -142,8 +143,8 @@ export default function AsientoLibrePage() {
               onSubmit={handleSubmit}
               onCancel={() => router.push('/transactions')}
               loading={loading}
-              onQuickCreateAccount={(initialName, lineIndex) =>
-                setQuickCreateState({ initialName, lineIndex })
+              onQuickCreateAccount={(initialName, lineIndex, suggestedType) =>
+                setQuickCreateState({ initialName, lineIndex, initialType: suggestedType })
               }
             />
           </div>
@@ -154,6 +155,7 @@ export default function AsientoLibrePage() {
       {quickCreateState && (
         <AccountModal
           initialName={quickCreateState.initialName}
+          initialType={quickCreateState.initialType}
           parentCandidates={accounts}
           onClose={() => setQuickCreateState(null)}
           onSuccess={(newAccount) => {

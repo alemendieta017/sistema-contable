@@ -491,7 +491,7 @@ describe('User Story 2: Free Journal Entry Grid (T011)', () => {
       const createBtn = screen.getByText('Crear nueva cuenta');
       fireEvent.click(createBtn);
 
-      expect(onQuickCreateMock).toHaveBeenCalledWith('', 0);
+      expect(onQuickCreateMock).toHaveBeenCalledWith('', 0, undefined);
     });
   });
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QuickOperationType } from '@sistema-contable/shared';
+import { QuickOperationType, AccountType } from '@sistema-contable/shared';
 import { QuickTransactionForm } from '../components/transactions/QuickTransactionForm';
 import type { AccountOption } from '../types/account';
 
@@ -44,7 +44,7 @@ describe('QuickTransactionForm Component (T007)', () => {
     {
       id: 'acc-bank',
       name: 'Banco Familiar',
-      type: 'ASSET',
+      type: AccountType.ASSET,
       isCashOrBank: true,
       balance: 10000,
       status: 'ACTIVE',
@@ -52,7 +52,7 @@ describe('QuickTransactionForm Component (T007)', () => {
     {
       id: 'acc-cash',
       name: 'Caja Chica',
-      type: 'ASSET',
+      type: AccountType.ASSET,
       isCashOrBank: true,
       balance: 500,
       status: 'ACTIVE',
@@ -60,7 +60,7 @@ describe('QuickTransactionForm Component (T007)', () => {
     {
       id: 'acc-card',
       name: 'Tarjeta Crédito Visa',
-      type: 'LIABILITY',
+      type: AccountType.LIABILITY,
       isCashOrBank: true,
       balance: -1500,
       status: 'ACTIVE',
@@ -68,23 +68,37 @@ describe('QuickTransactionForm Component (T007)', () => {
     {
       id: 'acc-exp-fuel',
       name: 'Combustibles y Lubricantes',
-      type: 'EXPENSE',
+      type: AccountType.EXPENSE,
       balance: 350,
       status: 'ACTIVE',
     },
     {
       id: 'acc-exp-office',
       name: 'Útiles de Oficina',
-      type: 'EXPENSE',
+      type: AccountType.EXPENSE,
       balance: 120,
       status: 'ACTIVE',
     },
     {
-      id: 'acc-inc-sales',
-      name: 'Ventas de Servicios',
-      type: 'INCOME',
-      balance: 25000,
+      id: 'acc-inc-salary',
+      name: 'Sueldos y Honorarios',
+      type: AccountType.INCOME,
+      balance: 15000,
       status: 'ACTIVE',
+    },
+    {
+      id: 'acc-inc-sales',
+      name: 'Venta de Mercaderías',
+      type: AccountType.INCOME,
+      balance: 8000,
+      status: 'ACTIVE',
+    },
+    {
+      id: 'acc-inactive',
+      name: 'Cuenta Inactiva',
+      type: AccountType.ASSET,
+      balance: 0,
+      status: 'INACTIVE',
     },
   ];
 
@@ -450,7 +464,7 @@ describe('QuickTransactionForm Component (T007)', () => {
   });
 
   describe('Quick Create Account Integration', () => {
-    test('invokes onQuickCreateAccount with targetField "primary" when primary account picker creates an account', () => {
+    test('invokes onQuickCreateAccount with targetField "primary" and suggestedType "ASSET" when primary account picker creates an account', () => {
       const onQuickCreateMock = jest.fn();
       render(<QuickTransactionForm {...defaultProps} onQuickCreateAccount={onQuickCreateMock} />);
 
@@ -461,10 +475,10 @@ describe('QuickTransactionForm Component (T007)', () => {
       const staticCreateBtn = screen.getByText('Crear nueva cuenta');
       fireEvent.click(staticCreateBtn);
 
-      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'primary');
+      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'primary', AccountType.ASSET);
     });
 
-    test('invokes onQuickCreateAccount with targetField "secondary" when secondary account picker creates an account', () => {
+    test('invokes onQuickCreateAccount with targetField "secondary" and suggestedType "EXPENSE" when secondary account picker creates an account for EXPENSE operation', () => {
       const onQuickCreateMock = jest.fn();
       render(<QuickTransactionForm {...defaultProps} onQuickCreateAccount={onQuickCreateMock} />);
 
@@ -475,7 +489,47 @@ describe('QuickTransactionForm Component (T007)', () => {
       const staticCreateBtn = screen.getByText('Crear nueva cuenta');
       fireEvent.click(staticCreateBtn);
 
-      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'secondary');
+      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'secondary', AccountType.EXPENSE);
+    });
+
+    test('invokes onQuickCreateAccount with targetField "secondary" and suggestedType "INCOME" when secondary account picker creates an account for INCOME operation', () => {
+      const onQuickCreateMock = jest.fn();
+      render(
+        <QuickTransactionForm
+          {...defaultProps}
+          initialValues={{ operationType: QuickOperationType.INCOME }}
+          onQuickCreateAccount={onQuickCreateMock}
+        />,
+      );
+
+      // Open secondary account picker
+      const secondaryTrigger = screen.getAllByRole('combobox')[1];
+      fireEvent.click(secondaryTrigger);
+
+      const staticCreateBtn = screen.getByText('Crear nueva cuenta');
+      fireEvent.click(staticCreateBtn);
+
+      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'secondary', AccountType.INCOME);
+    });
+
+    test('invokes onQuickCreateAccount with targetField "secondary" and suggestedType "ASSET" when secondary account picker creates an account for TRANSFER operation', () => {
+      const onQuickCreateMock = jest.fn();
+      render(
+        <QuickTransactionForm
+          {...defaultProps}
+          initialValues={{ operationType: QuickOperationType.TRANSFER }}
+          onQuickCreateAccount={onQuickCreateMock}
+        />,
+      );
+
+      // Open secondary account picker
+      const secondaryTrigger = screen.getAllByRole('combobox')[1];
+      fireEvent.click(secondaryTrigger);
+
+      const staticCreateBtn = screen.getByText('Crear nueva cuenta');
+      fireEvent.click(staticCreateBtn);
+
+      expect(onQuickCreateMock).toHaveBeenCalledWith('', 'secondary', AccountType.ASSET);
     });
   });
 

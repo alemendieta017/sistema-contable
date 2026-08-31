@@ -4,7 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
-import { TransactionMode, type CreateTransactionRequest } from '@sistema-contable/shared';
+import {
+  TransactionMode,
+  AccountType,
+  type CreateTransactionRequest,
+} from '@sistema-contable/shared';
 import {
   ModeSelector,
   QuickTransactionForm,
@@ -43,6 +47,7 @@ export default function TransactionModal({
 
   const [quickCreateState, setQuickCreateState] = useState<{
     initialName: string;
+    initialType?: AccountType;
     targetField?: 'primary' | 'secondary';
     lineIndex?: number;
   } | null>(null);
@@ -184,8 +189,8 @@ export default function TransactionModal({
               onSubmit={handleSubmit}
               onCancel={onClose}
               loading={loading}
-              onQuickCreateAccount={(initialName, targetField) =>
-                setQuickCreateState({ initialName, targetField })
+              onQuickCreateAccount={(initialName, targetField, suggestedType) =>
+                setQuickCreateState({ initialName, targetField, initialType: suggestedType })
               }
             />
           ) : (
@@ -196,8 +201,8 @@ export default function TransactionModal({
               onSubmit={handleSubmit}
               onCancel={onClose}
               loading={loading}
-              onQuickCreateAccount={(initialName, lineIndex) =>
-                setQuickCreateState({ initialName, lineIndex })
+              onQuickCreateAccount={(initialName, lineIndex, suggestedType) =>
+                setQuickCreateState({ initialName, lineIndex, initialType: suggestedType })
               }
             />
           )}
@@ -207,6 +212,7 @@ export default function TransactionModal({
         {quickCreateState && (
           <AccountModal
             initialName={quickCreateState.initialName}
+            initialType={quickCreateState.initialType}
             parentCandidates={accounts}
             onClose={() => setQuickCreateState(null)}
             onSuccess={(newAccount) => {

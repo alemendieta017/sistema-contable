@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Loader2 } from 'lucide-react';
-import { QuickOperationType, type CreateTransactionRequest } from '@sistema-contable/shared';
+import {
+  QuickOperationType,
+  AccountType,
+  type CreateTransactionRequest,
+} from '@sistema-contable/shared';
 import AccountPickerSheet from './AccountPickerSheet';
 import type { AccountOption } from '../../types/account';
 import { cn, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../../lib/utils';
@@ -15,7 +19,11 @@ export interface QuickTransactionFormProps {
   onSubmit: (payload: CreateTransactionRequest) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
-  onQuickCreateAccount?: (initialName: string, targetField: 'primary' | 'secondary') => void;
+  onQuickCreateAccount?: (
+    initialName: string,
+    targetField: 'primary' | 'secondary',
+    suggestedType?: AccountType,
+  ) => void;
   className?: string;
 }
 
@@ -142,14 +150,20 @@ export function QuickTransactionForm({
     // Clean up incompatible accounts when switching operation mode
     const selectedSecondary = accounts.find((a) => a.id === secondaryAccountId);
     if (selectedSecondary) {
-      if (newType === QuickOperationType.EXPENSE && selectedSecondary.type !== 'EXPENSE') {
+      if (
+        newType === QuickOperationType.EXPENSE &&
+        selectedSecondary.type !== AccountType.EXPENSE
+      ) {
         setSecondaryAccountId('');
-      } else if (newType === QuickOperationType.INCOME && selectedSecondary.type !== 'INCOME') {
+      } else if (
+        newType === QuickOperationType.INCOME &&
+        selectedSecondary.type !== AccountType.INCOME
+      ) {
         setSecondaryAccountId('');
       } else if (
         newType === QuickOperationType.TRANSFER &&
-        selectedSecondary.type !== 'ASSET' &&
-        selectedSecondary.type !== 'LIABILITY' &&
+        selectedSecondary.type !== AccountType.ASSET &&
+        selectedSecondary.type !== AccountType.LIABILITY &&
         !selectedSecondary.isCashOrBank
       ) {
         setSecondaryAccountId('');
@@ -159,8 +173,8 @@ export function QuickTransactionForm({
     const selectedPrimary = accounts.find((a) => a.id === primaryAccountId);
     if (selectedPrimary) {
       if (
-        selectedPrimary.type !== 'ASSET' &&
-        selectedPrimary.type !== 'LIABILITY' &&
+        selectedPrimary.type !== AccountType.ASSET &&
+        selectedPrimary.type !== AccountType.LIABILITY &&
         !selectedPrimary.isCashOrBank
       ) {
         setPrimaryAccountId('');
@@ -497,7 +511,10 @@ export function QuickTransactionForm({
             placeholder={primaryConfig.placeholder}
             baseCurrency={baseCurrency}
             onQuickCreateAccount={
-              onQuickCreateAccount ? (name) => onQuickCreateAccount(name, 'primary') : undefined
+              onQuickCreateAccount
+                ? (name, suggestedType) =>
+                    onQuickCreateAccount(name, 'primary', suggestedType || AccountType.ASSET)
+                : undefined
             }
             error={errors.primaryAccountId}
             disabled={loading}
@@ -524,7 +541,19 @@ export function QuickTransactionForm({
             placeholder={secondaryConfig.placeholder}
             baseCurrency={baseCurrency}
             onQuickCreateAccount={
-              onQuickCreateAccount ? (name) => onQuickCreateAccount(name, 'secondary') : undefined
+              onQuickCreateAccount
+                ? (name, suggestedType) =>
+                    onQuickCreateAccount(
+                      name,
+                      'secondary',
+                      suggestedType ||
+                        (operationType === QuickOperationType.EXPENSE
+                          ? AccountType.EXPENSE
+                          : operationType === QuickOperationType.INCOME
+                            ? AccountType.INCOME
+                            : AccountType.ASSET),
+                    )
+                : undefined
             }
             error={errors.secondaryAccountId}
             disabled={loading}

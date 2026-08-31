@@ -7,6 +7,7 @@ import { api } from '../../../services/api';
 import {
   TransactionMode,
   QuickOperationType,
+  AccountType,
   type CreateTransactionRequest,
 } from '@sistema-contable/shared';
 import {
@@ -57,8 +58,8 @@ function mapTransactionToQuickValues(
 
   // Expense: DEBIT Expense, CREDIT Asset / Liability
   if (
-    debitAcc?.type === 'EXPENSE' &&
-    (creditAcc?.type === 'ASSET' || creditAcc?.type === 'LIABILITY')
+    debitAcc?.type === AccountType.EXPENSE &&
+    (creditAcc?.type === AccountType.ASSET || creditAcc?.type === AccountType.LIABILITY)
   ) {
     return {
       accountingDate,
@@ -72,8 +73,8 @@ function mapTransactionToQuickValues(
 
   // Income: DEBIT Asset / Liability, CREDIT Income
   if (
-    (debitAcc?.type === 'ASSET' || debitAcc?.type === 'LIABILITY') &&
-    creditAcc?.type === 'INCOME'
+    (debitAcc?.type === AccountType.ASSET || debitAcc?.type === AccountType.LIABILITY) &&
+    creditAcc?.type === AccountType.INCOME
   ) {
     return {
       accountingDate,
@@ -86,7 +87,7 @@ function mapTransactionToQuickValues(
   }
 
   // Transfer: DEBIT Asset, CREDIT Asset
-  if (debitAcc?.type === 'ASSET' && creditAcc?.type === 'ASSET') {
+  if (debitAcc?.type === AccountType.ASSET && creditAcc?.type === AccountType.ASSET) {
     return {
       accountingDate,
       operationType: QuickOperationType.TRANSFER,
@@ -149,6 +150,7 @@ function TransactionPageContent() {
 
   const [quickCreateState, setQuickCreateState] = useState<{
     initialName: string;
+    initialType?: AccountType;
     targetField?: 'primary' | 'secondary';
     lineIndex?: number;
   } | null>(null);
@@ -409,9 +411,9 @@ function TransactionPageContent() {
                 onSubmit={handleSubmit}
                 onCancel={handleCancelClick}
                 loading={loading}
-                onQuickCreateAccount={(initialName, targetField) => {
+                onQuickCreateAccount={(initialName, targetField, suggestedType) => {
                   setIsDirty(true);
-                  setQuickCreateState({ initialName, targetField });
+                  setQuickCreateState({ initialName, targetField, initialType: suggestedType });
                 }}
               />
             ) : (
@@ -422,9 +424,9 @@ function TransactionPageContent() {
                 onSubmit={handleSubmit}
                 onCancel={handleCancelClick}
                 loading={loading}
-                onQuickCreateAccount={(initialName, lineIndex) => {
+                onQuickCreateAccount={(initialName, lineIndex, suggestedType) => {
                   setIsDirty(true);
-                  setQuickCreateState({ initialName, lineIndex });
+                  setQuickCreateState({ initialName, lineIndex, initialType: suggestedType });
                 }}
               />
             )}
@@ -436,6 +438,7 @@ function TransactionPageContent() {
       {quickCreateState && (
         <AccountModal
           initialName={quickCreateState.initialName}
+          initialType={quickCreateState.initialType}
           parentCandidates={accounts}
           onClose={() => setQuickCreateState(null)}
           onSuccess={(newAccount) => {

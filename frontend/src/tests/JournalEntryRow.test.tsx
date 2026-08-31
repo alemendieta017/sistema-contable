@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalEntryRow from '../components/JournalEntryRow';
 import { AccountOption } from '../types/account';
+import { AccountType } from '@sistema-contable/shared';
 
 // Mock Lucide React icons
 jest.mock('lucide-react', () => ({
@@ -14,8 +15,8 @@ jest.mock('lucide-react', () => ({
 
 describe('JournalEntryRow Component', () => {
   const mockAccounts: AccountOption[] = [
-    { id: 'acc-1', name: 'Caja Chica', type: 'ASSET' },
-    { id: 'acc-2', name: 'Servicios Básicos', type: 'EXPENSE' },
+    { id: 'acc-1', name: 'Caja Chica', type: AccountType.ASSET },
+    { id: 'acc-2', name: 'Servicios Básicos', type: AccountType.EXPENSE },
   ];
 
   const defaultProps = {
@@ -70,7 +71,7 @@ describe('JournalEntryRow Component', () => {
     expect(createBtn).toBeInTheDocument();
     fireEvent.mouseDown(createBtn);
 
-    expect(onQuickCreate).toHaveBeenCalledWith('');
+    expect(onQuickCreate).toHaveBeenCalledWith('', undefined);
   });
 
   test('shows dynamic search shortcut when search does not match existing accounts', () => {
@@ -85,7 +86,23 @@ describe('JournalEntryRow Component', () => {
     expect(dynamicOption).toBeInTheDocument();
 
     fireEvent.mouseDown(dynamicOption);
-    expect(onQuickCreate).toHaveBeenCalledWith('Servicios Tigo');
+    expect(onQuickCreate).toHaveBeenCalledWith('Servicios Tigo', undefined);
+  });
+
+  test('passes active tab as suggestedType when creating account', () => {
+    const onQuickCreate = jest.fn();
+    render(<JournalEntryRow {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
+
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+
+    const expenseTab = screen.getByText('Egresos');
+    fireEvent.click(expenseTab);
+
+    const createBtn = screen.getByText('Crear Cuenta');
+    fireEvent.mouseDown(createBtn);
+
+    expect(onQuickCreate).toHaveBeenCalledWith('', AccountType.EXPENSE);
   });
 
   test('excludes inactive accounts from combobox options unless currently assigned to row', () => {

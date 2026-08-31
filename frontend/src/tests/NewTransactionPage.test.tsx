@@ -245,4 +245,52 @@ describe('NewTransactionPage Dual-Mode Integration', () => {
       );
     });
   });
+
+  test('should open AccountModal with INCOME type when creating secondary account during INCOME mode', async () => {
+    render(<NewTransactionPage />);
+
+    await waitFor(() => {
+      expect(api.accounts.summary).toHaveBeenCalled();
+    });
+
+    // Switch operation mode to INCOME
+    const incomeTypeBtn = screen.getByRole('button', { name: /Ingreso/i });
+    fireEvent.click(incomeTypeBtn);
+
+    // Open secondary account picker (Categoría de Ingreso)
+    const secondaryTrigger = screen.getAllByRole('combobox')[1];
+    fireEvent.click(secondaryTrigger);
+
+    // Click "Crear nueva cuenta"
+    const createBtn = screen.getByText('Crear nueva cuenta');
+    fireEvent.click(createBtn);
+
+    // AccountModal should be open with INGRESO
+    await waitFor(() => {
+      expect(screen.getByText('Crear Cuenta o Categoría')).toBeInTheDocument();
+      expect(screen.getByText('INGRESO')).toBeInTheDocument();
+    });
+  });
+
+  test('should open AccountModal with EXPENSE type when creating secondary account during EXPENSE mode', async () => {
+    render(<NewTransactionPage />);
+
+    await waitFor(() => {
+      expect(api.accounts.summary).toHaveBeenCalled();
+    });
+
+    // Open secondary account picker (Categoría de Gasto - default mode is EXPENSE)
+    const secondaryTrigger = screen.getAllByRole('combobox')[1];
+    fireEvent.click(secondaryTrigger);
+
+    // Click "Crear nueva cuenta"
+    const createBtn = screen.getByText('Crear nueva cuenta');
+    fireEvent.click(createBtn);
+
+    // AccountModal should be open with EGRESO
+    await waitFor(() => {
+      expect(screen.getByText('Crear Cuenta o Categoría')).toBeInTheDocument();
+      expect(screen.getByText('EGRESO')).toBeInTheDocument();
+    });
+  });
 });

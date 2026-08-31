@@ -202,7 +202,7 @@ describe('US3: Rapid Keyboard-First Desktop Navigation Tests', () => {
       fireEvent.keyDown(searchInput, { key: 'ArrowDown', code: 'ArrowDown' });
       fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
 
-      expect(handleQuickCreate).toHaveBeenCalledWith('Nueva Cuenta Externa');
+      expect(handleQuickCreate).toHaveBeenCalledWith('Nueva Cuenta Externa', undefined);
     });
   });
 

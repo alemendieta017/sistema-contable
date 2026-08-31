@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Search, ChevronDown, Plus, X, Check } from 'lucide-react';
 import { formatCurrency, cn, type CurrencyInfo } from '../../lib/utils';
 import type { AccountOption } from '../../types/account';
+import { AccountType } from '@sistema-contable/shared';
 
 export type AccountPickerFilterMode =
   | 'ALL'
@@ -16,12 +17,12 @@ export interface AccountPickerSheetProps {
   accounts: AccountOption[];
   selectedAccountId?: string;
   onSelect: (account: AccountOption) => void;
-  allowedTypes?: Array<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>;
+  allowedTypes?: AccountType[];
   filterMode?: AccountPickerFilterMode;
   label?: string;
   placeholder?: string;
   baseCurrency?: CurrencyInfo;
-  onQuickCreateAccount?: (initialName: string) => void;
+  onQuickCreateAccount?: (initialName: string, suggestedType?: AccountType) => void;
   error?: string;
   disabled?: boolean;
   className?: string;
@@ -29,29 +30,29 @@ export interface AccountPickerSheetProps {
 
 type TabConfig = {
   id: string;
-  type?: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+  type?: AccountType;
   label: string;
   dot: string | null;
 };
 
 const ALL_TABS: TabConfig[] = [
   { id: 'ALL', label: 'Todos', dot: null },
-  { id: 'ASSET', type: 'ASSET', label: 'Activos', dot: 'bg-emerald-500' },
-  { id: 'LIABILITY', type: 'LIABILITY', label: 'Pasivos', dot: 'bg-rose-500' },
-  { id: 'EXPENSE', type: 'EXPENSE', label: 'Gastos', dot: 'bg-rose-500' },
-  { id: 'INCOME', type: 'INCOME', label: 'Ingresos', dot: 'bg-sky-500' },
-  { id: 'EQUITY', type: 'EQUITY', label: 'Patrimonio', dot: 'bg-violet-500' },
+  { id: AccountType.ASSET, type: AccountType.ASSET, label: 'Activos', dot: 'bg-emerald-500' },
+  { id: AccountType.LIABILITY, type: AccountType.LIABILITY, label: 'Pasivos', dot: 'bg-rose-500' },
+  { id: AccountType.EXPENSE, type: AccountType.EXPENSE, label: 'Gastos', dot: 'bg-rose-500' },
+  { id: AccountType.INCOME, type: AccountType.INCOME, label: 'Ingresos', dot: 'bg-sky-500' },
+  { id: AccountType.EQUITY, type: AccountType.EQUITY, label: 'Patrimonio', dot: 'bg-violet-500' },
 ];
 
 const ORDERED_GROUPS: Array<{
-  type: 'ASSET' | 'LIABILITY' | 'EXPENSE' | 'INCOME' | 'EQUITY';
+  type: AccountType;
   label: string;
 }> = [
-  { type: 'ASSET', label: 'Activos' },
-  { type: 'LIABILITY', label: 'Pasivos' },
-  { type: 'EXPENSE', label: 'Gastos' },
-  { type: 'INCOME', label: 'Ingresos' },
-  { type: 'EQUITY', label: 'Patrimonio Neto' },
+  { type: AccountType.ASSET, label: 'Activos' },
+  { type: AccountType.LIABILITY, label: 'Pasivos' },
+  { type: AccountType.EXPENSE, label: 'Gastos' },
+  { type: AccountType.INCOME, label: 'Ingresos' },
+  { type: AccountType.EQUITY, label: 'Patrimonio Neto' },
 ];
 
 export default function AccountPickerSheet({
@@ -99,7 +100,8 @@ export default function AccountPickerSheet({
   );
 
   // Currency balance helper
-  const isBalanceEligible = (type?: string) => type === 'ASSET' || type === 'LIABILITY';
+  const isBalanceEligible = (type?: string) =>
+    type === AccountType.ASSET || type === AccountType.LIABILITY;
 
   const formatAccBalance = useCallback(
     (a: AccountOption) => {
@@ -121,25 +123,29 @@ export default function AccountPickerSheet({
   }, [accounts, selectedAccountId]);
 
   // Determine effective allowed types
-  const effectiveAllowedTypes = useMemo<
-    Array<'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'>
-  >(() => {
+  const effectiveAllowedTypes = useMemo<AccountType[]>(() => {
     if (allowedTypes && allowedTypes.length > 0) {
       return allowedTypes;
     }
     if (filterMode === 'PAYMENT_ACCOUNTS') {
-      return ['ASSET', 'LIABILITY'];
+      return [AccountType.ASSET, AccountType.LIABILITY];
     }
     if (filterMode === 'EXPENSES') {
-      return ['EXPENSE'];
+      return [AccountType.EXPENSE];
     }
     if (filterMode === 'INCOMES') {
-      return ['INCOME'];
+      return [AccountType.INCOME];
     }
     if (filterMode === 'ASSETS') {
-      return ['ASSET'];
+      return [AccountType.ASSET];
     }
-    return ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
+    return [
+      AccountType.ASSET,
+      AccountType.LIABILITY,
+      AccountType.EQUITY,
+      AccountType.INCOME,
+      AccountType.EXPENSE,
+    ];
   }, [allowedTypes, filterMode]);
 
   // Operable accounts pool
@@ -151,7 +157,7 @@ export default function AccountPickerSheet({
       if (a.status === 'INACTIVE' && a.id !== selectedAccountId) return false;
       // Filter by mode / allowedTypes
       if (filterMode === 'PAYMENT_ACCOUNTS') {
-        return a.isCashOrBank || a.type === 'ASSET' || a.type === 'LIABILITY';
+        return a.isCashOrBank || a.type === AccountType.ASSET || a.type === AccountType.LIABILITY;
       }
       return effectiveAllowedTypes.includes(a.type);
     });
@@ -274,9 +280,23 @@ export default function AccountPickerSheet({
     setIsOpen(false);
   };
 
+  const isAccountType = (val: string): val is AccountType =>
+    Object.values(AccountType).includes(val as AccountType);
+
+  const getSuggestedType = (): AccountType | undefined => {
+    if (activeTab !== 'ALL' && isAccountType(activeTab)) {
+      return activeTab;
+    }
+    if (filterMode === 'EXPENSES') return AccountType.EXPENSE;
+    if (filterMode === 'INCOMES') return AccountType.INCOME;
+    if (filterMode === 'PAYMENT_ACCOUNTS' || filterMode === 'ASSETS') return AccountType.ASSET;
+    if (allowedTypes && allowedTypes.length === 1) return allowedTypes[0];
+    return undefined;
+  };
+
   const handleQuickCreate = (initialName: string) => {
     setIsOpen(false);
-    onQuickCreateAccount?.(initialName);
+    onQuickCreateAccount?.(initialName, getSuggestedType());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -342,15 +362,15 @@ export default function AccountPickerSheet({
 
   const getTypeBadgeClasses = (type: string) => {
     switch (type) {
-      case 'ASSET':
+      case AccountType.ASSET:
         return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400';
-      case 'LIABILITY':
+      case AccountType.LIABILITY:
         return 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400';
-      case 'EXPENSE':
+      case AccountType.EXPENSE:
         return 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400';
-      case 'INCOME':
+      case AccountType.INCOME:
         return 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400';
-      case 'EQUITY':
+      case AccountType.EQUITY:
         return 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400';
       default:
         return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
@@ -359,15 +379,15 @@ export default function AccountPickerSheet({
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'ASSET':
+      case AccountType.ASSET:
         return 'Activo';
-      case 'LIABILITY':
+      case AccountType.LIABILITY:
         return 'Pasivo';
-      case 'EXPENSE':
+      case AccountType.EXPENSE:
         return 'Gasto';
-      case 'INCOME':
+      case AccountType.INCOME:
         return 'Ingreso';
-      case 'EQUITY':
+      case AccountType.EQUITY:
         return 'Patrimonio';
       default:
         return type;

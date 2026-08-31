@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import AccountPickerSheet from '../components/transactions/AccountPickerSheet';
 import type { AccountOption } from '../types/account';
+import { AccountType } from '@sistema-contable/shared';
 
 // Mock Lucide React icons
 jest.mock('lucide-react', () => ({
@@ -19,28 +20,51 @@ jest.mock('lucide-react', () => ({
 
 describe('AccountPickerSheet Component', () => {
   const mockAccounts: AccountOption[] = [
-    { id: 'acc-1', name: 'Caja Chica', type: 'ASSET', balance: 1500, status: 'ACTIVE' },
-    { id: 'acc-2', name: 'Banco Familiar', type: 'ASSET', status: 'ACTIVE' },
+    { id: 'acc-1', name: 'Caja Chica', type: AccountType.ASSET, balance: 1500, status: 'ACTIVE' },
+    { id: 'acc-2', name: 'Banco Familiar', type: AccountType.ASSET, status: 'ACTIVE' },
     {
       id: 'acc-3',
       name: 'Cuenta Corriente',
-      type: 'ASSET',
+      type: AccountType.ASSET,
       parentId: 'acc-2',
       balance: 5000,
       status: 'ACTIVE',
     },
-    { id: 'acc-4', name: 'Tarjeta Crédito', type: 'LIABILITY', balance: -800, status: 'ACTIVE' },
-    { id: 'acc-5', name: 'Combustibles', type: 'EXPENSE', balance: 350, status: 'ACTIVE' },
-    { id: 'acc-6', name: 'Ventas de Servicios', type: 'INCOME', balance: 12000, status: 'ACTIVE' },
-    { id: 'acc-7', name: 'Capital Social', type: 'EQUITY', status: 'ACTIVE' },
+    {
+      id: 'acc-4',
+      name: 'Tarjeta Crédito',
+      type: AccountType.LIABILITY,
+      balance: -800,
+      status: 'ACTIVE',
+    },
+    {
+      id: 'acc-5',
+      name: 'Combustibles',
+      type: AccountType.EXPENSE,
+      balance: 350,
+      status: 'ACTIVE',
+    },
+    {
+      id: 'acc-6',
+      name: 'Ventas de Servicios',
+      type: AccountType.INCOME,
+      balance: 12000,
+      status: 'ACTIVE',
+    },
+    { id: 'acc-7', name: 'Capital Social', type: AccountType.EQUITY, status: 'ACTIVE' },
     {
       id: 'acc-system',
       name: 'Resultado del Ejercicio',
-      type: 'EQUITY',
+      type: AccountType.EQUITY,
       systemRole: 'NET_INCOME',
       status: 'ACTIVE',
     },
-    { id: 'acc-inactive', name: 'Banco Antiguo Inactivo', type: 'ASSET', status: 'INACTIVE' },
+    {
+      id: 'acc-inactive',
+      name: 'Banco Antiguo Inactivo',
+      type: AccountType.ASSET,
+      status: 'INACTIVE',
+    },
   ];
 
   const defaultProps = {
@@ -262,7 +286,7 @@ describe('AccountPickerSheet Component', () => {
   });
 
   describe('Quick Create Account', () => {
-    test('renders dynamic quick create button with search term and invokes callback', () => {
+    test('renders dynamic quick create button with search term and invokes callback with suggestedType undefined for ALL', () => {
       const onQuickCreate = jest.fn();
       render(<AccountPickerSheet {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
       fireEvent.click(screen.getByRole('combobox'));
@@ -275,11 +299,11 @@ describe('AccountPickerSheet Component', () => {
 
       fireEvent.click(dynamicCreateBtn);
 
-      expect(onQuickCreate).toHaveBeenCalledWith('Librería Oficina');
+      expect(onQuickCreate).toHaveBeenCalledWith('Librería Oficina', undefined);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    test('renders static quick create button at bottom of list and invokes callback', () => {
+    test('renders static quick create button at bottom of list and invokes callback with suggestedType undefined for ALL', () => {
       const onQuickCreate = jest.fn();
       render(<AccountPickerSheet {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
       fireEvent.click(screen.getByRole('combobox'));
@@ -289,8 +313,56 @@ describe('AccountPickerSheet Component', () => {
 
       fireEvent.click(createBottomBtn);
 
-      expect(onQuickCreate).toHaveBeenCalledWith('');
+      expect(onQuickCreate).toHaveBeenCalledWith('', undefined);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    test('passes EXPENSE suggestedType when filterMode is EXPENSES', () => {
+      const onQuickCreate = jest.fn();
+      render(
+        <AccountPickerSheet
+          {...defaultProps}
+          filterMode="EXPENSES"
+          onQuickCreateAccount={onQuickCreate}
+        />,
+      );
+      fireEvent.click(screen.getByRole('combobox'));
+
+      const createBottomBtn = screen.getByText('Crear nueva cuenta');
+      fireEvent.click(createBottomBtn);
+
+      expect(onQuickCreate).toHaveBeenCalledWith('', AccountType.EXPENSE);
+    });
+
+    test('passes INCOME suggestedType when filterMode is INCOMES', () => {
+      const onQuickCreate = jest.fn();
+      render(
+        <AccountPickerSheet
+          {...defaultProps}
+          filterMode="INCOMES"
+          onQuickCreateAccount={onQuickCreate}
+        />,
+      );
+      fireEvent.click(screen.getByRole('combobox'));
+
+      const createBottomBtn = screen.getByText('Crear nueva cuenta');
+      fireEvent.click(createBottomBtn);
+
+      expect(onQuickCreate).toHaveBeenCalledWith('', AccountType.INCOME);
+    });
+
+    test('passes active tab type as suggestedType when a specific category tab is selected', () => {
+      const onQuickCreate = jest.fn();
+      render(<AccountPickerSheet {...defaultProps} onQuickCreateAccount={onQuickCreate} />);
+      fireEvent.click(screen.getByRole('combobox'));
+
+      const expensesTab = screen.getByTestId('category-tab-EXPENSE');
+      fireEvent.click(expensesTab);
+
+      const createBottomBtn = screen.getByText('Crear nueva cuenta');
+      fireEvent.click(createBottomBtn);
+
+      expect(onQuickCreate).toHaveBeenCalledWith('', AccountType.EXPENSE);
     });
   });
 
@@ -299,7 +371,7 @@ describe('AccountPickerSheet Component', () => {
       render(
         <AccountPickerSheet
           {...defaultProps}
-          allowedTypes={['EXPENSE']}
+          allowedTypes={[AccountType.EXPENSE]}
           label="Categoría de Gasto"
         />,
       );

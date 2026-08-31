@@ -388,7 +388,9 @@ export function FreeJournalEntryGrid({
                   handleAddLine();
                 }
               }}
-              onQuickCreateAccount={(initialName) => onQuickCreateAccount?.(initialName, index)}
+              onQuickCreateAccount={(initialName, suggestedType) =>
+                onQuickCreateAccount?.(initialName, index, suggestedType)
+              }
               disabled={loading || isSubmitting}
               error={errors.lines?.[index]}
             />
