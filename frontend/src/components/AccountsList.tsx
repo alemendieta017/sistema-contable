@@ -6,8 +6,8 @@ import {
   Building2,
   CreditCard,
   TrendingUp,
+  TrendingDown,
   ReceiptText,
-  FileText,
   Landmark,
   Lock,
   MoreVertical,
@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Trash2,
   EyeOff,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
@@ -27,40 +28,41 @@ export interface AccountSummary {
   currencyCode?: string;
   currencySymbol?: string;
   decimalPlaces?: number;
+  isCashOrBank?: boolean;
   parentId?: string | null;
   status?: 'ACTIVE' | 'INACTIVE';
-  isCashOrBank?: boolean;
   systemRole?: string | null;
 }
 
 export interface AccountsListProps {
   accounts: AccountSummary[];
+  activeTab?: 'FINANCIAL' | 'CATEGORIES';
   onDelete?: (id: string) => void;
-  deletingId?: string;
-  onToggleCashOrBank?: (id: string, isCashOrBank: boolean) => void;
-  onReactivate?: (id: string) => void;
   onDeactivate?: (id: string) => void;
-  reactivatingId?: string;
-  deactivatingId?: string;
+  onReactivate?: (id: string) => void;
+  onToggleCashOrBank?: (id: string, currentVal: boolean) => void;
   onEdit?: (account: AccountSummary) => void;
-  onAddSubaccount?: (parentAccount: AccountSummary) => void;
+  onAddSubaccount?: (parent: AccountSummary) => void;
+  onAdjustBalance?: (account: AccountSummary) => void;
   onAccountClick?: (account: AccountSummary) => void;
-  activeTab?: 'FINANCIAL' | 'CATEGORIES' | 'ALL';
+  deletingId?: string | null;
+  deactivatingId?: string | null;
+  reactivatingId?: string | null;
 }
 
 export default function AccountsList({
   accounts,
+  activeTab = 'FINANCIAL',
   onDelete,
-  deletingId,
-  onToggleCashOrBank: _onToggleCashOrBank,
-  onReactivate,
   onDeactivate,
-  reactivatingId,
-  deactivatingId,
+  onReactivate,
   onEdit,
   onAddSubaccount,
+  onAdjustBalance,
   onAccountClick,
-  activeTab,
+  deletingId,
+  deactivatingId,
+  reactivatingId,
 }: AccountsListProps) {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
@@ -72,17 +74,17 @@ export default function AccountsList({
 
   const getAccountIcon = (account: AccountSummary) => {
     if (account.isCashOrBank) {
-      return <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+      return <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
     }
     switch (account.type) {
       case 'ASSET':
-        return <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+        return <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
       case 'LIABILITY':
         return <CreditCard className="w-4 h-4 text-red-500 dark:text-red-400" />;
       case 'INCOME':
-        return <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+        return <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
       case 'EXPENSE':
-        return <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />;
+        return <TrendingDown className="w-4 h-4 text-rose-500 dark:text-rose-400" />;
       case 'EQUITY':
         return <Landmark className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
       default:
@@ -90,7 +92,7 @@ export default function AccountsList({
     }
   };
 
-  const renderGroup = (title: string, list: AccountSummary[]) => {
+  const renderGroup = (title: string, list: AccountSummary[], showBalances: boolean = true) => {
     if (list.length === 0) return null;
 
     const roots = list.filter((a) => !a.parentId);
@@ -124,9 +126,11 @@ export default function AccountsList({
               {list.length}
             </span>
           </div>
-          <span className="text-3xs font-semibold tabular-nums text-slate-400 dark:text-slate-500">
-            Subtotal: {formatCurrency(totalGroupBalance, groupCurrency)}
-          </span>
+          {showBalances && (
+            <span className="text-3xs font-semibold tabular-nums text-slate-400 dark:text-slate-500">
+              Subtotal: {formatCurrency(totalGroupBalance, groupCurrency)}
+            </span>
+          )}
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 shadow-sm overflow-visible">
@@ -174,14 +178,14 @@ export default function AccountsList({
                       )}
 
                       {a.isCashOrBank && (
-                        <span className="text-5xs bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold shrink-0">
-                          Caja/Banco
+                        <span className="text-4xs bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md font-medium border border-slate-200/60 dark:border-slate-600/60 shrink-0">
+                          Efectivo
                         </span>
                       )}
 
                       {a.systemRole && (
                         <span
-                          className="inline-flex items-center gap-1 text-5xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold shrink-0"
+                          className="inline-flex items-center gap-1 text-5xs bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold shrink-0"
                           title="Cuenta especial reservada por el sistema"
                         >
                           <Lock className="w-2.5 h-2.5" />
@@ -210,23 +214,25 @@ export default function AccountsList({
 
                 {/* Right: Balance & Context Menu */}
                 <div className="flex items-center gap-3 shrink-0">
-                  <span
-                    className={`font-extrabold tabular-nums text-xs sm:text-sm text-right ${
-                      a.type === 'ASSET'
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : a.type === 'LIABILITY'
-                          ? 'text-red-500 dark:text-red-400'
-                          : a.type === 'INCOME'
-                            ? 'text-indigo-600 dark:text-indigo-400'
-                            : 'text-slate-600 dark:text-slate-300'
-                    }`}
-                  >
-                    {formatCurrency(a.balance, {
-                      code: a.currencyCode,
-                      symbol: a.currencySymbol,
-                      decimalPlaces: a.decimalPlaces,
-                    })}
-                  </span>
+                  {showBalances && (
+                    <span
+                      className={`font-bold tabular-nums text-xs sm:text-sm text-right ${
+                        a.type === 'ASSET'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : a.type === 'LIABILITY'
+                            ? 'text-red-500 dark:text-red-400'
+                            : a.type === 'INCOME'
+                              ? 'text-indigo-600 dark:text-indigo-400'
+                              : 'text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {formatCurrency(a.balance, {
+                        code: a.currencyCode,
+                        symbol: a.currencySymbol,
+                        decimalPlaces: a.decimalPlaces,
+                      })}
+                    </span>
+                  )}
 
                   {/* Kebab Menu Trigger */}
                   <div className="relative">
@@ -269,6 +275,23 @@ export default function AccountsList({
                             <span>Ver movimientos</span>
                           </button>
 
+                          {!a.systemRole &&
+                            !isInactive &&
+                            onAdjustBalance &&
+                            (a.type === 'ASSET' || a.type === 'LIABILITY') && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  onAdjustBalance(a);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 text-slate-700 dark:text-slate-200 transition"
+                              >
+                                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Modificar saldo</span>
+                              </button>
+                            )}
+
                           {!a.systemRole && onEdit && (
                             <button
                               type="button"
@@ -279,23 +302,27 @@ export default function AccountsList({
                               className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 text-slate-700 dark:text-slate-200 transition"
                             >
                               <Pencil className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Editar cuenta</span>
+                              <span>Editar</span>
                             </button>
                           )}
 
-                          {!a.systemRole && !isChild && onAddSubaccount && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveMenuId(null);
-                                onAddSubaccount(a);
-                              }}
-                              className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 text-slate-700 dark:text-slate-200 transition"
-                            >
-                              <Plus className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Agregar subcuenta</span>
-                            </button>
-                          )}
+                          {!a.systemRole &&
+                            a.type !== 'EQUITY' &&
+                            a.name.trim().toLowerCase() !== 'capital' &&
+                            !isChild &&
+                            onAddSubaccount && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  onAddSubaccount(a);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 text-slate-700 dark:text-slate-200 transition"
+                              >
+                                <Plus className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Agregar subcuenta</span>
+                              </button>
+                            )}
 
                           {!a.systemRole && (
                             <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
@@ -325,9 +352,9 @@ export default function AccountsList({
                                       onDeactivate(a.id);
                                     }}
                                     disabled={isDeletingOrDeactivating}
-                                    className="w-full text-left px-3.5 py-2 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 text-amber-600 dark:text-amber-400 transition"
+                                    className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 flex items-center gap-2 text-slate-700 dark:text-slate-200 transition"
                                   >
-                                    <EyeOff className="w-3.5 h-3.5" />
+                                    <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                                     <span>Desactivar cuenta</span>
                                   </button>
                                 ))}
@@ -362,7 +389,6 @@ export default function AccountsList({
   // Classify accounts into business groups
   const liquidAssets = accounts.filter((a) => a.type === 'ASSET' && a.isCashOrBank);
   const otherAssets = accounts.filter((a) => a.type === 'ASSET' && !a.isCashOrBank);
-  const allAssets = accounts.filter((a) => a.type === 'ASSET');
   const liabilities = accounts.filter((a) => a.type === 'LIABILITY');
   const incomes = accounts.filter((a) => a.type === 'INCOME');
   const expenses = accounts.filter((a) => a.type === 'EXPENSE');
@@ -371,9 +397,10 @@ export default function AccountsList({
   if (activeTab === 'FINANCIAL') {
     return (
       <div className="space-y-6">
-        {renderGroup('Cuentas de Efectivo y Bancos', liquidAssets)}
-        {renderGroup('Otras Cuentas de Activo (Inversiones, Bienes)', otherAssets)}
-        {renderGroup('Pasivos y Obligaciones (Tarjetas, Deudas)', liabilities)}
+        {renderGroup('Cuentas a la vista', liquidAssets)}
+        {renderGroup('Activos e Inversiones', otherAssets)}
+        {renderGroup('Pasivos y Deudas', liabilities)}
+        {renderGroup('Patrimonio Neto', equity)}
       </div>
     );
   }
@@ -381,32 +408,19 @@ export default function AccountsList({
   if (activeTab === 'CATEGORIES') {
     return (
       <div className="space-y-6">
-        {renderGroup('Categorías de Ingreso', incomes)}
-        {renderGroup('Categorías de Gasto', expenses)}
+        {renderGroup('Categorías de Ingreso', incomes, false)}
+        {renderGroup('Categorías de Gasto', expenses, false)}
       </div>
     );
   }
 
-  if (activeTab === 'ALL') {
-    return (
-      <div className="space-y-6">
-        {renderGroup('Activos', allAssets)}
-        {renderGroup('Pasivos', liabilities)}
-        {renderGroup('Patrimonio Neto', equity)}
-        {renderGroup('Ingresos', incomes)}
-        {renderGroup('Egresos', expenses)}
-      </div>
-    );
-  }
-
-  // Default fallback (renders all non-empty sections)
+  // Default: Financial (Cash, Banks, Assets, Liabilities & Equity)
   return (
     <div className="space-y-6">
-      {renderGroup('Activos (Efectivo, bancos, bienes)', allAssets)}
-      {renderGroup('Pasivos (Tarjetas, deudas, préstamos)', liabilities)}
-      {renderGroup('Ingresos (Categorías de entrada)', incomes)}
-      {renderGroup('Egresos (Categorías de gasto)', expenses)}
-      {renderGroup('Patrimonio Neto (Capital y resultados)', equity)}
+      {renderGroup('Cuentas a la vista', liquidAssets)}
+      {renderGroup('Activos e Inversiones', otherAssets)}
+      {renderGroup('Pasivos y Deudas', liabilities)}
+      {renderGroup('Patrimonio Neto', equity)}
     </div>
   );
 }

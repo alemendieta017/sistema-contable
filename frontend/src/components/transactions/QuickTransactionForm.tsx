@@ -5,7 +5,7 @@ import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Loader2 } from 'lucide-rea
 import { QuickOperationType, type CreateTransactionRequest } from '@sistema-contable/shared';
 import AccountPickerSheet from './AccountPickerSheet';
 import type { AccountOption } from '../../types/account';
-import { cn, type CurrencyInfo } from '../../lib/utils';
+import { cn, formatInputDisplay, parseInputRaw, type CurrencyInfo } from '../../lib/utils';
 import type { QuickTransactionFormValues } from './index';
 
 export interface QuickTransactionFormProps {
@@ -546,18 +546,17 @@ export function QuickTransactionForm({
             <input
               id="quick-amount"
               name="amount"
-              type="number"
+              type="text"
               inputMode="decimal"
-              step={isZeroDecimal ? '1' : 'any'}
-              min={isZeroDecimal ? '1' : '0.01'}
               disabled={loading}
-              value={amount}
+              value={formatInputDisplay(amount)}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => {
-                const val = e.target.value;
-                setAmount(val === '' ? '' : val);
+                const parsed = parseInputRaw(e.target.value);
+                setAmount(parsed === '' ? '' : parsed);
                 clearFieldError('amount');
               }}
-              placeholder={isZeroDecimal ? '0' : '0.00'}
+              placeholder={isZeroDecimal ? '0' : '0,00'}
               className={cn(
                 'w-full bg-slate-50/70 dark:bg-slate-800/80 border rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm font-medium tabular-nums text-slate-900 dark:text-slate-50 outline-none transition-all duration-200',
                 errors.amount

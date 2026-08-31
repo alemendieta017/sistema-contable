@@ -306,10 +306,8 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
 
       expect(debitInput).toHaveAttribute('inputmode', 'decimal');
       expect(creditInput).toHaveAttribute('inputmode', 'decimal');
-      expect(debitInput).toHaveAttribute('type', 'number');
-      expect(creditInput).toHaveAttribute('type', 'number');
-      expect(debitInput).toHaveAttribute('step', 'any');
-      expect(creditInput).toHaveAttribute('step', 'any');
+      expect(debitInput).toHaveAttribute('type', 'text');
+      expect(creditInput).toHaveAttribute('type', 'text');
     });
 
     test('QuickTransactionForm amount monetary input has inputMode="decimal"', () => {
@@ -325,8 +323,7 @@ describe('User Story 4: Touch-First Mobile Accounting Experience (T021)', () => 
 
       const amountInput = screen.getByLabelText(/monto/i);
       expect(amountInput).toHaveAttribute('inputmode', 'decimal');
-      expect(amountInput).toHaveAttribute('type', 'number');
-      expect(amountInput).toHaveAttribute('step', 'any');
+      expect(amountInput).toHaveAttribute('type', 'text');
     });
 
     test('QuickTransactionForm operation template buttons have touch-friendly tap targets', () => {

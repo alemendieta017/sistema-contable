@@ -1,6 +1,7 @@
 import {
   CreateAccountRequest,
   UpdateAccountRequest,
+  AdjustAccountBalanceRequest,
   CreateTransactionRequest,
   UpdateTransactionRequest,
   RollingBudgetMatrixResponse,
@@ -176,6 +177,15 @@ export const api = {
     async update(id: string, data: UpdateAccountRequest) {
       const res = await fetch(`${API_BASE_URL}/accounts/${id}`, {
         method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+
+    async adjustBalance(id: string, data: AdjustAccountBalanceRequest) {
+      const res = await fetch(`${API_BASE_URL}/accounts/${id}/adjust-balance`, {
+        method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(data),
       });

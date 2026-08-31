@@ -100,9 +100,20 @@ export const CreateAccountRequestSchema = z.object({
   isCashOrBank: z.boolean().optional(),
   metadata: z.record(z.any()).optional(),
   systemRole: SystemRoleSchema,
+  initialBalance: z.number().optional(),
 });
 
 export type CreateAccountRequest = z.infer<typeof CreateAccountRequestSchema>;
+
+// Adjust Account Balance Schema
+export const AdjustAccountBalanceRequestSchema = z.object({
+  targetBalance: z.number(),
+  adjustmentType: z.enum(['CAPITAL', 'CATEGORY']),
+  categoryId: z.string().uuid().optional().nullable(),
+  description: z.string().optional(),
+});
+
+export type AdjustAccountBalanceRequest = z.infer<typeof AdjustAccountBalanceRequestSchema>;
 
 // Update Account Request Schema
 export const UpdateAccountRequestSchema = z.object({

@@ -223,7 +223,7 @@ export default function IncomeStatementForecastPage() {
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="px-2 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tracking-tight select-none truncate text-center min-w-24 sm:min-w-36">
+            <span className="px-2 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 tracking-tight select-none truncate text-center min-w-24 sm:min-w-36">
               {navigatorLabel}
             </span>
 
@@ -293,7 +293,7 @@ export default function IncomeStatementForecastPage() {
               <span>(+) Ingresos Devengados</span>
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 truncate tabular-nums">
+            <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate tabular-nums">
               {formatCurrency(heroSummary.totalIncome, baseCurrency)}
             </p>
           </div>
@@ -304,7 +304,7 @@ export default function IncomeStatementForecastPage() {
               <span>(-) Gastos Devengados</span>
               <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-rose-600 dark:text-rose-400 mt-1 truncate tabular-nums">
+            <p className="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mt-1 truncate tabular-nums">
               {formatCurrency(heroSummary.totalExpense, baseCurrency)}
             </p>
           </div>
@@ -316,7 +316,7 @@ export default function IncomeStatementForecastPage() {
               <Wallet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <p
-              className={`text-sm sm:text-base font-bold font-mono mt-1 truncate tabular-nums ${
+              className={`text-sm sm:text-base font-bold mt-1 truncate tabular-nums ${
                 heroSummary.netProfit >= 0
                   ? 'text-indigo-950 dark:text-indigo-100'
                   : 'text-rose-600 dark:text-rose-400'
@@ -333,7 +333,7 @@ export default function IncomeStatementForecastPage() {
               <Percent className="w-3.5 h-3.5 text-slate-400" />
             </div>
             <p
-              className={`text-sm sm:text-base font-bold font-mono mt-1 truncate tabular-nums ${
+              className={`text-sm sm:text-base font-bold mt-1 truncate tabular-nums ${
                 heroSummary.profitMargin >= 0
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-rose-600 dark:text-rose-400'

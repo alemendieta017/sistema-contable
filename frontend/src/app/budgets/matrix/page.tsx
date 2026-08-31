@@ -604,7 +604,7 @@ export default function BudgetMatrixPage() {
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            <span className="px-1.5 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 font-mono tracking-tight select-none truncate text-center min-w-20 sm:min-w-32">
+            <span className="px-1.5 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 tracking-tight select-none truncate text-center min-w-20 sm:min-w-32">
               {navigatorLabel}
             </span>
 
@@ -734,7 +734,7 @@ export default function BudgetMatrixPage() {
               <span>Ingresos</span>
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 truncate">
+            <p className="text-sm sm:text-base font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-1 truncate">
               {formatCurrency(heroSummary.ingresos, baseCurrency)}
             </p>
           </div>
@@ -745,7 +745,7 @@ export default function BudgetMatrixPage() {
               <span>Egresos</span>
               <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 truncate">
+            <p className="text-sm sm:text-base font-bold tabular-nums text-slate-900 dark:text-slate-100 mt-1 truncate">
               {formatCurrency(heroSummary.egresos, baseCurrency)}
             </p>
           </div>
@@ -757,7 +757,7 @@ export default function BudgetMatrixPage() {
               <Wallet className="w-3.5 h-3.5" />
             </div>
             <p
-              className={`text-sm sm:text-base font-bold font-mono mt-1 truncate ${
+              className={`text-sm sm:text-base font-bold tabular-nums mt-1 truncate ${
                 heroSummary.resultado >= 0
                   ? 'text-indigo-700 dark:text-indigo-300'
                   : 'text-rose-600 dark:text-rose-400'
@@ -773,7 +773,7 @@ export default function BudgetMatrixPage() {
               <span>Ahorros e Inversiones</span>
               <PiggyBank className="w-3.5 h-3.5 text-blue-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-blue-600 dark:text-blue-400 mt-1 truncate">
+            <p className="text-sm sm:text-base font-bold tabular-nums text-blue-600 dark:text-blue-400 mt-1 truncate">
               {formatCurrency(heroSummary.ahorros, baseCurrency)}
             </p>
           </div>
@@ -784,7 +784,7 @@ export default function BudgetMatrixPage() {
               <span>Deudas y Financiación</span>
               <Wallet className="w-3.5 h-3.5 text-purple-500" />
             </div>
-            <p className="text-sm sm:text-base font-bold font-mono text-purple-600 dark:text-purple-400 mt-1 truncate">
+            <p className="text-sm sm:text-base font-bold tabular-nums text-purple-600 dark:text-purple-400 mt-1 truncate">
               {formatCurrency(heroSummary.deudas, baseCurrency)}
             </p>
           </div>
@@ -796,7 +796,7 @@ export default function BudgetMatrixPage() {
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
             </div>
             <p
-              className={`text-sm sm:text-base font-bold font-mono mt-1 truncate ${
+              className={`text-sm sm:text-base font-bold tabular-nums mt-1 truncate ${
                 heroSummary.margenLibre >= 0
                   ? 'text-emerald-700 dark:text-emerald-300'
                   : 'text-rose-600 dark:text-rose-400'
@@ -892,7 +892,7 @@ export default function BudgetMatrixPage() {
             </span>
           </button>
 
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 font-mono">
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
             {navigatorLabel}
           </span>
 

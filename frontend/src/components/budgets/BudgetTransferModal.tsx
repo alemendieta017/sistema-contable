@@ -259,7 +259,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               ))}
             </select>
             {selectedSourceItem && (
-              <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1.5 font-mono font-semibold">
+              <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1.5 tabular-nums font-semibold">
                 Saldo disponible transferible:{' '}
                 {formatCurrency(selectedSourceItem.available, baseCurrency)}
               </p>
@@ -307,7 +307,7 @@ export const BudgetTransferModal: React.FC<BudgetTransferModalProps> = ({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Ej: 150000"
-              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none min-h-[44px]"
+              className="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs tabular-nums font-bold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none min-h-[44px]"
             />
           </div>
 
