@@ -205,11 +205,11 @@ export default function AccountsPage() {
     }) || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
             Cuentas y Rubros
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -217,19 +217,19 @@ export default function AccountsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 self-start sm:self-auto">
           {inactiveCount > 0 && (
             <button
               type="button"
               onClick={() => setShowInactive(!showInactive)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-3xs font-bold border transition ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-3xs font-bold border transition ${
                 showInactive
                   ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 shadow-sm'
               }`}
             >
               {showInactive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{showInactive ? 'Ocultar inactivas' : `Ver inactivas (${inactiveCount})`}</span>
+              <span>{showInactive ? 'Ocultar inactivas' : `Inactivas (${inactiveCount})`}</span>
             </button>
           )}
 
@@ -239,7 +239,7 @@ export default function AccountsPage() {
               setSubaccountParent(null);
               setShowAddModal(true);
             }}
-            className="flex items-center gap-1.5 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+            className="flex items-center gap-1.5 py-1.5 px-3 sm:py-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
           >
             <Plus className="w-4 h-4" />
             <span>Agregar</span>
@@ -248,7 +248,7 @@ export default function AccountsPage() {
       </div>
 
       {error && (
-        <div className="p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-3 sm:p-3.5 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-2xl border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
@@ -273,60 +273,62 @@ export default function AccountsPage() {
         };
 
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {/* Patrimonio Neto */}
-            <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white rounded-2xl p-2.5 sm:p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-3xs font-extrabold uppercase tracking-widest text-indigo-200">
+                <span className="text-[10px] sm:text-3xs font-extrabold uppercase tracking-wider text-indigo-200 truncate">
                   Patrimonio Neto
                 </span>
-                <div className="w-7 h-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">
+                <div className="hidden sm:flex w-7 h-7 rounded-lg bg-indigo-500/30 items-center justify-center">
                   <Wallet className="w-4 h-4 text-indigo-100" />
                 </div>
               </div>
-              <div className="mt-3">
-                <span className="text-2xl font-bold tracking-tight tabular-nums">
+              <div className="mt-1 sm:mt-3 min-w-0">
+                <span className="text-xs sm:text-2xl font-bold tracking-tight tabular-nums block truncate">
                   {formatCurrency(summary?.netWorth || 0, baseCurrency)}
                 </span>
-                <p className="text-4xs text-indigo-200 mt-0.5">Activos menos Pasivos</p>
+                <p className="hidden sm:block text-4xs text-indigo-200 mt-0.5">
+                  Activos menos Pasivos
+                </p>
               </div>
             </div>
 
             {/* Total Activos */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-2.5 sm:p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-3xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] sm:text-3xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
                   Total Activos
                 </span>
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                <div className="hidden sm:flex w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 items-center justify-center">
                   <ArrowUpRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
-              <div className="mt-3">
-                <span className="text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100">
+              <div className="mt-1 sm:mt-3 min-w-0">
+                <span className="text-xs sm:text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100 block truncate">
                   {formatCurrency(summary?.totalAssets || 0, baseCurrency)}
                 </span>
-                <p className="text-4xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-semibold">
+                <p className="hidden sm:block text-4xs text-emerald-600 dark:text-emerald-400 mt-0.5 font-semibold">
                   Bienes, bancos y efectivo
                 </p>
               </div>
             </div>
 
             {/* Total Pasivos */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-2.5 sm:p-5 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-3xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] sm:text-3xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
                   Total Pasivos
                 </span>
-                <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center">
+                <div className="hidden sm:flex w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 items-center justify-center">
                   <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 </div>
               </div>
-              <div className="mt-3">
-                <span className="text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100">
+              <div className="mt-1 sm:mt-3 min-w-0">
+                <span className="text-xs sm:text-2xl font-bold tracking-tight tabular-nums text-slate-800 dark:text-slate-100 block truncate">
                   {formatCurrency(summary?.totalLiabilities || 0, baseCurrency)}
                 </span>
-                <p className="text-4xs text-rose-500 dark:text-rose-400 mt-0.5 font-semibold">
+                <p className="hidden sm:block text-4xs text-rose-500 dark:text-rose-400 mt-0.5 font-semibold">
                   Deudas y obligaciones
                 </p>
               </div>
@@ -337,30 +339,30 @@ export default function AccountsPage() {
 
       {/* Tabs Filter Bar */}
       {summary && summary.accounts.length > 0 && (
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700/80 pb-3">
+        <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60 sm:flex sm:bg-transparent sm:dark:bg-transparent sm:border-0 sm:border-b sm:border-slate-200 sm:dark:border-slate-700/80 sm:p-0 sm:pb-3 sm:rounded-none">
           <button
             type="button"
             onClick={() => setActiveTab('FINANCIAL')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs font-bold transition cursor-pointer ${
               activeTab === 'FINANCIAL'
                 ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 sm:bg-white sm:dark:bg-slate-800 sm:border sm:border-slate-200/80 sm:dark:border-slate-700'
             }`}
           >
-            <Briefcase className="w-3.5 h-3.5" />
+            <Briefcase className="w-3.5 h-3.5 shrink-0" />
             <span>Cuentas de Dinero</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('CATEGORIES')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs font-bold transition cursor-pointer ${
               activeTab === 'CATEGORIES'
                 ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 sm:bg-white sm:dark:bg-slate-800 sm:border sm:border-slate-200/80 sm:dark:border-slate-700'
             }`}
           >
-            <Tags className="w-3.5 h-3.5" />
+            <Tags className="w-3.5 h-3.5 shrink-0" />
             <span>Categorías</span>
           </button>
         </div>

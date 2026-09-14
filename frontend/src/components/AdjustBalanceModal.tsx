@@ -173,17 +173,17 @@ export default function AdjustBalanceModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <SlidersHorizontal className="w-5 h-5" />
+        <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+              <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
                 Modificar Saldo
               </h2>
               <p className="text-4xs text-slate-400 uppercase font-bold tracking-wider mt-0.5">
@@ -195,12 +195,15 @@ export default function AdjustBalanceModal({
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
           >
-            <X className="w-4.5 h-4.5 text-slate-500" />
+            <X className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-slate-500" />
           </button>
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form
+          onSubmit={handleSave}
+          className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1"
+        >
           {error && (
             <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -209,12 +212,12 @@ export default function AdjustBalanceModal({
           )}
 
           {/* Current vs Difference Info */}
-          <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl sm:rounded-2xl">
             <div>
               <span className="block text-4xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Saldo Actual
               </span>
-              <span className="text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200">
+              <span className="text-xs sm:text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-200">
                 {formatCurrency(currentBalance, currencyInfo)}
               </span>
             </div>
@@ -223,7 +226,7 @@ export default function AdjustBalanceModal({
                 Diferencia
               </span>
               <span
-                className={`text-sm font-semibold tabular-nums flex items-center gap-0.5 ${
+                className={`text-xs sm:text-sm font-semibold tabular-nums flex items-center gap-0.5 ${
                   delta > 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : delta < 0
@@ -232,9 +235,9 @@ export default function AdjustBalanceModal({
                 }`}
               >
                 {delta > 0 ? (
-                  <ArrowUpRight className="w-4 h-4 shrink-0" />
+                  <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 ) : delta < 0 ? (
-                  <ArrowDownRight className="w-4 h-4 shrink-0" />
+                  <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 ) : null}
                 {delta > 0 ? '+' : ''}
                 {formatCurrency(delta, currencyInfo)}
@@ -270,12 +273,12 @@ export default function AdjustBalanceModal({
                 ¿Cómo deseas contabilizar la diferencia?
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                 {/* Option 1: Contabilizar contra capital */}
                 <button
                   type="button"
                   onClick={() => setAdjustmentType('CAPITAL')}
-                  className={`flex flex-col p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`flex flex-col p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left transition-all cursor-pointer ${
                     adjustmentType === 'CAPITAL'
                       ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border-indigo-500 ring-2 ring-indigo-500/20 text-indigo-950 dark:text-indigo-100 shadow-sm'
                       : 'bg-slate-50/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800'
@@ -294,7 +297,7 @@ export default function AdjustBalanceModal({
                 <button
                   type="button"
                   onClick={() => setAdjustmentType('CATEGORY')}
-                  className={`flex flex-col p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`flex flex-col p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left transition-all cursor-pointer ${
                     adjustmentType === 'CATEGORY'
                       ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border-indigo-500 ring-2 ring-indigo-500/20 text-indigo-950 dark:text-indigo-100 shadow-sm'
                       : 'bg-slate-50/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800'

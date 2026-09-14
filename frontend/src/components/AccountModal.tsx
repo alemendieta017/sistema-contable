@@ -210,13 +210,13 @@ export default function AccountModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <div>
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+            <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
               {isEditing ? 'Editar Cuenta o Categoría' : 'Crear Cuenta o Categoría'}
             </h2>
           </div>
@@ -224,12 +224,15 @@ export default function AccountModal({
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
           >
-            <X className="w-4.5 h-4.5 text-slate-500" />
+            <X className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-slate-500" />
           </button>
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form
+          onSubmit={handleSave}
+          className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1"
+        >
           {error && (
             <div className="p-3 text-xs text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-400 rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
