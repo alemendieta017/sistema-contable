@@ -1,3 +1,5 @@
+# Para desplegar en otros puertos:
+# FRONTEND_PORT=4000 BACKEND_PORT=4001 POSTGRES_PORT=5433 docker compose up -d
 services:
   db:
     image: postgres:16-alpine

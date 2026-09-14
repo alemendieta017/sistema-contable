@@ -9,6 +9,47 @@ Este es un monorepo para la aplicación de Contabilidad de partida doble con Nes
 
 ---
 
+## Despliegue con Docker y Configuración de Puertos
+
+Por defecto, los servicios corren en los siguientes puertos:
+
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:3001`
+- **PostgreSQL**: `localhost:5432`
+
+Si necesitas desplegar la aplicación en otro conjunto de puertos (por conflictos de puertos o para correr múltiples instancias), puedes sobreescribirlos mediante variables de entorno:
+
+### 1. Vía CLI en una sola línea
+
+```bash
+# Linux / macOS / Git Bash:
+FRONTEND_PORT=4000 BACKEND_PORT=4001 POSTGRES_PORT=5433 docker compose up -d
+
+# Windows PowerShell:
+$env:FRONTEND_PORT="4000"; $env:BACKEND_PORT="4001"; $env:POSTGRES_PORT="5433"; docker compose up -d
+```
+
+### 2. Vía archivo `.env`
+
+Crea o edita un archivo `.env` en la raíz del proyecto:
+
+```env
+FRONTEND_PORT=4000
+BACKEND_PORT=4001
+POSTGRES_PORT=5433
+```
+
+Y luego levanta los contenedores habitualmente:
+
+```bash
+docker compose up -d
+
+# O especificando un archivo alternativo:
+docker compose --env-file .env.custom up -d
+```
+
+---
+
 ## Base de Datos: Comandos de Montaje y Sembrado (Seeding)
 
 Para facilitar las pruebas de flujos complejos (como el cierre de año contable o bloqueos de períodos mensuales), se implementó un sistema de **Sembrado Basado en Escenarios** en TypeScript/NestJS.
