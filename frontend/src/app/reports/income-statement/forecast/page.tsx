@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../../../../services/api';
 import { useIsMobile } from '../../../../hooks/useMediaQuery';
 import { formatCurrency } from '../../../../lib/utils';
@@ -9,6 +9,7 @@ import {
   AccountForecastItem,
   MonthForecastItem,
 } from '../../../../components/reports/ForecastMatrixGrid';
+import { ForecastMobileView } from '../../../../components/reports/ForecastMobileView';
 import {
   ChevronLeft,
   ChevronRight,
@@ -51,8 +52,30 @@ export default function IncomeStatementForecastPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // View Mode: 'four_months' (4 meses), 'six_months' (6 meses), 'annual' (12 meses)
-  const [viewMode, setViewMode] = useState<'four_months' | 'six_months' | 'annual'>('annual');
+  // View Mode: 'monthly' (1 mes), 'four_months' (4 meses), 'six_months' (6 meses), 'annual' (12 meses)
+  const [viewMode, setViewMode] = useState<'monthly' | 'four_months' | 'six_months' | 'annual'>(
+    'four_months',
+  );
+  const [lastDesktopMode, setLastDesktopMode] = useState<
+    'monthly' | 'four_months' | 'six_months' | 'annual'
+  >('four_months');
+  const prevIsMobileRef = useRef(isMobile);
+
+  // Smooth transition between mobile and desktop:
+  // On mobile, automatically switch to 'monthly'. When returning to desktop, restore previous desktop mode.
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('monthly');
+    } else if (prevIsMobileRef.current && !isMobile) {
+      setViewMode(lastDesktopMode);
+    }
+    prevIsMobileRef.current = isMobile;
+  }, [isMobile, lastDesktopMode]);
+
+  const handleSetViewMode = (mode: 'monthly' | 'four_months' | 'six_months' | 'annual') => {
+    setLastDesktopMode(mode);
+    setViewMode(mode);
+  };
 
   const [months, setMonths] = useState<MonthForecastItem[]>([]);
   const [accounts, setAccounts] = useState<AccountForecastItem[]>([]);
@@ -83,8 +106,8 @@ export default function IncomeStatementForecastPage() {
     const [yearStr] = currentYearMonth.split('-');
     const year = parseInt(yearStr, 10);
 
-    if (viewMode === 'annual') {
-      // Full calendar year (Ene - Dic)
+    if (viewMode === 'annual' || viewMode === 'monthly') {
+      // Cargar los 12 meses del ejercicio para disponer de toda la información en memoria
       return { queryStartPeriod: `${year}-01`, queryMonths: 12, isRolling: false };
     } else if (viewMode === 'six_months') {
       return { queryStartPeriod: currentYearMonth, queryMonths: 6, isRolling: true };
@@ -118,6 +141,15 @@ export default function IncomeStatementForecastPage() {
     fetchData();
   }, [fetchData]);
 
+  // Months filtered for grid rendering (in monthly mode, show only the current active month)
+  const displayMonths = useMemo(() => {
+    if (viewMode === 'monthly') {
+      const matching = months.filter((m) => m.periodName === currentYearMonth);
+      return matching.length > 0 ? matching : months.length > 0 ? [months[0]] : [];
+    }
+    return months;
+  }, [months, viewMode, currentYearMonth]);
+
   // Navigation handlers
   const handlePrev = () => {
     const [year, month] = currentYearMonth.split('-').map(Number);
@@ -131,7 +163,7 @@ export default function IncomeStatementForecastPage() {
         newYear -= 1;
       }
       setCurrentYearMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`);
-    } else {
+    } else if (viewMode === 'four_months') {
       let newMonth = month - 4;
       let newYear = year;
       if (newMonth <= 0) {
@@ -139,6 +171,13 @@ export default function IncomeStatementForecastPage() {
         newYear -= 1;
       }
       setCurrentYearMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`);
+    } else {
+      // viewMode === 'monthly'
+      if (month === 1) {
+        setCurrentYearMonth(`${year - 1}-12`);
+      } else {
+        setCurrentYearMonth(`${year}-${String(month - 1).padStart(2, '0')}`);
+      }
     }
   };
 
@@ -154,7 +193,7 @@ export default function IncomeStatementForecastPage() {
         newYear += 1;
       }
       setCurrentYearMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`);
-    } else {
+    } else if (viewMode === 'four_months') {
       let newMonth = month + 4;
       let newYear = year;
       if (newMonth > 12) {
@@ -162,6 +201,13 @@ export default function IncomeStatementForecastPage() {
         newYear += 1;
       }
       setCurrentYearMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`);
+    } else {
+      // viewMode === 'monthly'
+      if (month === 12) {
+        setCurrentYearMonth(`${year + 1}-01`);
+      } else {
+        setCurrentYearMonth(`${year}-${String(month + 1).padStart(2, '0')}`);
+      }
     }
   };
 
@@ -175,17 +221,20 @@ export default function IncomeStatementForecastPage() {
     if (viewMode === 'annual') {
       return currentYearMonth.substring(0, 4);
     }
-    if (months && months.length >= 2) {
-      const pFirst = months[0].periodName;
-      const pLast = months[months.length - 1].periodName;
-      return `${getSpanishMonthName(pFirst)} — ${getSpanishMonthName(pLast)}`;
+    if (viewMode === 'four_months' || viewMode === 'six_months') {
+      if (months && months.length >= 2) {
+        const pFirst = months[0].periodName;
+        const pLast = months[months.length - 1].periodName;
+        return `${getSpanishMonthName(pFirst)} — ${getSpanishMonthName(pLast)}`;
+      }
     }
     return getSpanishMonthName(currentYearMonth);
   }, [viewMode, currentYearMonth, months]);
 
-  // Compute Hero Summary KPI Totals dynamically from months data
+  // Compute Hero Summary KPI Totals dynamically from active visible months data (Desktop)
   const heroSummary = useMemo(() => {
-    if (!months || months.length === 0) {
+    const targetMonths = viewMode === 'monthly' ? displayMonths : months;
+    if (!targetMonths || targetMonths.length === 0) {
       return {
         totalIncome: 0,
         totalExpense: 0,
@@ -194,8 +243,8 @@ export default function IncomeStatementForecastPage() {
       };
     }
 
-    const totalIncome = months.reduce((acc, m) => acc + (m.income || 0), 0);
-    const totalExpense = months.reduce((acc, m) => acc + (m.expense || 0), 0);
+    const totalIncome = targetMonths.reduce((acc, m) => acc + (m.income || 0), 0);
+    const totalExpense = targetMonths.reduce((acc, m) => acc + Math.abs(m.expense || 0), 0);
     const netProfit = totalIncome - totalExpense;
     const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
 
@@ -205,14 +254,14 @@ export default function IncomeStatementForecastPage() {
       netProfit,
       profitMargin,
     };
-  }, [months]);
+  }, [months, displayMonths, viewMode]);
 
   return (
     <div className="flex flex-col h-full w-full p-2 sm:p-4 space-y-3 font-sans overflow-hidden">
       {/* 1. Header Navigation & Mode Bar */}
-      <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-2 rounded-2xl shadow-xs shrink-0 w-full flex-wrap sm:flex-nowrap">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2.5 sm:px-4 py-2 rounded-2xl shadow-xs shrink-0 flex-nowrap w-full">
         {/* Temporal Navigator */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5 sm:p-1">
             <button
               type="button"
@@ -220,10 +269,10 @@ export default function IncomeStatementForecastPage() {
               className="p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Anterior"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            <span className="px-2 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 tracking-tight select-none truncate text-center min-w-24 sm:min-w-36">
+            <span className="px-1.5 sm:px-3 text-xs font-bold text-slate-900 dark:text-slate-100 tracking-tight select-none truncate text-center min-w-20 sm:min-w-32">
               {navigatorLabel}
             </span>
 
@@ -233,64 +282,77 @@ export default function IncomeStatementForecastPage() {
               className="p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Siguiente"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           <button
             type="button"
             onClick={handleGoToday}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer shrink-0"
+            className="px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer shrink-0"
           >
             Actual
           </button>
         </div>
 
-        {/* View Mode Switcher (Cuatrimestral / Semestral / Anual) */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-1 space-x-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setViewMode('four_months')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'four_months'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Cuatrimestral
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('six_months')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'six_months'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Semestral
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('annual')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'annual'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Anual
-          </button>
-        </div>
+        {/* View Mode Switcher (Desktop Only) */}
+        {!isMobile && (
+          <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-1 space-x-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('monthly')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'monthly'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Mensual
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('four_months')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'four_months'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Cuatrimestral
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('six_months')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'six_months'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Semestral
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('annual')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'annual'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Anual
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 2. Hero Summary Bar (4 KPIs) */}
+      {/* 2. Hero Summary Bar (4 KPIs - Desktop Only) */}
       {!isMobile && (
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 shrink-0">
-          {/* (+) Ingresos Devengados */}
+          {/* Ingresos */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-2xs flex flex-col justify-between">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>(+) Ingresos Devengados</span>
+              <span>Ingresos</span>
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             </div>
             <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate tabular-nums">
@@ -298,21 +360,21 @@ export default function IncomeStatementForecastPage() {
             </p>
           </div>
 
-          {/* (-) Gastos Devengados */}
+          {/* Gastos */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-2xs flex flex-col justify-between">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>(-) Gastos Devengados</span>
+              <span>Gastos</span>
               <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
             </div>
             <p className="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mt-1 truncate tabular-nums">
-              {formatCurrency(heroSummary.totalExpense, baseCurrency)}
+              {formatCurrency(Math.abs(heroSummary.totalExpense), baseCurrency)}
             </p>
           </div>
 
-          {/* (=) Resultado Neto (P&L) */}
+          {/* Resultado Neto */}
           <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 rounded-2xl p-3 shadow-2xs flex flex-col justify-between">
             <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
-              <span>(=) Resultado Neto Proyectado</span>
+              <span>Resultado Neto</span>
               <Wallet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <p
@@ -329,7 +391,7 @@ export default function IncomeStatementForecastPage() {
           {/* Margen Neto % */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-2xs flex flex-col justify-between">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-              <span>Margen Neto Estimado</span>
+              <span>Margen Neto</span>
               <Percent className="w-3.5 h-3.5 text-slate-400" />
             </div>
             <p
@@ -351,7 +413,7 @@ export default function IncomeStatementForecastPage() {
         </div>
       )}
 
-      {/* 3. Main Grid Area */}
+      {/* 3. Main Content: Mobile View or Desktop Grid */}
       <div className="flex-1 w-full min-h-0 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
@@ -362,10 +424,18 @@ export default function IncomeStatementForecastPage() {
               </span>
             </div>
           </div>
+        ) : isMobile ? (
+          <ForecastMobileView
+            type="INCOME_STATEMENT"
+            months={months}
+            accounts={accounts}
+            activePeriodName={currentYearMonth}
+            baseCurrency={baseCurrency}
+          />
         ) : (
           <ForecastMatrixGrid
             type="INCOME_STATEMENT"
-            months={months}
+            months={displayMonths}
             accounts={accounts}
             baseCurrency={baseCurrency}
           />

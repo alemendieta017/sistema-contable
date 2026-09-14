@@ -224,7 +224,11 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
 
           {/* Month Columns */}
           {months.map((m) => {
-            const val = getSubtreeValue(acc.accountId, m.periodId, flowFilter);
+            const rawVal = getSubtreeValue(acc.accountId, m.periodId, flowFilter);
+            const val =
+              acc.accountType === 'EXPENSE' || flowFilter === 'CASH_OUT'
+                ? Math.abs(rawVal)
+                : rawVal;
             return (
               <td
                 key={m.periodId}
@@ -236,15 +240,23 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                     : 'text-slate-400 dark:text-slate-600'
                 }`}
               >
-                {val === 0 ? '-' : formatCurrency(val, baseCurrency)}
+                {val === 0 ? '—' : formatCurrency(val, baseCurrency)}
               </td>
             );
           })}
 
           {/* Row Total */}
-          <td className="p-2 text-right text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80 tabular-nums truncate">
-            {rowTotal === 0 ? '-' : formatCurrency(rowTotal, baseCurrency)}
-          </td>
+          {(() => {
+            const absRowTotal =
+              acc.accountType === 'EXPENSE' || flowFilter === 'CASH_OUT'
+                ? Math.abs(rowTotal)
+                : rowTotal;
+            return (
+              <td className="p-2 text-right text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900/80 tabular-nums truncate">
+                {absRowTotal === 0 ? '—' : formatCurrency(absRowTotal, baseCurrency)}
+              </td>
+            );
+          })()}
         </tr>
 
         {isExpanded && directChildren.map((child) => renderAccountRow(child, flowFilter))}
@@ -306,7 +318,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans text-slate-800 dark:text-slate-200 sticky left-0 bg-slate-50/95 dark:bg-slate-950 z-10 truncate">
                     <div className="flex items-center space-x-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                      <span>(+) Saldo Inicial de Caja</span>
+                      <span>Saldo Inicial de Caja</span>
                     </div>
                   </td>
                   {months.map((m) => (
@@ -322,7 +334,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   </td>
                 </tr>
 
-                {/* 2. Sección: (+) Ingresos Operativos */}
+                {/* 2. Sección: Ingresos */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -331,7 +343,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                        (+) Ingresos Operativos
+                        Ingresos
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.income ? (
@@ -350,7 +362,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                     .filter((a) => a.accountType === 'INCOME' && a.parentId === null)
                     .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
-                {/* 3. Sección: (+) Entradas de Activo / Pasivo */}
+                {/* 3. Sección: Entradas de Activo / Pasivo */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -359,7 +371,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                        (+) Entradas de Activo / Pasivo
+                        Entradas Activo / Pasivo
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.assetInflow ? (
@@ -382,12 +394,12 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                     )
                     .map((acc) => renderAccountRow(acc, 'CASH_IN'))}
 
-                {/* 4. Subtotal: (=) TOTAL ENTRADAS DE CAJA */}
+                {/* 4. Subtotal: Total Entradas */}
                 <tr className="bg-emerald-50/40 dark:bg-emerald-950/20 font-bold border-t border-b border-emerald-200/60 dark:border-emerald-900/60 h-9">
                   <td className="px-3 py-2 border-r border-emerald-200/60 dark:border-emerald-900/60 font-sans text-emerald-800 dark:text-emerald-300 sticky left-0 bg-emerald-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>(=) Total Entradas de Caja</span>
+                      <span>Total Entradas</span>
                     </div>
                   </td>
                   {months.map((m) => (
@@ -406,7 +418,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   </td>
                 </tr>
 
-                {/* 5. Sección: (-) Egresos Operativos */}
+                {/* 5. Sección: Egresos */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -415,7 +427,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                        (-) Egresos Operativos
+                        Egresos
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.expenses ? (
@@ -434,7 +446,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                     .filter((a) => a.accountType === 'EXPENSE' && a.parentId === null)
                     .map((acc) => renderAccountRow(acc, 'DEFAULT'))}
 
-                {/* 6. Sección: (-) Salidas de Activo / Pasivo */}
+                {/* 6. Sección: Salidas de Activo / Pasivo */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -443,7 +455,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30">
-                        (-) Salidas de Activo / Pasivo
+                        Salidas Activo / Pasivo
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.assetOutflow ? (
@@ -466,12 +478,12 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                     )
                     .map((acc) => renderAccountRow(acc, 'CASH_OUT'))}
 
-                {/* 7. Subtotal: (=) TOTAL SALIDAS DE CAJA */}
+                {/* 7. Subtotal: Total Salidas */}
                 <tr className="bg-rose-50/40 dark:bg-rose-950/20 font-bold border-t border-b border-rose-200/60 dark:border-rose-900/60 h-9">
                   <td className="px-3 py-2 border-r border-rose-200/60 dark:border-rose-900/60 font-sans text-rose-800 dark:text-rose-300 sticky left-0 bg-rose-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
-                      <span>(=) Total Salidas de Caja</span>
+                      <span>Total Salidas</span>
                     </div>
                   </td>
                   {months.map((m) => (
@@ -479,23 +491,23 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                       key={m.periodId}
                       className="p-2 text-right border-r border-rose-200/60 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 tabular-nums whitespace-nowrap"
                     >
-                      {formatCurrency(m.totalSalidas || 0, baseCurrency)}
+                      {formatCurrency(Math.abs(m.totalSalidas || 0), baseCurrency)}
                     </td>
                   ))}
                   <td className="p-2 text-right text-rose-800 dark:text-rose-200 bg-rose-100/40 dark:bg-slate-900 tabular-nums font-extrabold truncate">
                     {formatCurrency(
-                      months.reduce((acc, m) => acc + (m.totalSalidas || 0), 0),
+                      Math.abs(months.reduce((acc, m) => acc + (m.totalSalidas || 0), 0)),
                       baseCurrency,
                     )}
                   </td>
                 </tr>
 
-                {/* 8. (=) FLUJO NETO DEL PERÍODO */}
+                {/* 8. Flujo Neto del Período */}
                 <tr className="bg-slate-100/60 dark:bg-slate-950/70 font-bold border-t border-b border-slate-300 dark:border-slate-700 h-9">
                   <td className="px-3 py-2 border-r border-slate-200 dark:border-slate-800 font-sans text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-100 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <Wallet className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>(=) Flujo Neto del Período</span>
+                      <span>Flujo Neto</span>
                     </div>
                   </td>
                   {months.map((m) => {
@@ -522,12 +534,12 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   </td>
                 </tr>
 
-                {/* 9. (=) SALDO FINAL DE CAJA (Resaltado Sobrio sin Sparkles) */}
+                {/* 9. SALDO FINAL DE CAJA */}
                 <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 font-extrabold border-t-2 border-indigo-200 dark:border-indigo-800 h-10">
                   <td className="px-3 py-2 border-r border-indigo-200 dark:border-indigo-800 font-sans text-indigo-900 dark:text-indigo-200 sticky left-0 bg-indigo-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                      <span className="tracking-tight">(=) SALDO FINAL DE CAJA</span>
+                      <span className="tracking-tight">SALDO FINAL DE CAJA</span>
                     </div>
                   </td>
                   {months.map((m) => {
@@ -557,7 +569,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
               /* --- ESTADO DE RESULTADOS (P&L) PROYECTADO --- */
               /* ========================================================================= */
               <>
-                {/* 1. Sección: (+) Ingresos Devengados */}
+                {/* 1. Sección: Ingresos */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -566,7 +578,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                        (+) Ingresos Devengados
+                        Ingresos
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.income ? (
@@ -590,7 +602,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td className="px-3 py-2 border-r border-emerald-200/60 dark:border-emerald-900/60 font-sans text-emerald-800 dark:text-emerald-300 sticky left-0 bg-emerald-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Total Ingresos Devengados</span>
+                      <span>Total Ingresos</span>
                     </div>
                   </td>
                   {months.map((m) => (
@@ -609,7 +621,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   </td>
                 </tr>
 
-                {/* 2. Sección: (-) Gastos Devengados */}
+                {/* 2. Sección: Gastos */}
                 <tr className="bg-slate-100/70 dark:bg-slate-950 font-bold border-t border-b border-slate-200 dark:border-slate-800">
                   <td
                     colSpan={months.length + 2}
@@ -618,7 +630,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   >
                     <div className="sticky left-0 px-4 py-2.5 flex items-center space-x-2 w-max">
                       <span className="px-2 py-0.5 rounded-lg text-xs font-bold border bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30">
-                        (-) Gastos Devengados
+                        Gastos
                       </span>
                       <span className="text-slate-400">
                         {collapsedSections.expenses ? (
@@ -642,7 +654,7 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                   <td className="px-3 py-2 border-r border-rose-200/60 dark:border-rose-900/60 font-sans text-rose-800 dark:text-rose-300 sticky left-0 bg-rose-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Total Gastos Devengados</span>
+                      <span>Total Gastos</span>
                     </div>
                   </td>
                   {months.map((m) => (
@@ -650,23 +662,23 @@ export const ForecastMatrixGrid: React.FC<ForecastMatrixGridProps> = ({
                       key={m.periodId}
                       className="p-2 text-right border-r border-rose-200/60 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 tabular-nums whitespace-nowrap"
                     >
-                      {formatCurrency(m.expense || 0, baseCurrency)}
+                      {formatCurrency(Math.abs(m.expense || 0), baseCurrency)}
                     </td>
                   ))}
                   <td className="p-2 text-right text-rose-800 dark:text-rose-200 bg-rose-100/40 dark:bg-slate-900 tabular-nums font-extrabold truncate">
                     {formatCurrency(
-                      months.reduce((acc, m) => acc + (m.expense || 0), 0),
+                      Math.abs(months.reduce((acc, m) => acc + (m.expense || 0), 0)),
                       baseCurrency,
                     )}
                   </td>
                 </tr>
 
-                {/* 3. (=) RESULTADO NETO (P&L) */}
+                {/* 3. RESULTADO NETO (P&L) */}
                 <tr className="bg-indigo-50/70 dark:bg-indigo-950/40 font-extrabold border-t-2 border-indigo-200 dark:border-indigo-800 h-10">
                   <td className="px-3 py-2 border-r border-indigo-200 dark:border-indigo-800 font-sans text-indigo-900 dark:text-indigo-200 sticky left-0 bg-indigo-50 dark:bg-slate-950 truncate">
                     <div className="flex items-center space-x-1.5">
                       <Wallet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                      <span className="tracking-tight">(=) RESULTADO NETO (P&L)</span>
+                      <span className="tracking-tight">Resultado Neto (P&L)</span>
                     </div>
                   </td>
                   {months.map((m) => {
