@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { authService } from '@/services/auth.service';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -29,14 +30,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-12">
-      <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-white">
-            Forgot Your Password?
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-12">
+      <div className="max-w-md w-full space-y-8 bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
+        <div className="flex flex-col items-center">
+          <BrandLogo variant="horizontal" className="h-8 w-auto mb-3" />
+          <h2 className="mt-1 text-center text-2xl font-extrabold text-white">
+            Recuperar Contraseña
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-400">
-            Enter your email address and we&apos;ll send you a link to reset your password.
+          <p className="mt-1 text-center text-xs text-slate-400">
+            Ingresa tu correo para recibir el enlace de recuperación
           </p>
         </div>
 
@@ -74,9 +76,9 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading || !email}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow text-sm font-bold text-white bg-brand-gradient hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
-                {isLoading ? 'Sending Link...' : 'Send Reset Link'}
+                {isLoading ? 'Enviando enlace...' : 'Enviar Enlace de Recuperación'}
               </button>
             </div>
           </form>

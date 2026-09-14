@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Sistema Contable E2E Workflow', () => {
+test.describe('Contawave E2E Workflow', () => {
   test('should allow a new user to register, log in, manage accounts and post transactions', async ({
     page,
   }) => {
     // 1. Visit homepage
     await page.goto('/');
-    await expect(page.locator('h1')).toContainText('Sistema Contable');
+    await expect(page.locator('h1')).toContainText('Contawave');
 
     // 2. Mock auth register and login flow
     // In e2e test, we mock the api responses or test the real pages

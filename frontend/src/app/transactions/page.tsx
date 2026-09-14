@@ -230,19 +230,36 @@ function TransactionsPageContent() {
         </div>
       )}
 
-      {/* Mobile View: Stacked Full-Width Row segments (pegados) */}
+      {/* Mobile View: Hero Balance Card (Reflecting Contawave Mockup) */}
+      <div className="sm:hidden -mx-2 mb-3">
+        <div className="bg-brand-gradient text-white rounded-3xl p-5 shadow-brand-glow relative overflow-hidden">
+          <div className="relative z-10 space-y-1">
+            <span className="text-xs font-semibold text-white/80 tracking-wide block">
+              Balance Actual
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight">
+              {formatCurrency(netBalance, baseCurrency)}
+            </h2>
+          </div>
+          {/* Subtle decorative wave / glow accents */}
+          <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
+          <div className="absolute right-3 top-3 w-20 h-20 rounded-full bg-brand-wave/20 blur-md pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Mobile View: Stacked Full-Width Row segments */}
       <div
-        className={`sm:hidden -mx-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 shadow-sm ${!success && !error ? '-mt-6' : 'mt-2'}`}
+        className={`sm:hidden -mx-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-xs ${!success && !error ? '-mt-1' : 'mt-2'}`}
       >
         {/* Segmented Control Row */}
-        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/40">
-          <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-0.5 rounded-xl shadow-inner">
+        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/60">
+          <div className="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800 p-0.5 rounded-xl shadow-inner">
             <button
               onClick={() => handleViewChange('daily')}
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'daily'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <ReceiptText className="w-3.5 h-3.5" />
@@ -252,8 +269,8 @@ function TransactionsPageContent() {
               onClick={() => handleViewChange('calendar')}
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'calendar'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
@@ -263,8 +280,8 @@ function TransactionsPageContent() {
               onClick={() => handleViewChange('monthly')}
               className={`flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
                 view === 'monthly'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -392,9 +409,9 @@ function TransactionsPageContent() {
             {/* Dedicated Desktop Agregar Transacción Button */}
             <Link
               href="/transactions/new"
-              className="flex items-center gap-1.5 py-1.5 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              className="flex items-center gap-1.5 py-2 px-4 bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl text-xs shadow-brand-glow-sm hover:shadow-brand-glow transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Agregar Transacción</span>
             </Link>
           </div>

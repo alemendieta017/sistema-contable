@@ -3,66 +3,131 @@
 @theme {
   --font-sans:
     var(--font-plus-jakarta-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Contawave Official Brand Colors */
+  --color-brand-deep: #231238;
+  --color-brand-vivid: #7c3aed;
+  --color-brand-wave: #b56ce2;
+  --color-brand-card: #f4eefb;
+  --color-brand-general: #ffffff;
+  --color-brand-teal: #10b981;
+
+  /* Mapped Brand Purple Scale for seamless app-wide theme adoption */
+  --color-indigo-50: #f4eefb;
+  --color-indigo-100: #ebdff9;
+  --color-indigo-200: #dac4f4;
+  --color-indigo-300: #c29ded;
+  --color-indigo-400: #b56ce2;
+  --color-indigo-500: #9333ea;
+  --color-indigo-600: #7c3aed;
+  --color-indigo-700: #6d28d9;
+  --color-indigo-800: #5b21b6;
+  --color-indigo-900: #4c1d95;
+  --color-indigo-950: #231238;
 }
 
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
+    /* Brand Raw HSL Channels (H S% L%) */
+    --brand-deep: 267 51% 15%;
+    --brand-vivid: 262 83% 58%;
+    --brand-wave: 277 68% 65%;
+    --brand-card: 268 59% 96%;
+    --brand-teal: 160 84% 39%;
+    --brand-gradient-start: 269 68% 30%;
+    --brand-gradient-mid: 262 83% 58%;
+    --brand-gradient-end: 277 68% 65%;
+
+    /* Semantic Theme Tokens */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 267 51% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-tint: 268 59% 96%;
+    --card-foreground: 267 51% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40.1% 98%;
-    --secondary: 210 40.1% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40.1% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40.1% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 267 51% 15%;
+    --primary: 267 51% 15%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 268 59% 96%;
+    --secondary-foreground: 267 51% 15%;
+    --muted: 268 30% 95%;
+    --muted-foreground: 267 15% 45%;
+    --accent: 268 59% 96%;
+    --accent-foreground: 262 83% 58%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40.1% 98%;
-    --border: 214.3 32.1% 91.4%;
-    --input: 214.3 32.1% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --destructive-foreground: 0 0% 100%;
+    --border: 268 25% 91%;
+    --input: 268 25% 91%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40.1% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40.1% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40.1% 98%;
-    --primary: 210 40.1% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40.1% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40.1% 98%;
+    --brand-gradient-start: 264 68% 44%;
+    --brand-gradient-mid: 262 83% 62%;
+    --brand-gradient-end: 277 75% 70%;
+    --background: 267 55% 7%;
+    --foreground: 268 50% 97%;
+    --card: 267 45% 12%;
+    --card-tint: 267 45% 15%;
+    --card-foreground: 268 50% 97%;
+    --popover: 267 45% 12%;
+    --popover-foreground: 268 50% 97%;
+    --primary: 262 83% 65%;
+    --primary-foreground: 267 55% 7%;
+    --secondary: 267 40% 18%;
+    --secondary-foreground: 268 50% 97%;
+    --muted: 267 35% 18%;
+    --muted-foreground: 268 20% 65%;
+    --accent: 267 40% 18%;
+    --accent-foreground: 268 50% 97%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40.1% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 267 35% 22%;
+    --input: 267 35% 22%;
+    --ring: 262 83% 65%;
   }
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #fbf9fe;
+  color: #231238;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans), sans-serif;
 }
 
 .dark body {
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: #120820;
+  color: #fbf9fe;
+}
+
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    hsl(var(--brand-gradient-start, 269 68% 30%)) 0%,
+    hsl(var(--brand-gradient-mid, 262 83% 58%)) 50%,
+    hsl(var(--brand-gradient-end, 277 68% 65%)) 100%
+  );
+}
+
+@utility text-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    hsl(var(--brand-gradient-start, 269 68% 30%)) 0%,
+    hsl(var(--brand-gradient-mid, 262 83% 58%)) 50%,
+    hsl(var(--brand-gradient-end, 277 68% 65%)) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility shadow-brand-glow {
+  box-shadow: 0 10px 25px -4px rgba(124, 58, 237, 0.35);
+}
+
+@utility shadow-brand-glow-sm {
+  box-shadow: 0 4px 14px -2px rgba(124, 58, 237, 0.25);
 }
 
 /* Sleek custom scrollbars */

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import BrandLogo from '../components/brand/BrandLogo';
 
 export default function HomePage() {
   const [view, setView] = useState<'home' | 'login' | 'register'>('home');
@@ -54,24 +55,11 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-      <div className="w-full max-w-md p-8 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in duration-500">
-        {/* Logo */}
-        <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-indigo-500 text-white rounded-2xl shadow-lg shadow-indigo-500/30">
-          <svg
-            className="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-500">
+        {/* Contawave Logo */}
+        <div className="flex justify-center mb-6">
+          <BrandLogo variant="square" className="w-24 h-24" />
         </div>
 
         {error && (
@@ -82,20 +70,22 @@ export default function HomePage() {
 
         {view === 'home' && (
           <>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Sistema Contable</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-slate-900 dark:text-white">
+              Contawave
+            </h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
-              Contabilidad personal y familiar con partida doble y presupuestos.
+              Sistema de gestión contable con partida doble y presupuestos.
             </p>
             <div className="space-y-3">
               <button
                 onClick={() => setView('login')}
-                className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
+                className="w-full py-3 px-4 bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow transition duration-200 cursor-pointer"
               >
                 Ingresar
               </button>
               <button
                 onClick={() => setView('register')}
-                className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white font-semibold rounded-xl transition duration-200"
+                className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white font-semibold rounded-xl transition duration-200 cursor-pointer"
               >
                 Crear cuenta
               </button>
@@ -135,7 +125,7 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 disabled:opacity-50"
+              className="w-full py-3 bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow transition duration-200 disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Iniciando...' : 'Ingresar'}
             </button>
@@ -194,7 +184,7 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 disabled:opacity-50"
+              className="w-full py-3 bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow transition duration-200 disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Creando...' : 'Registrar Cuenta'}
             </button>

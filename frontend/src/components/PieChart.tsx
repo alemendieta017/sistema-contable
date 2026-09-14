@@ -16,14 +16,14 @@ interface PieChartProps {
 }
 
 const colors = [
-  '#6366f1', // Indigo
-  '#10b981', // Emerald
+  '#7c3aed', // Vivid Purple
+  '#b56ce2', // Soft Orchid / Lavender
+  '#231238', // Deep Royal Purple
+  '#10b981', // Emerald Teal
   '#f59e0b', // Amber
+  '#6366f1', // Indigo Accent
   '#ec4899', // Pink
-  '#0ea5e9', // Sky
-  '#8b5cf6', // Violet
-  '#ef4444', // Red
-  '#14b8a6', // Teal
+  '#06b6d4', // Cyan
 ];
 
 export default function PieChart({ data, type }: PieChartProps) {
@@ -99,7 +99,7 @@ export default function PieChart({ data, type }: PieChartProps) {
               : `Total ${type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}`}
           </span>
           <span
-            className={`font-extrabold text-xs sm:text-sm mt-1 leading-none truncate max-w-full ${type === 'EXPENSE' ? 'text-red-500' : 'text-green-500'}`}
+            className={`font-extrabold text-xs sm:text-sm mt-1 leading-none truncate max-w-full ${type === 'EXPENSE' ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}
           >
             $
             {(activeItem ? activeItem.amount : total).toLocaleString(undefined, {

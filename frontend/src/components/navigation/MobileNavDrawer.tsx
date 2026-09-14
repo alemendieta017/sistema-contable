@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { X, Moon, Sun, LogOut } from 'lucide-react';
 import { mobileDrawerSections, isNavItemActive } from '../../config/navigation';
+import BrandLogo from '../brand/BrandLogo';
 
 export interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -63,8 +64,10 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
         className="bg-white dark:bg-slate-800 rounded-t-3xl p-5 sm:p-6 space-y-5 shadow-2xl border-t border-slate-100 dark:border-slate-700 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-full duration-300"
       >
         {/* Header */}
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-700">
-          <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">Menú</h3>
+        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <BrandLogo variant="horizontal" className="h-5 w-auto max-w-[120px]" />
+          </div>
           <button
             type="button"
             onClick={onClose}

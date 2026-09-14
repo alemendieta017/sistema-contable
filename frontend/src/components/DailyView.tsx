@@ -212,7 +212,7 @@ export default function DailyView({
                                 : isExpense
                                   ? 'text-red-500'
                                   : isIncome
-                                    ? 'text-green-500'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
                                     : 'text-indigo-600 dark:text-indigo-400'
                             }`}
                           >

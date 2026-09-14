@@ -12,8 +12,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: 'Sistema Contable',
-  description: 'Contabilidad personal y familiar con partida doble',
+  title: 'Contawave',
+  description: 'Sistema de gestión contable con partida doble',
+  icons: {
+    icon: '/brand/contawave_logo_only.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

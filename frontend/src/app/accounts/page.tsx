@@ -239,9 +239,9 @@ export default function AccountsPage() {
               setSubaccountParent(null);
               setShowAddModal(true);
             }}
-            className="flex items-center gap-1.5 py-1.5 px-3 sm:py-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 transition"
+            className="flex items-center gap-1.5 py-1.5 px-3 sm:py-2 sm:px-4 bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl text-xs shadow-brand-glow-sm hover:shadow-brand-glow transition cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Agregar</span>
           </button>
         </div>
@@ -275,23 +275,25 @@ export default function AccountsPage() {
         return (
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {/* Patrimonio Neto */}
-            <div className="bg-gradient-to-tr from-indigo-600 to-indigo-700 text-white rounded-2xl p-2.5 sm:p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-3xs font-extrabold uppercase tracking-wider text-indigo-200 truncate">
+            <div className="bg-brand-gradient text-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-5 shadow-brand-glow relative overflow-hidden flex flex-col justify-between">
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-[10px] sm:text-3xs font-extrabold uppercase tracking-wider text-white/80 truncate">
                   Patrimonio Neto
                 </span>
-                <div className="hidden sm:flex w-7 h-7 rounded-lg bg-indigo-500/30 items-center justify-center">
-                  <Wallet className="w-4 h-4 text-indigo-100" />
+                <div className="hidden sm:flex w-7 h-7 rounded-lg bg-white/20 items-center justify-center">
+                  <Wallet className="w-4 h-4 text-white" />
                 </div>
               </div>
-              <div className="mt-1 sm:mt-3 min-w-0">
+              <div className="relative z-10 mt-1 sm:mt-3 min-w-0">
                 <span className="text-xs sm:text-2xl font-bold tracking-tight tabular-nums block truncate">
                   {formatCurrency(summary?.netWorth || 0, baseCurrency)}
                 </span>
-                <p className="hidden sm:block text-4xs text-indigo-200 mt-0.5">
+                <p className="hidden sm:block text-4xs text-white/80 mt-0.5">
                   Activos menos Pasivos
                 </p>
               </div>
+              {/* Decorative brand glow / wave accent */}
+              <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
             </div>
 
             {/* Total Activos */}

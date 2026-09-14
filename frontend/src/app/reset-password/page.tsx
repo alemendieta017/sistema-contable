@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/auth.service';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -25,13 +26,14 @@ function ResetPasswordForm() {
   const rules = [{ label: 'At least 6 characters long', valid: newPassword.length >= 6 }];
 
   const isPasswordValid = rules.every((r) => r.valid);
-  const isFormValid = !!token && isPasswordValid && newPassword === confirmPassword;
+  const isFormValid = isPasswordValid && newPassword === confirmPassword && token;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
 
     setError(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
     try {
@@ -53,11 +55,14 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
-      <div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-white">Reset Your Password</h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
-          Enter your new secure password below
+    <div className="max-w-md w-full space-y-8 bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
+      <div className="flex flex-col items-center">
+        <BrandLogo variant="horizontal" className="h-8 w-auto mb-3" />
+        <h2 className="mt-1 text-center text-2xl font-extrabold text-white">
+          Restablecer Contraseña
+        </h2>
+        <p className="mt-1 text-center text-xs text-slate-400">
+          Ingresa tu nueva contraseña para acceder a Contawave
         </p>
       </div>
 
@@ -132,9 +137,9 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={!isFormValid || isLoading}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow text-sm font-bold text-white bg-brand-gradient hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
-              {isLoading ? 'Resetting Password...' : 'Reset Password'}
+              {isLoading ? 'Restableciendo...' : 'Restablecer Contraseña'}
             </button>
           </div>
         </form>

@@ -10,6 +10,7 @@ import { navigationRegistry, isNavGroup, isNavItem, isNavGroupActive } from '../
 import { SidebarNavItem } from './navigation/SidebarNavItem';
 import { SidebarNavGroup } from './navigation/SidebarNavGroup';
 import { SidebarFlyout } from './navigation/SidebarFlyout';
+import BrandLogo from './brand/BrandLogo';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -96,7 +97,7 @@ export default function Sidebar() {
       aria-label="Barra lateral principal"
       className={`hidden sm:flex flex-col ${
         isCollapsed ? 'w-20 p-3' : 'w-64 p-5'
-      } bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-screen justify-between transition-all duration-300 ease-in-out shrink-0`}
+      } bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 min-h-screen justify-between transition-all duration-300 ease-in-out shrink-0`}
     >
       <div className="space-y-6">
         {/* Header / Logo & Collapse Toggle */}
@@ -105,35 +106,22 @@ export default function Sidebar() {
             isCollapsed ? 'justify-center flex-col gap-3 py-1' : 'justify-between px-1 py-1.5'
           }`}
         >
-          <div className="flex items-center space-x-3 overflow-hidden">
-            <div className="flex items-center justify-center w-9 h-9 shrink-0 bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-500/20">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2.5"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            {!isCollapsed && (
-              <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent truncate">
-                Contabilidad
-              </span>
+          <Link
+            href="/transactions"
+            className="flex items-center overflow-hidden focus:outline-none"
+          >
+            {isCollapsed ? (
+              <BrandLogo variant="icon" className="w-8 h-8" />
+            ) : (
+              <BrandLogo variant="horizontal" className="h-7 w-auto max-w-[170px]" />
             )}
-          </div>
+          </Link>
           <button
             type="button"
             onClick={toggleCollapse}
             aria-label={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
             title={isCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronRight className="w-5 h-5" />
@@ -148,7 +136,7 @@ export default function Sidebar() {
           <Link
             href="/transactions/new"
             title="Nueva Transacción"
-            className={`flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-500/10 transition duration-150 active:scale-95 cursor-pointer ${
+            className={`flex items-center justify-center bg-brand-gradient hover:opacity-95 text-white font-bold rounded-xl shadow-brand-glow-sm hover:shadow-brand-glow transition-all duration-150 active:scale-95 cursor-pointer ${
               isCollapsed ? 'w-10 h-10 p-0' : 'w-full gap-2 py-2.5 px-4 text-xs'
             }`}
           >
