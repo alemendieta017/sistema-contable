@@ -43,5 +43,9 @@
     "*.{json,md,yml,yaml,css,scss}": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "multer": "^2.3.0",
+    "uuid": "^11.1.1"
   }
 }
